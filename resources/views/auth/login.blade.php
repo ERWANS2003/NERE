@@ -42,7 +42,7 @@
                 autocomplete="username"
                 placeholder="prenom.nom@nere-mining.bf"
                 style="width:100%; padding:0.7rem 0.85rem; border:1px solid #ddd7c8; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.92rem; background:#fff; color:#1b1f23; outline:none; transition:border-color .15s;"
-                onfocus="this.style.borderColor='#c8963e'"
+                onfocus="this.style.borderColor='#e0a52f'"
                 onblur="this.style.borderColor='#ddd7c8'"
             >
         </div>
@@ -64,20 +64,20 @@
                 autocomplete="current-password"
                 placeholder="••••••••"
                 style="width:100%; padding:0.7rem 0.85rem; border:1px solid #ddd7c8; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.92rem; background:#fff; color:#1b1f23; outline:none; transition:border-color .15s;"
-                onfocus="this.style.borderColor='#c8963e'"
+                onfocus="this.style.borderColor='#e0a52f'"
                 onblur="this.style.borderColor='#ddd7c8'"
             >
         </div>
 
         <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; color:#6b6558; margin:1rem 0 1.5rem; cursor:pointer;">
-            <input type="checkbox" name="remember" style="accent-color:#c8963e; width:15px; height:15px;">
+            <input type="checkbox" name="remember" style="accent-color:#e0a52f; width:15px; height:15px;">
             Rester connecté
         </label>
 
         <button
             type="submit"
             style="width:100%; padding:0.78rem; border:none; border-radius:8px; background:#1b1f23; color:#f7f5f1; font-family:'Inter',sans-serif; font-weight:600; font-size:0.92rem; cursor:pointer; transition:background .15s;"
-            onmouseover="this.style.background='#c8963e'; this.style.color='#1b1f23'"
+            onmouseover="this.style.background='#e0a52f'; this.style.color='#1b1f23'"
             onmouseout="this.style.background='#1b1f23'; this.style.color='#f7f5f1'"
         >
             Se connecter

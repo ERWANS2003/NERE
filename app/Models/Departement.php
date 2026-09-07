@@ -3,11 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Departement extends Model
 {
-    protected $fillable = ['nom', 'code', 'description', 'actif'];
+    protected $fillable = ['nom', 'code', 'description', 'actif', 'directeur_id'];
+
+    public function directeur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'directeur_id');
+    }
 
     public function users(): HasMany
     {

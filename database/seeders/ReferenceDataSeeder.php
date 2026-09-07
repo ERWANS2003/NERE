@@ -15,6 +15,7 @@ use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
+use App\Models\NotificationSetting;
 use App\Services\AssignmentService;
 use App\Services\PriorityService;
 use App\Services\SlaService;
@@ -35,8 +36,19 @@ class ReferenceDataSeeder extends Seeder
         $slaService = app(SlaService::class);
 
         // Départements (Phase 1)
-        $departements = collect(['Production', 'Maintenance', 'Géologie', 'RH', 'Finance', 'IT'])
-            ->mapWithKeys(fn($nom) => [$nom => Departement::create(['nom' => $nom, 'code' => strtoupper(substr($nom, 0, 3))])]);
+        $codesDepartements = [
+            'Production' => 'PRO',
+            'Maintenance' => 'MAI',
+            'Géologie' => 'GEO',
+            'RH' => 'RH',
+            'Finance' => 'FIN',
+            'HSE' => 'HSE',
+            'Achats' => 'ACH',
+            'Logistique' => 'LOG',
+            'IT' => 'IT',
+        ];
+        $departements = collect($codesDepartements)
+            ->mapWithKeys(fn($code, $nom) => [$nom => Departement::firstOrCreate(['nom' => $nom], ['code' => $code, 'actif' => true])]);
 
         // Sites : mine de Karma + bureau de Ouagadougou
         $siteKarma = Site::create(['nom' => 'Mine de Karma', 'code' => 'KRM', 'region' => 'Centre-Nord']);
@@ -45,6 +57,7 @@ class ReferenceDataSeeder extends Seeder
         // Rôles
         $roleAdmin = Role::create(['nom' => 'Administrateur', 'slug' => 'admin']);
         $roleDsi = Role::create(['nom' => 'DSI', 'slug' => 'dsi', 'description' => 'Directeur des Systèmes d\'Information']);
+        $roleDirecteur = Role::create(['nom' => 'Directeur de Département', 'slug' => 'directeur_departement', 'description' => 'Dirige un département et gère les comptes de son équipe']);
         $roleTechnicien = Role::create(['nom' => 'Technicien', 'slug' => 'technicien']);
         $roleDemandeur = Role::create(['nom' => 'Demandeur', 'slug' => 'demandeur']);
 
@@ -56,6 +69,8 @@ class ReferenceDataSeeder extends Seeder
                 ['nom' => 'Affecter des tickets', 'slug' => 'tickets.assign', 'module' => 'tickets'],
                 ['nom' => 'Exporter des rapports', 'slug' => 'reports.export', 'module' => 'reports'],
                 ['nom' => 'Gérer les paramètres', 'slug' => 'admin.settings', 'module' => 'admin'],
+                ['nom' => 'Gérer équipe département', 'slug' => 'department.manage_team', 'module' => 'department'],
+                ['nom' => 'Créer membres département', 'slug' => 'users.create_department_member', 'module' => 'department'],
             ] as $perm
         ) {
             $permissions[$perm['slug']] = Permission::create($perm);
@@ -67,12 +82,30 @@ class ReferenceDataSeeder extends Seeder
             $permissions['tickets.assign']->id,
             $permissions['reports.export']->id,
         ]);
+        $roleDirecteur->permissions()->attach([
+            $permissions['tickets.create']->id,
+            $permissions['tickets.assign']->id,
+            $permissions['department.manage_team']->id,
+            $permissions['users.create_department_member']->id,
+        ]);
         $roleTechnicien->permissions()->attach([
             $permissions['tickets.create']->id,
         ]);
         $roleDemandeur->permissions()->attach([
             $permissions['tickets.create']->id,
         ]);
+
+        foreach (
+            [
+                ['evenement' => 'ticket_cree', 'libelle' => 'Nouveau ticket créé'],
+                ['evenement' => 'ticket_assigne', 'libelle' => 'Ticket affecté'],
+                ['evenement' => 'changement_statut', 'libelle' => 'Changement de statut'],
+                ['evenement' => 'ticket_resolu', 'libelle' => 'Ticket résolu'],
+                ['evenement' => 'sla_depasse', 'libelle' => 'SLA dépassé'],
+            ] as $notification
+        ) {
+            NotificationSetting::create($notification);
+        }
 
         // Statuts (Phase 4)
         $statuts = [];
@@ -130,17 +163,51 @@ class ReferenceDataSeeder extends Seeder
             ]);
         }
 
-        // Équipes (Phase 6)
-        $equipeReseau = Team::create(['nom' => 'Équipe Réseau', 'departement_id' => $departements['IT']->id]);
-        $equipeMateriel = Team::create(['nom' => 'Équipe Matériel', 'departement_id' => $departements['IT']->id]);
-        $equipeScada = Team::create(['nom' => 'Équipe SCADA/OT', 'departement_id' => $departements['Maintenance']->id]);
+        // Catalogue de services : chaque département possède une équipe de traitement.
+        $equipeReseau = Team::updateOrCreate(['nom' => 'Équipe Réseau'], ['departement_id' => $departements['IT']->id]);
+        $equipeMateriel = Team::updateOrCreate(['nom' => 'Équipe Matériel'], ['departement_id' => $departements['IT']->id]);
+        $equipeScada = Team::updateOrCreate(['nom' => 'Équipe SCADA/OT'], ['departement_id' => $departements['Maintenance']->id]);
+        $equipesServices = collect([
+            'Production' => 'Équipe Production',
+            'Géologie' => 'Équipe Géologie',
+            'RH' => 'Équipe RH',
+            'Finance' => 'Équipe Finance',
+            'HSE' => 'Équipe HSE',
+            'Achats' => 'Équipe Achats',
+            'Logistique' => 'Équipe Logistique',
+        ])->mapWithKeys(fn($nom, $departement) => [
+            $departement => Team::updateOrCreate(['nom' => $nom], [
+                'nom' => $nom,
+                'departement_id' => $departements[$departement]->id,
+            ]),
+        ]);
 
-        // Catégories liées à une équipe (affectation automatique)
-        $catReseau = TicketCategory::create(['nom' => 'Réseau', 'team_id' => $equipeReseau->id]);
-        $catMateriel = TicketCategory::create(['nom' => 'Matériel', 'team_id' => $equipeMateriel->id]);
-        $catLogiciel = TicketCategory::create(['nom' => 'Logiciel', 'team_id' => $equipeMateriel->id]);
-        $catScada = TicketCategory::create(['nom' => 'SCADA / OT', 'team_id' => $equipeScada->id]);
-        $catAd = TicketCategory::create(['nom' => 'Compte utilisateur / Active Directory', 'team_id' => $equipeReseau->id]);
+        // Catégories liées à une équipe (affectation automatique).
+        $catReseau = TicketCategory::updateOrCreate(['nom' => 'Réseau'], ['team_id' => $equipeReseau->id]);
+        $catMateriel = TicketCategory::updateOrCreate(['nom' => 'Matériel'], ['team_id' => $equipeMateriel->id]);
+        $catLogiciel = TicketCategory::updateOrCreate(['nom' => 'Logiciel'], ['team_id' => $equipeMateriel->id]);
+        $catScada = TicketCategory::updateOrCreate(['nom' => 'SCADA / OT'], ['team_id' => $equipeScada->id]);
+        $catAd = TicketCategory::updateOrCreate(['nom' => 'Compte utilisateur / Active Directory'], ['team_id' => $equipeReseau->id]);
+
+        foreach (
+            [
+                'Production' => ['Incident de production', 'Équipement de production'],
+                'Géologie' => ['Échantillonnage', 'Données géologiques'],
+                'RH' => ['Congé', 'Attestation', 'Recrutement', 'Formation', 'Contrat', 'Paie'],
+                'Finance' => ['Demande de paiement', 'Budget', 'Facturation'],
+                'HSE' => ['Accident', 'Presqu\'accident', 'Inspection', 'Observation', 'Demande d\'EPI', 'Incendie', 'Environnement'],
+                'Achats' => ['Demande d\'achat', 'Commande fournisseur'],
+                'Logistique' => ['Véhicule', 'Transport', 'Carburant'],
+            ] as $departement => $categoriesService
+        ) {
+            foreach ($categoriesService as $nom) {
+                TicketCategory::updateOrCreate(['nom' => $nom], ['team_id' => $equipesServices[$departement]->id]);
+            }
+        }
+
+        $catProduction = TicketCategory::where('team_id', $equipesServices['Production']->id)->first();
+        $catRh = TicketCategory::where('team_id', $equipesServices['RH']->id)->first();
+        $catFinance = TicketCategory::where('team_id', $equipesServices['Finance']->id)->first();
 
         $motDePasse = Hash::make('password');
 
@@ -265,7 +332,7 @@ class ReferenceDataSeeder extends Seeder
                 'user_id' => $demandeurProdKarma->id,
                 'site_id' => $siteKarma->id,
                 'departement_id' => $departements['Production']->id,
-                'ticket_category_id' => $catReseau->id,
+                'ticket_category_id' => $catProduction->id,
                 'impact' => 'Critique',
                 'urgence' => 'Élevé',
                 'ticket_status_id' => $statuts['Assigné']->id,
@@ -276,7 +343,7 @@ class ReferenceDataSeeder extends Seeder
                 'user_id' => $demandeurRhOuaga->id,
                 'site_id' => $siteOuaga->id,
                 'departement_id' => $departements['RH']->id,
-                'ticket_category_id' => $catMateriel->id,
+                'ticket_category_id' => $catRh->id,
                 'impact' => 'Moyen',
                 'urgence' => 'Moyen',
                 'ticket_status_id' => $statuts['En cours']->id,
@@ -287,7 +354,7 @@ class ReferenceDataSeeder extends Seeder
                 'user_id' => $demandeurRhOuaga->id,
                 'site_id' => $siteOuaga->id,
                 'departement_id' => $departements['RH']->id,
-                'ticket_category_id' => $catAd->id,
+                'ticket_category_id' => $catRh->id,
                 'impact' => 'Moyen',
                 'urgence' => 'Faible',
                 'ticket_status_id' => $statuts['Nouveau']->id,
@@ -297,7 +364,7 @@ class ReferenceDataSeeder extends Seeder
                 'description' => 'Alerte récurrente sur le convoyeur n°3 — capteur de vitesse incohérent.',
                 'user_id' => $demandeurProdKarma->id,
                 'site_id' => $siteKarma->id,
-                'departement_id' => $departements['Production']->id,
+                'departement_id' => $departements['Maintenance']->id,
                 'ticket_category_id' => $catScada->id,
                 'impact' => 'Élevé',
                 'urgence' => 'Critique',
@@ -309,7 +376,7 @@ class ReferenceDataSeeder extends Seeder
                 'user_id' => $demandeurRhOuaga->id,
                 'site_id' => $siteOuaga->id,
                 'departement_id' => $departements['Finance']->id,
-                'ticket_category_id' => $catLogiciel->id,
+                'ticket_category_id' => $catFinance->id,
                 'impact' => 'Faible',
                 'urgence' => 'Moyen',
                 'ticket_status_id' => $statuts['Nouveau']->id,

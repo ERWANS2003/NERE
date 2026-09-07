@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.editorconfig
+/storage/logs/*
+.phpunit.result.cache
+/bootstrap/cache/*
+.DS_Store
+*.log

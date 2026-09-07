@@ -44,9 +44,27 @@
         }
 
         .kpi.critique { --kpi-accent: var(--rouge); }
-        .kpi.sla { --kpi-accent: #e07b39; }
+        .kpi.sla { --kpi-accent: #d9362e; }
         .kpi.vert { --kpi-accent: var(--vert); }
         .kpi.bleu { --kpi-accent: var(--bleu); }
+
+        .portail-intro { display:flex; justify-content:space-between; gap:1.5rem; align-items:flex-end; margin-bottom:1.5rem; }
+        .sur-titre { margin:0 0 .4rem; color:var(--ambre-clair); font:500 .68rem 'JetBrains Mono', monospace; letter-spacing:.1em; text-transform:uppercase; }
+        .portail-intro h2 { margin:0; font:700 clamp(1.5rem, 3vw, 2.35rem) 'Space Grotesk', sans-serif; color:var(--ivoire); }
+        .portail-intro p { max-width:560px; color:var(--texte-att); margin:.5rem 0 0; line-height:1.6; }
+        .services-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.85rem; margin-bottom:1.75rem; }
+        .service-card { position:relative; min-height:145px; padding:1.05rem; border:1px solid var(--graphite-line); border-radius:10px; background:linear-gradient(145deg,#2a323b,#222830); transition:transform .18s,border-color .18s; }
+        .service-card:hover { transform:translateY(-2px); border-color:var(--ambre); }
+        .service-card h3 { margin:.6rem 0 .3rem; font:600 1rem 'Space Grotesk',sans-serif; }
+        .service-card p { margin:0; color:var(--texte-att); font-size:.75rem; }
+        .service-card .service-count { position:absolute; right:1rem; top:1rem; color:var(--ambre-clair); font:700 1.3rem 'Space Grotesk',sans-serif; }
+        .service-card .service-categories { margin-top:.8rem; color:#c8cbd0; font-size:.72rem; line-height:1.5; }
+        .special-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin:0 0 1.75rem; }
+        .special-kpi { background:var(--graphite-soft); border:1px solid var(--graphite-line); border-radius:10px; padding:1rem; }
+        .special-kpi h3 { margin:0 0 .75rem; font:600 .9rem 'Space Grotesk',sans-serif; color:var(--ambre-clair); }
+        .special-kpi-row { display:flex; justify-content:space-between; gap:1rem; padding:.35rem 0; border-bottom:1px solid var(--graphite-line); font-size:.78rem; }
+        .special-kpi-row:last-child { border-bottom:0; }
+        .special-kpi-row span:last-child { color:var(--texte-clair); font-weight:600; }
 
         .charts-grid {
             display: grid;
@@ -82,12 +100,65 @@
             height: 300px;
         }
 
+        .derniers-tickets {
+            grid-column: 1 / -1;
+        }
+
+        .ticket-ligne {
+            display: grid;
+            grid-template-columns: 1.1fr 2fr 1fr 1fr 1fr;
+            gap: .75rem;
+            align-items: center;
+            padding: .75rem 0;
+            border-bottom: 1px solid var(--graphite-line);
+            font-size: .82rem;
+        }
+
+        .ticket-ligne:last-child { border-bottom: none; }
+        .ticket-ligne .reference { color: var(--ambre-clair); font-family: 'JetBrains Mono', monospace; font-size: .75rem; }
+        .ticket-ligne .secondaire { color: var(--texte-att); font-size: .76rem; }
+
+        @media (max-width: 700px) {
+            .ticket-ligne { grid-template-columns: 1fr 1fr; }
+            .ticket-ligne > :nth-child(2) { grid-column: 1 / -1; grid-row: 1; }
+        }
+
         @media (max-width: 860px) {
             .charts-grid { grid-template-columns: 1fr; }
         }
 @endsection
 
 @section('contenu')
+
+    <div class="portail-intro">
+        <div>
+            <p class="sur-titre">Néré Mining · portail de services</p>
+            <h2>Que souhaitez-vous faire ?</h2>
+            <p>Une demande unique, dirigée automatiquement vers le bon service et suivie jusqu'à sa résolution.</p>
+        </div>
+        <a href="{{ route('tickets.create') }}" class="btn btn-primaire">Créer une demande</a>
+    </div>
+
+    <div class="services-grid">
+        @foreach ($departements as $departement)
+            @php($categoriesService = $departement->teams->flatMap->categories->pluck('nom')->take(4))
+            <a class="service-card" href="{{ route('tickets.create') }}?departement={{ $departement->id }}">
+                <span class="service-count">{{ $departement->tickets_count }}</span>
+                <div style="color:var(--ambre-clair);font-size:1.2rem;">{{ strtoupper(substr($departement->nom, 0, 2)) }}</div>
+                <h3>{{ $departement->nom }}</h3>
+                <p>{{ $departement->teams_count }} équipe{{ $departement->teams_count > 1 ? 's' : '' }} de traitement</p>
+                <div class="service-categories">{{ $categoriesService->implode(' · ') }}</div>
+            </a>
+        @endforeach
+    </div>
+
+    <div class="special-kpis">
+        @foreach ($serviceKpis as $service => $indicateurs)
+            @if ($departements->contains('nom', $service) || auth()->user()->hasRole('admin'))
+                <div class="special-kpi"><h3>{{ $service }} · indicateurs</h3>@foreach ($indicateurs as $libelle => $valeur)<div class="special-kpi-row"><span>{{ $libelle }}</span><span>{{ number_format($valeur) }}</span></div>@endforeach</div>
+            @endif
+        @endforeach
+    </div>
 
     <div class="kpi-grid">
         <div class="kpi">
@@ -97,6 +168,14 @@
         <div class="kpi bleu">
             <div class="kpi-label">Tickets ouverts</div>
             <div class="kpi-valeur">{{ number_format($stats['tickets_ouverts']) }}</div>
+        </div>
+        <div class="kpi sla">
+            <div class="kpi-label">En attente</div>
+            <div class="kpi-valeur">{{ number_format($stats['tickets_en_attente']) }}</div>
+        </div>
+        <div class="kpi vert">
+            <div class="kpi-label">Résolus</div>
+            <div class="kpi-valeur">{{ number_format($stats['tickets_resolus']) }}</div>
         </div>
         <div class="kpi critique">
             <div class="kpi-label">Critiques ouverts</div>
@@ -140,6 +219,21 @@
                 <canvas id="chart-evolution"></canvas>
             </div>
         </div>
+
+        <div class="chart-card derniers-tickets">
+            <h2>Derniers tickets</h2>
+            @forelse ($derniersTickets as $ticket)
+                <a class="ticket-ligne" href="{{ route('tickets.show', $ticket) }}">
+                    <span class="reference">{{ $ticket->reference }}</span>
+                    <span>{{ Str::limit($ticket->titre, 55) }}</span>
+                    <span class="secondaire">{{ $ticket->site?->nom ?? 'Tous sites' }}</span>
+                    <span class="badge" style="background:{{ $ticket->statut?->couleur ?? '#a9aeb4' }}22;color:{{ $ticket->statut?->couleur ?? '#a9aeb4' }};">{{ $ticket->statut?->nom ?? '—' }}</span>
+                    <span class="secondaire">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
+                </a>
+            @empty
+                <p style="color:var(--texte-att);margin:0;">Aucun ticket enregistré.</p>
+            @endforelse
+        </div>
     </div>
 
 @endsection
@@ -151,7 +245,7 @@
         Chart.defaults.borderColor = '#383f47';
         Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
 
-        const palette = ['#c8963e', '#e0b563', '#3fa66b', '#4a90d9', '#d64545', '#9b7fd4', '#e07b39'];
+        const palette = ['#e0a52f', '#ffc247', '#d9362e', '#8f2020', '#f0c96a', '#b94b35'];
 
         const doughnutDefaults = {
             responsive: true,
@@ -208,7 +302,7 @@
                 labels: @json($ticketsParSite->keys()),
                 datasets: [{
                     data: @json($ticketsParSite->values()),
-                    backgroundColor: '#c8963e',
+                    backgroundColor: '#e0a52f',
                     borderRadius: 6,
                 }],
             },
@@ -225,11 +319,11 @@
                 datasets: [{
                     label: 'Tickets créés',
                     data: @json($evolutionMensuelle->values()),
-                    borderColor: '#c8963e',
+                    borderColor: '#e0a52f',
                     backgroundColor: 'rgba(200,150,62,0.12)',
                     fill: true,
                     tension: 0.35,
-                    pointBackgroundColor: '#c8963e',
+                    pointBackgroundColor: '#e0a52f',
                     pointRadius: 4,
                     pointHoverRadius: 6,
                 }],

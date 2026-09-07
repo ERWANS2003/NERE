@@ -87,4 +87,34 @@ class SlaService
 
         return $depasse;
     }
+
+    /** Retourne le seuil atteint une seule fois : 75 ou 100 pour cent. */
+    public function verifierAlerte(Ticket $ticket): ?int
+    {
+        if (! $ticket->date_echeance_resolution || $ticket->statut?->est_final || $ticket->date_mise_en_attente) {
+            return null;
+        }
+
+        $sla = $ticket->sla;
+        if (! $sla || $sla->temps_resolution_heures <= 0) {
+            return null;
+        }
+
+        $debut = $ticket->created_at->copy()->addSeconds((int) $ticket->sla_temps_pause_secondes);
+        $dureeTotale = max(1, $ticket->date_echeance_resolution->diffInSeconds($debut));
+        $elapsed = $debut->diffInSeconds(now());
+        $pourcentage = ($elapsed / $dureeTotale) * 100;
+
+        if ($pourcentage >= 100 && ! $ticket->sla_alerte_100_envoyee) {
+            $ticket->forceFill(['sla_alerte_100_envoyee' => true, 'sla_depasse' => true])->save();
+            return 100;
+        }
+
+        if ($pourcentage >= 75 && ! $ticket->sla_alerte_75_envoyee) {
+            $ticket->forceFill(['sla_alerte_75_envoyee' => true])->save();
+            return 75;
+        }
+
+        return null;
+    }
 }

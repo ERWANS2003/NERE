@@ -11,14 +11,27 @@ class KnowledgeArticleController extends Controller
     // Phase 9 : Base de connaissances
     public function index(Request $request)
     {
+        $perPage = in_array((int) $request->query('per_page'), [10, 15, 25, 50], true)
+            ? (int) $request->query('per_page')
+            : 15;
+
         $articles = KnowledgeArticle::query()
             ->with(['categorie', 'auteur'])
             ->where('publie', true)
-            ->when($request->filled('q'), fn ($q) => $q->suggeresPour($request->query('q'), $request->integer('categorie_id') ?: null))
+            ->when($request->filled('categorie_id'), fn($q) => $q->where('ticket_category_id', $request->query('categorie_id')))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $terme = '%' . $request->query('q') . '%';
+                $q->where(function ($sub) use ($terme) {
+                    $sub->where('titre', 'like', $terme)
+                        ->orWhere('contenu', 'like', $terme)
+                        ->orWhere('mots_cles', 'like', $terme);
+                });
+            })
             ->latest()
-            ->paginate(15);
+            ->paginate($perPage)
+            ->withQueryString();
 
-        return view('knowledge.index', compact('articles'));
+        return view('knowledge.index', compact('articles', 'perPage'));
     }
 
     // Utilisé en AJAX avant la création d'un ticket pour suggérer des articles pertinents

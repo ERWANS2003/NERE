@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Models\TicketHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,9 +12,24 @@ class ReportController extends Controller
     // Phase 11 : Rapports
     public function index(Request $request)
     {
-        $periode = $request->query('periode', 'mois'); // mois, site, categorie, technicien
+        $driver = DB::connection()->getDriverName();
+        $dateFormatExpr = match ($driver) {
+            'pgsql' => "to_char(created_at, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            default => "DATE_FORMAT(created_at, '%Y-%m')",
+        };
+        $diffHourExpr = match ($driver) {
+            'pgsql' => "EXTRACT(EPOCH FROM (date_resolution - created_at)) / 3600",
+            'sqlite' => "((julianday(date_resolution) - julianday(created_at)) * 24)",
+            default => "TIMESTAMPDIFF(HOUR, created_at, date_resolution)",
+        };
+        $diffHourTicketExpr = match ($driver) {
+            'pgsql' => "EXTRACT(EPOCH FROM (tickets.date_resolution - tickets.created_at)) / 3600",
+            'sqlite' => "((julianday(tickets.date_resolution) - julianday(tickets.created_at)) * 24)",
+            default => "TIMESTAMPDIFF(HOUR, tickets.created_at, tickets.date_resolution)",
+        };
 
-        $ticketsParMois = Ticket::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as periode, count(*) as total")
+        $ticketsParMois = Ticket::selectRaw("{$dateFormatExpr} as periode, count(*) as total")
             ->groupBy('periode')->orderBy('periode')->get();
 
         $ticketsParSite = Ticket::join('sites', 'tickets.site_id', '=', 'sites.id')
@@ -25,7 +41,7 @@ class ReportController extends Controller
             ->groupBy('ticket_categories.nom')->get();
 
         $tempsMoyenResolution = Ticket::whereNotNull('date_resolution')
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, date_resolution)) as moyenne_heures')
+            ->selectRaw("AVG({$diffHourExpr}) as moyenne_heures")
             ->value('moyenne_heures');
 
         $tauxSatisfaction = Ticket::whereNotNull('satisfaction_note')
@@ -38,29 +54,35 @@ class ReportController extends Controller
         ];
 
         $performanceTechniciens = Ticket::join('users', 'tickets.assigned_to', '=', 'users.id')
-            ->selectRaw('users.name as technicien, count(*) as total_traites,
-                AVG(TIMESTAMPDIFF(HOUR, tickets.created_at, tickets.date_resolution)) as temps_moyen_heures')
+            ->selectRaw("users.name as technicien, count(*) as total_traites, AVG({$diffHourTicketExpr}) as temps_moyen_heures")
             ->whereNotNull('tickets.date_resolution')
             ->groupBy('users.name')
             ->get();
 
+        $historiques = TicketHistory::with(['ticket', 'utilisateur'])
+            ->latest()
+            ->limit(50)
+            ->get();
+
         return view('reports.index', compact(
-            'ticketsParMois', 'ticketsParSite', 'ticketsParCategorie',
-            'tempsMoyenResolution', 'tauxSatisfaction', 'respectSla', 'performanceTechniciens'
+            'ticketsParMois',
+            'ticketsParSite',
+            'ticketsParCategorie',
+            'tempsMoyenResolution',
+            'tauxSatisfaction',
+            'respectSla',
+            'performanceTechniciens',
+            'historiques'
         ));
     }
 
-    // Export PDF / Excel / CSV (nécessite barryvdh/laravel-dompdf et maatwebsite/excel)
     public function exportPdf()
     {
-        // $pdf = Pdf::loadView('reports.pdf', [...]);
-        // return $pdf->download('rapport-tickets.pdf');
         abort(501, 'Installer barryvdh/laravel-dompdf pour activer cet export.');
     }
 
     public function exportExcel()
     {
-        // return Excel::download(new TicketsExport, 'rapport-tickets.xlsx');
         abort(501, 'Installer maatwebsite/excel pour activer cet export.');
     }
 
@@ -73,8 +95,13 @@ class ReportController extends Controller
             fputcsv($out, ['Référence', 'Titre', 'Catégorie', 'Priorité', 'Statut', 'Site', 'Créé le']);
             foreach ($tickets as $t) {
                 fputcsv($out, [
-                    $t->reference, $t->titre, $t->categorie?->nom, $t->priorite?->nom,
-                    $t->statut?->nom, $t->site?->nom, $t->created_at,
+                    $t->reference,
+                    $t->titre,
+                    $t->categorie?->nom,
+                    $t->priorite?->nom,
+                    $t->statut?->nom,
+                    $t->site?->nom,
+                    $t->created_at,
                 ]);
             }
             fclose($out);

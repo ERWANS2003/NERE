@@ -9,9 +9,7 @@
 @section('contenu')
 
     @php
-        $peutGererTicket = auth()->user()->hasPermission('tickets.assign')
-            || auth()->user()->est_technicien
-            || auth()->user()->hasRole('admin');
+        $peutGererTicket = auth()->user()->hasRole('admin');
     @endphp
 
     <div class="page-actions">
@@ -66,14 +64,6 @@
 
             @if ($peutGererTicket)
                 <div class="form-grille" style="margin-bottom:1rem;">
-                    <div class="champ">
-                        <label for="ticket_status_id">Statut</label>
-                        <select id="ticket_status_id" name="ticket_status_id">
-                            @foreach ($statuts as $statut)
-                                <option value="{{ $statut->id }}" @selected(old('ticket_status_id', $ticket->ticket_status_id) == $statut->id)>{{ $statut->nom }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="champ">
                         <label for="assigned_to">Technicien assigné</label>
                         <select id="assigned_to" name="assigned_to">

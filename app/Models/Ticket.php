@@ -15,20 +15,48 @@ class Ticket extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'reference', 'titre', 'description', 'type', 'solution', 'motif_attente',
-        'user_id', 'site_id', 'departement_id', 'ticket_category_id',
-        'impact', 'urgence', 'ticket_priority_id', 'ticket_status_id',
-        'team_id', 'assigned_to', 'assigned_by', 'date_assignation', 'date_mise_en_attente',
-        'sla_id', 'date_echeance_reponse', 'date_echeance_resolution',
-        'date_premiere_reponse', 'date_resolution', 'date_cloture', 'sla_depasse',
+        'reference',
+        'titre',
+        'description',
+        'service_data',
+        'type',
+        'solution',
+        'motif_attente',
+        'user_id',
+        'site_id',
+        'departement_id',
+        'ticket_category_id',
+        'impact',
+        'urgence',
+        'ticket_priority_id',
+        'ticket_status_id',
+        'team_id',
+        'assigned_to',
+        'assigned_by',
+        'date_assignation',
+        'date_mise_en_attente',
+        'sla_id',
+        'date_echeance_reponse',
+        'date_echeance_resolution',
+        'date_premiere_reponse',
+        'date_resolution',
+        'date_cloture',
+        'sla_depasse',
         'sla_temps_pause_secondes',
-        'satisfaction_note', 'satisfaction_commentaire',
+        'satisfaction_note',
+        'satisfaction_commentaire',
+        'validation_statut',
+        'valide_par',
+        'date_validation',
+        'sla_alerte_75_envoyee',
+        'sla_alerte_100_envoyee',
     ];
 
     protected function casts(): array
     {
         return [
             'type' => TicketType::class,
+            'service_data' => 'array',
             'date_assignation' => 'datetime',
             'date_mise_en_attente' => 'datetime',
             'date_echeance_reponse' => 'datetime',
@@ -37,6 +65,9 @@ class Ticket extends Model
             'date_resolution' => 'datetime',
             'date_cloture' => 'datetime',
             'sla_depasse' => 'boolean',
+            'date_validation' => 'datetime',
+            'sla_alerte_75_envoyee' => 'boolean',
+            'sla_alerte_100_envoyee' => 'boolean',
         ];
     }
 
@@ -98,6 +129,11 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    public function validateur(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'valide_par');
+    }
+
     public function assignePar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
@@ -145,12 +181,12 @@ class Ticket extends Model
 
     public function scopeOuverts(Builder $query): Builder
     {
-        return $query->whereHas('statut', fn ($q) => $q->where('est_final', false));
+        return $query->whereHas('statut', fn($q) => $q->where('est_final', false));
     }
 
     public function scopeCritiques(Builder $query): Builder
     {
-        return $query->whereHas('priorite', fn ($q) => $q->where('niveau', '>=', 4));
+        return $query->whereHas('priorite', fn($q) => $q->where('niveau', '>=', 4));
     }
 
     public function scopeParSite(Builder $query, int $siteId): Builder

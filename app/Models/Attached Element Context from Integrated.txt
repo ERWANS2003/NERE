@@ -1,0 +1,45 @@
+Attached Element Context from Integrated Browser
+
+Element: div.accroche
+
+URL: http://127.0.0.1:8000/connexion
+
+HTML Path: div.ecran > aside.panneau-marque > div.accroche
+
+Outer HTML:
+```html
+<div class="accroche">
+                <h1>Un seul point d'entrée pour signaler, suivre et résoudre.</h1>
+                <p>Production, Maintenance, Géologie, RH, Finance, IT — tous les incidents et demandes du groupe centralisés au même endroit.</p>
+            </div>
+```
+
+Dimensions:
+- top: 373px
+- left: 52px
+- width: 303px
+- height: 280px
+
+CSS:
+```css
+* { box-sizing: border-box; }
+.accroche { position: relative;
+            max-width: 30ch; }
+
+/* Inherited */
+html, body { font-family: 'Inter', system-ui, sans-serif; color: var(--texte-clair) }
+
+/* Resolved values */
+box-sizing: border-box;
+color: rgb(236, 234, 230);
+display: block;
+font-family: Inter, system-ui, sans-serif;
+height: 279.792px;
+max-width: 302.812px;
+position: relative;
+unicode-bidi: isolate /*UA*/;
+width: 302.812px;
+
+/* CSS variables */
+--texte-clair: #eceae6;
+```

@@ -7,18 +7,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password',
-        'role_id', 'departement_id', 'site_id',
-        'matricule', 'telephone', 'poste',
-        'est_technicien', 'disponible', 'actif',
+        'name',
+        'email',
+        'password',
+        'role_id',
+        'departement_id',
+        'site_id',
+        'matricule',
+        'telephone',
+        'poste',
+        'est_technicien',
+        'disponible',
+        'actif',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -92,8 +102,18 @@ class User extends Authenticatable
         return $this->role?->hasPermission($slug) ?? false;
     }
 
+    public function departementDirige(): HasOne
+    {
+        return $this->hasOne(Departement::class, 'directeur_id');
+    }
+
     public function estDisponiblePourAffectation(): bool
     {
         return $this->est_technicien && $this->actif && $this->disponible;
+    }
+
+    public function isDirecteur(): bool
+    {
+        return $this->hasRole('directeur_departement') || $this->hasRole('dsi');
     }
 }

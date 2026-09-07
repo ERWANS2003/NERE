@@ -14,10 +14,10 @@
             --graphite-soft: #262b31;
             --graphite-line: #383f47;
             --ivoire: #f7f5f1;
-            --ambre: #c8963e;
-            --ambre-clair: #e0b563;
+            --ambre: #e0a52f;
+            --ambre-clair: #ffc247;
             --vert-actif: #3fa66b;
-            --rouge-alerte: #d64545;
+            --rouge-alerte: #d9362e;
             --texte-clair: #eceae6;
             --texte-att: #a9aeb4;
         }
@@ -50,7 +50,7 @@
             padding: 3.5rem 3.25rem;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
             overflow: hidden;
             border-right: 1px solid var(--graphite-line);
         }
@@ -60,9 +60,34 @@
             position: absolute;
             inset: 0;
             background-image:
-                radial-gradient(circle at 18% 15%, rgba(200,150,62,0.14), transparent 42%),
+                radial-gradient(circle at 18% 15%, rgba(255,194,71,0.18), transparent 42%),
                 repeating-radial-gradient(circle at 78% 68%, transparent 0, transparent 26px, rgba(255,255,255,0.028) 27px, transparent 28px, transparent 54px);
+            background-size: 150% 150%, 135% 135%;
+            animation: mouvement-fond 14s ease-in-out infinite alternate;
             pointer-events: none;
+        }
+
+        .panneau-marque::after {
+            content: "";
+            position: absolute;
+            inset: -20%;
+            background:
+                radial-gradient(ellipse at 18% 30%, rgba(255,194,71,0.25), transparent 30%),
+                radial-gradient(ellipse at 82% 75%, rgba(217,54,46,0.16), transparent 32%);
+            background-size: 125% 125%, 140% 140%;
+            opacity: 0.72;
+            animation: halo-fond 9s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes mouvement-fond {
+            0% { background-position: -8% -5%, 8% 4%; }
+            100% { background-position: 18% 10%, -14% -8%; }
+        }
+
+        @keyframes halo-fond {
+            0% { transform: translate(-5%, -3%) scale(0.94); opacity: 0.42; }
+            100% { transform: translate(6%, 5%) scale(1.08); opacity: 0.82; }
         }
 
         .marque {
@@ -78,6 +103,10 @@
         .accroche {
             position: relative;
             max-width: 30ch;
+            align-self: center;
+            text-align: center;
+            margin-top: auto;
+            margin-bottom: auto;
         }
 
         .accroche h1 {
@@ -96,67 +125,9 @@
             margin: 0;
         }
 
-        /* Flux d'état des sites — élément signature */
-        .flux-sites {
-            position: relative;
-            border-top: 1px solid var(--graphite-line);
-            padding-top: 1.4rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.7rem;
-        }
-
-        .flux-titre {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.68rem;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            color: var(--texte-att);
-            margin-bottom: 0.2rem;
-        }
-
-        .ligne-site {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--texte-att);
-        }
-
-        .point {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--vert-actif);
-            box-shadow: 0 0 0 0 rgba(63,166,107,0.55);
-            animation: pulse 2.4s ease-out infinite;
-            flex-shrink: 0;
-        }
-
-        .point.alerte {
-            background: var(--rouge-alerte);
-            box-shadow: 0 0 0 0 rgba(214,69,69,0.55);
-            animation-name: pulse-alerte;
-        }
-
-        .ligne-site .nom-site { color: var(--texte-clair); }
-        .ligne-site .valeur { margin-left: auto; color: var(--ambre-clair); }
-
-        @keyframes pulse {
-            0%   { box-shadow: 0 0 0 0 rgba(63,166,107,0.5); }
-            70%  { box-shadow: 0 0 0 7px rgba(63,166,107,0); }
-            100% { box-shadow: 0 0 0 0 rgba(63,166,107,0); }
-        }
-
-        @keyframes pulse-alerte {
-            0%   { box-shadow: 0 0 0 0 rgba(214,69,69,0.5); }
-            70%  { box-shadow: 0 0 0 7px rgba(214,69,69,0); }
-            100% { box-shadow: 0 0 0 0 rgba(214,69,69,0); }
-        }
-
         @media (prefers-reduced-motion: reduce) {
-            .point { animation: none; }
+            .panneau-marque::before { animation: none; }
+            .panneau-marque::after { animation: none; }
         }
 
         /* ---------- Panneau droit : formulaire ---------- */
@@ -205,24 +176,6 @@
                 <p>Production, Maintenance, Géologie, RH, Finance, IT — tous les incidents et demandes du groupe centralisés au même endroit.</p>
             </div>
 
-            <div class="flux-sites">
-                <div class="flux-titre">État des sites — en direct</div>
-                <div class="ligne-site">
-                    <span class="point"></span>
-                    <span class="nom-site">Mine de Karma</span>
-                    <span class="valeur">Opérationnel</span>
-                </div>
-                <div class="ligne-site">
-                    <span class="point"></span>
-                    <span class="nom-site">Bureau de Ouagadougou</span>
-                    <span class="valeur">Opérationnel</span>
-                </div>
-                <div class="ligne-site">
-                    <span class="point alerte"></span>
-                    <span class="nom-site">SLA critiques</span>
-                    <span class="valeur">2 en dépassement</span>
-                </div>
-            </div>
         </aside>
 
         <main class="panneau-formulaire">
@@ -234,7 +187,7 @@
                 @yield('contenu')
 
                 <p class="pied-formulaire">
-                    Néré Mining &middot; Karma, Centre-Nord &middot; <a href="mailto:it-support@nere-mining.bf">it-support@nere-mining.bf</a>
+                    <a href="mailto:it-support@nere-mining.bf">it-support@nere-mining.bf</a>
                 </p>
             </div>
         </main>

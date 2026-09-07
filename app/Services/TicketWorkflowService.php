@@ -52,7 +52,7 @@ class TicketWorkflowService
         }
 
         return match ($vers) {
-            TicketStatusSlug::Assigne => $user->hasPermission('tickets.assign') || $user->est_technicien,
+            TicketStatusSlug::Assigne => $this->peutAffecter($user),
             TicketStatusSlug::EnCours => $this->peutTraiter($ticket, $user),
             TicketStatusSlug::EnAttente => $this->peutTraiter($ticket, $user),
             TicketStatusSlug::Resolu => $this->peutTraiter($ticket, $user),
@@ -146,7 +146,9 @@ class TicketWorkflowService
 
         if ($ticket->assigned_to) {
             $this->historique($ticket, 'affectation', null, (string) $ticket->assigned_to);
-            $this->historique($ticket, 'changement_statut',
+            $this->historique(
+                $ticket,
+                'changement_statut',
                 (string) $this->statutParSlug(TicketStatusSlug::Nouveau)->id,
                 (string) $ticket->ticket_status_id,
             );
@@ -155,9 +157,9 @@ class TicketWorkflowService
         return $ticket;
     }
 
-    public function reaffecter(Ticket $ticket, User $operateur, int $technicienId): Ticket
+    public function reaffecter(Ticket $ticket, User $operateur, ?int $technicienId): Ticket
     {
-        if (! $operateur->hasPermission('tickets.assign') && ! $operateur->hasRole('admin')) {
+        if (! $this->peutAffecter($operateur)) {
             throw new InvalidArgumentException('Droit d\'affectation insuffisant.');
         }
 
@@ -167,20 +169,26 @@ class TicketWorkflowService
 
         $ancien = $ticket->assigned_to;
 
+        if ($technicienId && $ticket->team_id && ! User::findOrFail($technicienId)->teams()->whereKey($ticket->team_id)->exists()) {
+            throw new InvalidArgumentException('Le technicien doit appartenir à l’équipe du service.');
+        }
+
         $ticket->assigned_to = $technicienId;
         $ticket->assigned_by = $operateur->id;
         $ticket->date_assignation = now();
 
-        if (in_array($ticket->statut?->slug, ['nouveau', 'en_attente'], true)) {
+        if ($technicienId && in_array($ticket->statut?->slug, ['nouveau', 'en_attente'], true)) {
             $ticket->ticket_status_id = $this->statutParSlug(TicketStatusSlug::Assigne)->id;
             if ($ticket->statut?->slug === 'en_attente') {
                 $this->slaService->reprendre($ticket);
             }
+        } elseif (! $technicienId && $ticket->statut?->slug === 'assigne') {
+            $ticket->ticket_status_id = $this->statutParSlug(TicketStatusSlug::Nouveau)->id;
         }
 
         $ticket->save();
 
-        $this->historique($ticket, 'affectation', $ancien ? (string) $ancien : null, (string) $technicienId);
+        $this->historique($ticket, 'affectation', $ancien ? (string) $ancien : null, $technicienId ? (string) $technicienId : null);
 
         return $ticket->fresh(['statut', 'technicien']);
     }
@@ -189,6 +197,12 @@ class TicketWorkflowService
     {
         if (isset($contexte['assigned_to'])) {
             $this->reaffecter($ticket, $user, (int) $contexte['assigned_to']);
+
+            return;
+        }
+
+        if (! $ticket->assigned_to && ($user->est_technicien || $user->hasRole('admin'))) {
+            $this->reaffecter($ticket, $user, $user->id);
 
             return;
         }
@@ -269,8 +283,17 @@ class TicketWorkflowService
             || $ticket->assigned_to === $user->id;
     }
 
+    protected function peutAffecter(User $user): bool
+    {
+        return $user->hasRole('dsi') || $user->hasRole('admin');
+    }
+
     protected function peutCloturer(Ticket $ticket, User $user): bool
     {
+        if ($ticket->validation_statut === 'en_attente') {
+            return false;
+        }
+
         return $ticket->user_id === $user->id
             || $user->hasPermission('tickets.assign')
             || $user->hasRole('admin');

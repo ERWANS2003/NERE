@@ -23,6 +23,10 @@ class AssignmentService
             return $ticket;
         }
 
+        if ($team->departement_id && (int) $team->departement_id !== (int) $ticket->departement_id) {
+            return $ticket;
+        }
+
         $ticket->team_id = $team->id;
 
         $technicien = $this->trouverTechnicien($team, $ticket->site_id);
@@ -58,7 +62,7 @@ class AssignmentService
     {
         return $query
             ->withCount(['ticketsAssignes as tickets_ouverts_count' => function ($q) {
-                $q->whereHas('statut', fn ($s) => $s->where('est_final', false));
+                $q->whereHas('statut', fn($s) => $s->where('est_final', false));
             }])
             ->orderBy('tickets_ouverts_count')
             ->first();
