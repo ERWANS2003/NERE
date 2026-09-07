@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql pgsql gd \
+    && docker-php-ext-install pdo pdo_pgsql pgsql gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
