@@ -22,9 +22,8 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Enable Apache rewrite module and fix MPM configuration
-RUN a2enmod rewrite && \
-    a2dismod mpm_event && \
-    a2enmod mpm_prefork
+RUN a2dismod mpm_event mpm_worker && \
+    a2enmod mpm_prefork rewrite
 
 # Set working directory
 WORKDIR /var/www/html
@@ -70,14 +69,8 @@ ENV APACHE_RUN_USER=www-data \
     APACHE_PID_FILE=/var/run/apache2.pid
 
 # Create entrypoint script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-# Run migrations\n\
-php artisan migrate --force\n\
-\n\
-# Start Apache\n\
-apache2-foreground' > /entrypoint.sh && \
+RUN echo '#!/bin/bash\nset -e\n\n# Run migrations\nphp artisan migrate --force\n\n# Start Apache\napache2-foreground' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+
