@@ -9,8 +9,12 @@ RUN apt-get update && apt-get install -y \
     unzip \
     postgresql-client \
     libpq-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
-    && docker-php-ext-install pdo pdo_pgsql pgsql \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql pgsql gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -39,7 +43,7 @@ RUN echo '<Directory /var/www/html/public>\n\
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=php --ignore-platform-req=ext-gd
 
 # Install Node dependencies and build assets
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
