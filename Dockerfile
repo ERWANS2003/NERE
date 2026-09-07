@@ -21,8 +21,10 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+# Enable Apache rewrite module and fix MPM configuration
+RUN a2enmod rewrite && \
+    a2dismod mpm_event && \
+    a2enmod mpm_prefork
 
 # Set working directory
 WORKDIR /var/www/html
