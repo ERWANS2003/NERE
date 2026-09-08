@@ -88,27 +88,40 @@ RUN mkdir -p storage/logs storage/framework && \
     chown -R www-data:www-data /var/www/html && \
     chmod -R 755 storage bootstrap/cache
 
-# Create entrypoint
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "🚀 Starting Laravel..."\n\
-echo "DB_HOST: $DB_HOST"\n\
-for i in {1..30}; do\n\
-    if timeout 5 php artisan tinker --execute="DB::connection()->getPDO();" 2>/dev/null; then\n\
-        echo "✅ Database ready"\n\
-        break\n\
-    fi\n\
-    echo "⏳ Attempt $i/30"\n\
-    sleep 2\n\
-done\n\
-echo "📊 Running migrations..."\n\
-php artisan migrate --force 2>&1 | head -30 || true\n\
-echo "⚡ Caching config..."\n\
-php artisan config:cache 2>/dev/null || true\n\
-php artisan route:cache 2>/dev/null || true\n\
-echo "🌐 Starting services..."\n\
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+# Create entrypoint script
+RUN cat > /entrypoint.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 Starting Laravel ITSM..."
+echo "Environment Check:"
+echo "  DB_HOST: ${DB_HOST:-NOT SET}"
+echo "  DB_DATABASE: ${DB_DATABASE:-NOT SET}"
+
+# Wait for database
+echo "⏳ Waiting for database connection..."
+for i in {1..30}; do
+    if php artisan tinker --execute="DB::connection()->getPDO(); exit(0);" 2>/dev/null; then
+        echo "✅ Database connected!"
+        break
+    fi
+    echo "  Attempt $i/30..."
+    sleep 2
+done
+
+# Run migrations
+echo "📊 Running migrations..."
+php artisan migrate --force 2>&1 | grep -E "DONE|ERROR|FAILED" | head -20 || true
+
+# Cache configuration
+echo "⚡ Optimizing Laravel..."
+php artisan config:cache 2>/dev/null || echo "⚠️ Config cache failed"
+php artisan route:cache 2>/dev/null || echo "⚠️ Route cache failed"
+
+echo "🌐 Starting PHP-FPM and Nginx..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+EOF
+chmod +x /entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
