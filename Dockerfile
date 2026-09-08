@@ -21,10 +21,12 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Enable Apache rewrite module and fix MPM configuration
-RUN a2enmod rewrite && \
-    a2dismod mpm_event && \
-    a2enmod mpm_prefork
+# Fix MPM configuration - disable all conflicting MPMs and enable only prefork
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2dismod mpm_async || true && \
+    a2enmod mpm_prefork && \
+    a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
@@ -81,3 +83,4 @@ apache2-foreground' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+
