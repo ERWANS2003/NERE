@@ -56,6 +56,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/{ticket}/intelligence/actions', [\App\Http\Controllers\TicketIntelligenceController::class, 'getRecommendedActions'])->name('tickets.intelligence.actions');
     Route::post('/tickets/{ticket}/intelligence/execute', [\App\Http\Controllers\TicketIntelligenceController::class, 'executeAction'])->name('tickets.intelligence.execute');
 
+    // Catalogue de Services
+    Route::get('/services', [\App\Http\Controllers\ServiceCatalogController::class, 'index'])->name('services.index');
+    Route::get('/services/{service}', [\App\Http\Controllers\ServiceCatalogController::class, 'show'])->name('services.show');
+    Route::post('/services/{service}/submit', [\App\Http\Controllers\ServiceCatalogController::class, 'submitRequest'])->name('services.submit');
+    Route::get('/my-requests', [\App\Http\Controllers\ServiceCatalogController::class, 'myRequests'])->name('services.my-requests');
+    Route::middleware('can:approve-service-requests')->group(function () {
+        Route::get('/services/approvals/pending', [\App\Http\Controllers\ServiceCatalogController::class, 'pendingApprovals'])->name('services.approvals');
+        Route::post('/services/{serviceRequest}/approve', [\App\Http\Controllers\ServiceCatalogController::class, 'approve'])->name('services.approve');
+        Route::post('/services/{serviceRequest}/reject', [\App\Http\Controllers\ServiceCatalogController::class, 'reject'])->name('services.reject');
+    });
+
+    // Workflow Automations
+    Route::middleware('can:manage-automations')->group(function () {
+        Route::resource('automations', \App\Http\Controllers\WorkflowAutomationController::class);
+        Route::post('/automations/{automation}/toggle', [\App\Http\Controllers\WorkflowAutomationController::class, 'toggle'])->name('automations.toggle');
+        Route::post('/automations/{automation}/test', [\App\Http\Controllers\WorkflowAutomationController::class, 'test'])->name('automations.test');
+    });
+
     // Phase 8 : Gestion des actifs
     Route::resource('actifs', AssetController::class)->only(['index', 'store'])->names('assets');
     Route::post('actifs/{asset}/lier-ticket', [AssetController::class, 'lierTicket'])->name('assets.link-ticket');
