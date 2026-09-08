@@ -1,5 +1,5 @@
-# Use official PHP image with Apache
-FROM php:8.3-apache
+# Multi-stage build for Laravel with PHP-FPM + Nginx
+FROM php:8.3-fpm as php
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libpng-dev \
     libzip-dev \
+    nginx \
+    supervisor \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip \
@@ -21,48 +23,94 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# RADICAL APACHE CONFIGURATION FIX
-RUN echo "=== FIXING APACHE MPM CONFLICTS ===" && \
-    # Remove ALL MPM modules completely
-    rm -f /etc/apache2/mods-enabled/mpm_* && \
-    rm -f /etc/apache2/mods-available/mmp_* && \
-    # Disable any auto-loaded modules
-    a2dismod mpm_event mpm_worker mpm_async 2>/dev/null || true && \
-    # Create fresh MPM prefork configuration
-    echo "# MPM Prefork Module" > /etc/apache2/mods-available/mpm_prefork.load && \
-    echo "LoadModule mpm_prefork_module modules/mod_mpm_prefork.so" >> /etc/apache2/mods-available/mmp_prefork.load && \
-    # Enable ONLY prefork and rewrite
-    a2enmod mpm_prefork rewrite && \
-    # Set ServerName to avoid warnings
-    echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Create completely fresh Laravel Apache configuration
-RUN echo '# Laravel Apache Configuration\n\
-<VirtualHost *:80>\n\
-    ServerName localhost\n\
-    ServerAlias *\n\
-    DocumentRoot /var/www/html/public\n\
+# Create Nginx configuration for Laravel
+RUN echo 'server {\n\
+    listen 80;\n\
+    server_name localhost;\n\
+    root /var/www/html/public;\n\
+    index index.php index.html;\n\
     \n\
-    <Directory /var/www/html/public>\n\
-        Options -Indexes +FollowSymLinks\n\
-        AllowOverride All\n\
-        Require all granted\n\
-        \n\
-        # Laravel URL Rewriting\n\
-        RewriteEngine On\n\
-        RewriteCond %{REQUEST_FILENAME} !-f\n\
-        RewriteCond %{REQUEST_FILENAME} !-d\n\
-        RewriteRule ^(.*)$ index.php [QSA,L]\n\
-    </Directory>\n\
+    # Security headers\n\
+    add_header X-Frame-Options "SAMEORIGIN" always;\n\
+    add_header X-XSS-Protection "1; mode=block" always;\n\
+    add_header X-Content-Type-Options "nosniff" always;\n\
+    \n\
+    # Laravel URL rewriting\n\
+    location / {\n\
+        try_files $uri $uri/ /index.php?$query_string;\n\
+    }\n\
+    \n\
+    # PHP processing\n\
+    location ~ \\.php$ {\n\
+        fastcgi_pass 127.0.0.1:9000;\n\
+        fastcgi_index index.php;\n\
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;\n\
+        include fastcgi_params;\n\
+        fastcgi_read_timeout 300;\n\
+    }\n\
+    \n\
+    # Security: deny access to sensitive files\n\
+    location ~ /\\. {\n\
+        deny all;\n\
+    }\n\
+    \n\
+    location ~ ^/(storage|bootstrap/cache)/ {\n\
+        deny all;\n\
+    }\n\
     \n\
     # Logging\n\
-    ErrorLog ${APACHE_LOG_DIR}/laravel_error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/laravel_access.log combined\n\
-    LogLevel warn\n\
-</VirtualHost>' > /etc/apache2/sites-available/laravel.conf
+    access_log /var/log/nginx/laravel_access.log;\n\
+    error_log /var/log/nginx/laravel_error.log;\n\
+}' > /etc/nginx/sites-available/laravel
 
-# Activate Laravel site
-RUN a2dissite 000-default && a2ensite laravel
+# Enable Laravel site
+RUN rm /etc/nginx/sites-enabled/default && \
+    ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel
+
+# Configure PHP-FPM
+RUN echo '[www]\n\
+user = www-data\n\
+group = www-data\n\
+listen = 127.0.0.1:9000\n\
+listen.owner = www-data\n\
+listen.group = www-data\n\
+pm = dynamic\n\
+pm.max_children = 10\n\
+pm.start_servers = 2\n\
+pm.min_spare_servers = 1\n\
+pm.max_spare_servers = 3\n\
+pm.process_idle_timeout = 10s\n\
+pm.max_requests = 500\n\
+catch_workers_output = yes\n\
+php_admin_value[error_log] = /var/log/php-fpm.log\n\
+php_admin_flag[log_errors] = on' > /etc/php/8.3/fpm/pool.d/www.conf
+
+# Create Supervisor configuration
+RUN echo '[supervisord]\n\
+nodaemon=true\n\
+user=root\n\
+logfile=/var/log/supervisor/supervisord.log\n\
+pidfile=/var/run/supervisord.pid\n\
+\n\
+[program:php-fpm]\n\
+command=php-fpm8.3 -F\n\
+autostart=true\n\
+autorestart=true\n\
+priority=5\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+\n\
+[program:nginx]\n\
+command=nginx -g "daemon off;"\n\
+autostart=true\n\
+autorestart=true\n\
+priority=10\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
 
 # Set working directory
 WORKDIR /var/www/html
@@ -70,54 +118,39 @@ WORKDIR /var/www/html
 # Copy application code
 COPY . .
 
-# Install PHP dependencies with enhanced error handling
+# Install PHP dependencies
 RUN echo "Installing Composer dependencies..." && \
     composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist || \
-    (echo "Retry with ignore platform reqs..." && \
-     composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs) || \
-    (echo "Composer failed, continuing...")
+    composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 # Build frontend assets if needed
 RUN if [ -f "package.json" ]; then \
-        echo "Setting up Node.js..." && \
+        echo "Setting up Node.js for frontend build..." && \
         curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
         apt-get install -y nodejs && \
-        echo "Installing npm dependencies..." && \
         npm install && \
-        echo "Building frontend assets..." && \
         (npm run build || npm run production || echo "Frontend build completed"); \
-    else \
-        echo "No package.json found, skipping frontend build"; \
     fi
 
-# Set up Laravel directories and permissions
-RUN echo "Setting up Laravel directories..." && \
-    mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache && \
+# Set proper permissions
+RUN mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache && \
     chown -R www-data:www-data /var/www/html && \
     chmod -R 755 storage bootstrap/cache && \
-    chmod -R 775 storage/logs storage/framework
+    chmod -R 775 storage/logs storage/framework && \
+    mkdir -p /var/log/supervisor
 
-# Create the ultimate entrypoint script with MPM fixes
+# Create enhanced startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-echo "🚀 Starting Laravel ITSM application..."\n\
+echo "🚀 Starting Laravel ITSM with PHP-FPM + Nginx..."\n\
 \n\
-# ENSURE CLEAN APACHE STATE\n\
-echo "🔧 Ensuring clean Apache configuration..."\n\
-# Kill any existing Apache processes\n\
-pkill apache2 2>/dev/null || true\n\
-# Clean MPM modules one more time at runtime\n\
-a2dismod mmp_event mpm_worker 2>/dev/null || true\n\
-# Test configuration\n\
-apache2ctl configtest 2>/dev/null || echo "Config test warnings ignored"\n\
-\n\
-# Enhanced database connection check\n\
+# Wait for database connection\n\
 echo "⏳ Checking database connection..."\n\
 max_attempts=15\n\
 attempt=1\n\
 while [ $attempt -le $max_attempts ]; do\n\
-    if timeout 5 php -r "\n\
+    if timeout 10 php -r "\n\
         try {\n\
             \\$pdo = new PDO(\n\
                 \\\"pgsql:host={\\$_ENV[\\\"DB_HOST\\\"]};dbname={\\$_ENV[\\\"DB_DATABASE\\\"]}\\\",\n\
@@ -130,7 +163,7 @@ while [ $attempt -le $max_attempts ]; do\n\
             exit(1);\n\
         }\n\
     " 2>/dev/null; then\n\
-        echo "✅ Database connection established (attempt $attempt)"\n\
+        echo "✅ Database ready (attempt $attempt)"\n\
         break\n\
     fi\n\
     echo "⏳ Database not ready, attempt $attempt/$max_attempts..."\n\
@@ -143,29 +176,21 @@ echo "📊 Running database migrations..."\n\
 php artisan migrate --force || echo "⚠️ Migrations completed with warnings"\n\
 \n\
 # Optimize Laravel\n\
-echo "⚡ Optimizing Laravel application..."\n\
+echo "⚡ Optimizing Laravel..."\n\
 php artisan config:cache || true\n\
 php artisan route:cache || true\n\
 php artisan view:cache || true\n\
 \n\
-# Start Apache with clean slate\n\
-echo "🌐 Starting Apache web server..."\n\
-# Use apache2ctl instead of apache2-foreground for better control\n\
-exec /usr/sbin/apache2ctl -D FOREGROUND' > /entrypoint.sh && \
+# Start services with Supervisor\n\
+echo "🌐 Starting PHP-FPM and Nginx..."\n\
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
-
-# Set comprehensive Apache environment variables
-ENV APACHE_RUN_USER=www-data \
-    APACHE_RUN_GROUP=www-data \
-    APACHE_LOG_DIR=/var/log/apache2 \
-    APACHE_PID_FILE=/var/run/apache2/apache2.pid \
-    APACHE_RUN_DIR=/var/run/apache2 \
-    APACHE_LOCK_DIR=/var/lock/apache2 \
-    APACHE_SERVERNAME=localhost \
-    APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 # Expose port 80
 EXPOSE 80
 
-# Use our entrypoint
+# Set environment variables
+ENV PHP_FPM_LISTEN=127.0.0.1:9000 \
+    NGINX_ROOT=/var/www/html/public
+
 ENTRYPOINT ["/entrypoint.sh"]

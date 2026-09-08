@@ -1,12 +1,44 @@
-node_modules
-npm-debug.log
+# Git
 .git
 .gitignore
+.gitattributes
+
+# Documentation
 README.md
-.env
-.editorconfig
-/storage/logs/*
-.phpunit.result.cache
-/bootstrap/cache/*
+DEPLOYMENT.md
+RAILWAY_DEPLOYMENT.md
+VERCEL_DEPLOYMENT_GUIDE.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
 .DS_Store
-*.log
+Thumbs.db
+
+# Laravel development
+.env.local
+.env.example
+storage/logs/*
+!storage/logs/.gitkeep
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+
+# Node.js (if using npm/yarn for build)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+.phpunit.result.cache
+tests/
+phpunit.xml
+
+# Build artifacts
+.vercel/
+railway-debug.sh
+apache-laravel.conf
