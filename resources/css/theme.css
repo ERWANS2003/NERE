@@ -1,0 +1,284 @@
+/* Mining ITSM - Professional Light Theme */
+:root {
+    /* Primary Colors - Mining Palette (Earthy, professional, clear) */
+    --primary-900: #1a1410;    /* Deep charcoal (backgrounds) */
+    --primary-800: #2d2520;    /* Dark charcoal (sidebars) */
+    --primary-700: #3f3829;    /* Medium charcoal */
+    --primary-600: #524b42;    /* Charcoal-brown */
+    
+    /* Accent Colors - Ochre/Amber (Mining Gold) */
+    --accent-600: #b8860b;     /* Dark goldenrod */
+    --accent-500: #daa520;     /* Golden rod (primary action) */
+    --accent-400: #ecc94b;     /* Light gold */
+    --accent-300: #f5d76e;     /* Very light gold */
+    --accent-200: #fbe4a0;     /* Pale gold */
+    
+    /* Backgrounds - Light, Professional */
+    --bg-50: #fafbf8;          /* Almost white (page background) */
+    --bg-100: #f3f5f0;         /* Light off-white */
+    --bg-200: #e8ecdf;         /* Light neutral */
+    --bg-300: #dde2d0;         /* Subtle gray-green */
+    
+    /* Surfaces */
+    --surface-white: #ffffff;  /* Cards, modals */
+    --surface-light: #f8f9f6;  /* Subtle backgrounds */
+    --surface-hover: #eff1ec;  /* Hover states */
+    --surface-active: #e5e8dc; /* Active/selected states */
+    
+    /* Text Colors */
+    --text-900: #0f0e0c;       /* Darkest text */
+    --text-800: #1a1916;       /* Primary text */
+    --text-600: #3f3d39;       /* Secondary text */
+    --text-500: #5c5a54;       /* Tertiary text (labels) */
+    --text-400: #7e7b73;       /* Dimmed text (hints) */
+    --text-300: #a0a099;       /* Very dimmed (disabled) */
+    
+    /* Status Colors - Mining Safety Standard */
+    --status-success: #059669;  /* Green - All clear */
+    --status-warning: #d97706;  /* Orange - Caution */
+    --status-critical: #dc2626; /* Red - Critical alert */
+    --status-info: #0891b2;     /* Cyan - Information */
+    --status-neutral: #6b7280;  /* Gray - Neutral */
+    
+    /* Semantic Colors - Operational */
+    --operational: #10b981;     /* Operational/Available */
+    --maintenance: #f59e0b;     /* Maintenance/Scheduled */
+    --offline: #ef4444;         /* Offline/Unavailable */
+    --alert: #f97316;           /* Alert/Warning */
+    --safe: #22c55e;            /* Safe/Compliant */
+    
+    /* Borders & Dividers */
+    --border-200: #e5e7eb;      /* Light borders */
+    --border-300: #d1d5db;      /* Medium borders */
+    --border-400: #9ca3af;      /* Visible borders */
+    
+    /* Shadows - Professional, subtle */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    
+    /* Typography Scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    
+    /* Layout Dimensions */
+    --sidebar-width: 280px;
+    --header-height: 64px;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+    
+    /* Transitions */
+    --transition-fast: 150ms ease-out;
+    --transition-normal: 250ms ease-out;
+    --transition-slow: 400ms ease-out;
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-50: #0f0e0c;
+        --bg-100: #1a1916;
+        --bg-200: #2d2520;
+        --bg-300: #3f3829;
+        --surface-white: #1a1916;
+        --surface-light: #252118;
+        --surface-hover: #2f2b25;
+        --surface-active: #3a3430;
+        --text-900: #fafbf8;
+        --text-800: #f3f5f0;
+        --text-600: #dde2d0;
+        --text-500: #b8b7ad;
+        --text-400: #8a8980;
+        --text-300: #5c5a54;
+        --border-200: #3a3430;
+        --border-300: #4a4540;
+        --border-400: #5c5a54;
+    }
+}
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--text-800);
+    background-color: var(--bg-50);
+}
+
+/* Utility Classes for Theme Application */
+.text-primary {
+    color: var(--text-800);
+}
+
+.text-secondary {
+    color: var(--text-600);
+}
+
+.text-tertiary {
+    color: var(--text-500);
+}
+
+.text-dimmed {
+    color: var(--text-400);
+}
+
+.bg-surface {
+    background-color: var(--surface-white);
+}
+
+.bg-surface-light {
+    background-color: var(--surface-light);
+}
+
+.border-light {
+    border-color: var(--border-200);
+}
+
+.border-medium {
+    border-color: var(--border-300);
+}
+
+/* Status Indicators */
+.status-success {
+    color: var(--status-success);
+    background-color: rgba(5, 150, 105, 0.1);
+    border-color: var(--status-success);
+}
+
+.status-warning {
+    color: var(--status-warning);
+    background-color: rgba(217, 119, 6, 0.1);
+    border-color: var(--status-warning);
+}
+
+.status-critical {
+    color: var(--status-critical);
+    background-color: rgba(220, 38, 38, 0.1);
+    border-color: var(--status-critical);
+}
+
+.status-info {
+    color: var(--status-info);
+    background-color: rgba(8, 145, 178, 0.1);
+    border-color: var(--status-info);
+}
+
+/* Accent Button */
+.btn-accent {
+    background-color: var(--accent-500);
+    color: var(--text-900);
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.btn-accent:hover {
+    background-color: var(--accent-400);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-accent:active {
+    background-color: var(--accent-600);
+}
+
+/* Link Styling */
+a {
+    color: var(--accent-500);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--accent-600);
+    text-decoration: underline;
+}
+
+/* Form Elements */
+input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+    border: 1px solid var(--border-200);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--surface-white);
+    color: var(--text-800);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent-500);
+    box-shadow: 0 0 0 3px rgba(218, 165, 32, 0.1);
+}
+
+input:disabled, textarea:disabled, select:disabled {
+    background-color: var(--surface-light);
+    color: var(--text-300);
+    cursor: not-allowed;
+}
+
+/* Card/Box Styling */
+.card {
+    background-color: var(--surface-white);
+    border: 1px solid var(--border-200);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-300);
+}
+
+/* Badge/Label Styling */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    background-color: var(--bg-200);
+    color: var(--text-800);
+}
+
+.badge-success {
+    background-color: rgba(5, 150, 105, 0.15);
+    color: var(--status-success);
+}
+
+.badge-warning {
+    background-color: rgba(217, 119, 6, 0.15);
+    color: var(--status-warning);
+}
+
+.badge-critical {
+    background-color: rgba(220, 38, 38, 0.15);
+    color: var(--status-critical);
+}

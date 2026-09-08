@@ -10,6 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminSeeder::class,
+            MiningPermissionsSeeder::class,
+            MiningRoleHierarchySeeder::class,
             ReferenceDataSeeder::class,
             DashboardDemoDataSeeder::class,
         ]);
