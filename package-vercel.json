@@ -1,0 +1,13 @@
+{
+  "name": "itsm-nere-mining-vercel",
+  "version": "1.0.0",
+  "description": "Laravel ITSM sur Vercel",
+  "scripts": {
+    "build": "echo 'Build completed'",
+    "start": "node api/server.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": "18.x"
+  }
+}
