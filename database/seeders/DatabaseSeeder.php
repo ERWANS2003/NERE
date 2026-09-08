@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             MiningPermissionsSeeder::class,
             MiningRoleHierarchySeeder::class,
+            MiningCompanyDataSeeder::class,
             ReferenceDataSeeder::class,
             DashboardDemoDataSeeder::class,
         ]);

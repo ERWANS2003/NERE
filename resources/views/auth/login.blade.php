@@ -4,11 +4,11 @@
 
 @section('contenu')
 
-    <h2 style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.5rem; margin:0 0 0.35rem; letter-spacing:-0.01em;">
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.5rem; margin:0 0 0.35rem; letter-spacing:-0.01em; color:var(--text-900);">
         Connexion
     </h2>
-    <p style="color:#7d7869; font-size:0.9rem; margin:0 0 1.75rem;">
-        Accédez à votre espace de tickets, actifs et rapports.
+    <p style="color:var(--text-600); font-size:0.9rem; margin:0 0 1.75rem;">
+        Accédez à votre espace de gestion minière.
     </p>
 
     @if ($errors->any())
