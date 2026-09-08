@@ -158,7 +158,7 @@ echo ""
 echo "🌐 Starting PHP-FPM and Nginx..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
-chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
