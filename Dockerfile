@@ -79,6 +79,9 @@ WORKDIR /var/www/html
 # Copy application
 COPY . .
 
+# Create default .env if not exists
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || \
     composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
