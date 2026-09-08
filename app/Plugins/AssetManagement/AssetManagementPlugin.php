@@ -30,19 +30,19 @@ class AssetManagementPlugin extends BasePlugin
     public function registerRoutes(): void
     {
         Route::middleware(['web', 'auth'])->prefix('assets')->group(function () {
-            Route::get('/', [AssetController::class, 'index'])->name('assets.index');
-            Route::get('/create', [AssetController::class, 'create'])->name('assets.create');
-            Route::post('/', [AssetController::class, 'store'])->name('assets.store');
-            Route::get('/{asset}', [AssetController::class, 'show'])->name('assets.show');
-            Route::get('/{asset}/edit', [AssetController::class, 'edit'])->name('assets.edit');
-            Route::put('/{asset}', [AssetController::class, 'update'])->name('assets.update');
-            Route::delete('/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
+            Route::get('/', [\App\Http\Controllers\AssetController::class, 'index'])->name('assets.plugin.index');
+            Route::get('/create', [\App\Http\Controllers\AssetController::class, 'create'])->name('assets.plugin.create');
+            Route::post('/', [\App\Http\Controllers\AssetController::class, 'store'])->name('assets.plugin.store');
+            Route::get('/{asset}', [\App\Http\Controllers\AssetController::class, 'show'])->name('assets.plugin.show');
+            Route::get('/{asset}/edit', [\App\Http\Controllers\AssetController::class, 'edit'])->name('assets.plugin.edit');
+            Route::put('/{asset}', [\App\Http\Controllers\AssetController::class, 'update'])->name('assets.plugin.update');
+            Route::delete('/{asset}', [\App\Http\Controllers\AssetController::class, 'destroy'])->name('assets.plugin.destroy');
             
             // Fonctionnalités avancées
-            Route::post('/{asset}/maintenance', [AssetController::class, 'scheduleMaintenance'])->name('assets.maintenance');
-            Route::post('/{asset}/depreciation', [AssetController::class, 'calculateDepreciation'])->name('assets.depreciation');
-            Route::get('/{asset}/history', [AssetController::class, 'history'])->name('assets.history');
-            Route::post('/{asset}/qrcode', [AssetController::class, 'generateQRCode'])->name('assets.qrcode');
+            Route::post('/{asset}/maintenance', [\App\Http\Controllers\AssetController::class, 'scheduleMaintenance'])->name('assets.plugin.maintenance');
+            Route::post('/{asset}/depreciation', [\App\Http\Controllers\AssetController::class, 'calculateDepreciation'])->name('assets.plugin.depreciation');
+            Route::get('/{asset}/history', [\App\Http\Controllers\AssetController::class, 'history'])->name('assets.plugin.history');
+            Route::post('/{asset}/qrcode', [\App\Http\Controllers\AssetController::class, 'generateQRCode'])->name('assets.plugin.qrcode');
         });
     }
 

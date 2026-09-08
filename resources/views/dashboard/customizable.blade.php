@@ -1,366 +1,302 @@
 @extends('layouts.app-new')
 
-@section('title', 'Dashboard')
+@section('title', 'Portail de Services')
 
 @section('content')
-<div class="dashboard-container" x-data="dashboardCustomizer()">
-    <!-- Header avec options de personnalisation -->
-    <div class="dashboard-header">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
-                <p class="text-sm text-gray-600 mt-1">Personnalisez votre vue en glissant-déposant les widgets</p>
-            </div>
-
-            <div class="flex gap-3">
-                <!-- Toggle mode édition -->
-                <button 
-                    @click="editMode = !editMode"
-                    :class="editMode ? 'btn-primary' : 'btn-secondary'"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all">
-                    <x-icon :name="editMode ? 'check' : 'edit'" size="sm" />
-                    <span x-text="editMode ? 'Terminer' : 'Personnaliser'"></span>
-                </button>
-
-                <!-- Menu actions -->
-                <div class="relative" x-data="{ open: false }">
-                    <button 
-                        @click="open = !open"
-                        class="btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-lg">
-                        <x-icon name="dots-vertical" size="sm" />
-                    </button>
-
-                    <div x-show="open" 
-                         @click.away="open = false"
-                         x-transition
-                         class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
-                        <button @click="addWidget(); open = false" class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
-                            <x-icon name="plus" size="sm" />
-                            <span>Ajouter widget</span>
-                        </button>
-                        <button @click="resetLayout(); open = false" class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
-                            <x-icon name="refresh" size="sm" />
-                            <span>Réinitialiser</span>
-                        </button>
-                        <button @click="saveLayout(); open = false" class="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
-                            <x-icon name="save" size="sm" />
-                            <span>Sauvegarder</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Barre d'outils mode édition -->
-        <div x-show="editMode" 
-             x-transition
-             class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-amber-800">
-                    <x-icon name="info" size="sm" />
-                    <span class="font-medium">Mode personnalisation activé</span>
-                    <span class="text-sm">- Glissez-déposez les widgets pour réorganiser votre dashboard</span>
-                </div>
-                <button @click="showWidgetLibrary = true" class="btn-primary-sm">
-                    <x-icon name="plus" size="sm" />
-                    Ajouter un widget
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grid des widgets -->
-    <div class="dashboard-grid" 
-         :class="editMode ? 'edit-mode' : ''"
-         id="widget-grid">
-        
-        <template x-for="(item, index) in layout.grid" :key="index">
-            <div 
-                class="widget-container"
-                :style="`grid-column: span ${item.position.w}; grid-row: span ${item.position.h};`"
-                :data-widget="item.widget">
-                
-                <!-- Widget Header -->
-                <div class="widget-header">
-                    <div class="flex items-center gap-2">
-                        <x-icon :name="getWidgetIcon(item.widget)" size="sm" />
-                        <h3 class="font-semibold text-gray-900" x-text="getWidgetName(item.widget)"></h3>
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <button 
-                            @click="refreshWidget(item.widget)" 
-                            class="text-gray-400 hover:text-gray-600 transition">
-                            <x-icon name="refresh" size="xs" />
-                        </button>
-                        <button 
-                            x-show="editMode"
-                            @click="removeWidget(index)" 
-                            class="text-red-400 hover:text-red-600 transition">
-                            <x-icon name="trash" size="xs" />
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Widget Content -->
-                <div class="widget-content" 
-                     x-data="{ loading: true, content: '' }"
-                     x-init="loadWidgetData(item.widget).then(html => { content = html; loading = false; })">
-                    <div x-show="loading" class="flex items-center justify-center h-full py-8">
-                        <div class="animate-spin text-amber-500">
-                            <x-icon name="refresh" size="lg" />
-                        </div>
-                    </div>
-                    <div x-show="!loading" x-html="content"></div>
-                </div>
-            </div>
-        </template>
-
-        <!-- Empty state -->
-        <div x-show="layout.grid.length === 0" class="col-span-12 text-center py-20">
-            <x-icon name="dashboard" size="xl" class="mx-auto text-gray-300 mb-4" />
-            <h3 class="text-xl font-semibold text-gray-700 mb-2">Aucun widget</h3>
-            <p class="text-gray-500 mb-4">Commencez par ajouter des widgets à votre dashboard</p>
-            <button @click="showWidgetLibrary = true" class="btn-primary">
-                <x-icon name="plus" size="sm" />
-                Ajouter des widgets
-            </button>
-        </div>
-    </div>
-
-    <!-- Modal Bibliothèque de Widgets -->
-    <div x-show="showWidgetLibrary" 
-         x-transition
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         style="display: none;">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 bg-black opacity-50" @click="showWidgetLibrary = false"></div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-16 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-4xl font-bold mb-4">
+                Néré Mining - Portail de Services
+            </h1>
+            <p class="text-xl text-gray-300 max-w-2xl">
+                Une demande unique, dirigée automatiquement vers le bon service et suivie jusqu'à sa résolution.
+            </p>
             
-            <div class="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-                <!-- Modal Header -->
-                <div class="border-b border-gray-200 px-6 py-4">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-gray-900">Bibliothèque de Widgets</h2>
-                        <button @click="showWidgetLibrary = false" class="text-gray-400 hover:text-gray-600">
-                            <x-icon name="close" size="md" />
-                        </button>
-                    </div>
+            <!-- Quick Action Button -->
+            <div class="mt-8">
+                <a href="{{ route('tickets.create') }}" 
+                   class="inline-flex items-center gap-3 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Créer une demande
+                </a>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Filtres catégories -->
-                    <div class="flex gap-2 mt-4 overflow-x-auto">
-                        <button 
-                            @click="selectedCategory = null"
-                            :class="selectedCategory === null ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-700'"
-                            class="px-4 py-2 rounded-lg whitespace-nowrap transition">
-                            Tous
-                        </button>
-                        @foreach($categories as $key => $category)
-                        <button 
-                            @click="selectedCategory = '{{ $key }}'"
-                            :class="selectedCategory === '{{ $key }}' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-700'"
-                            class="px-4 py-2 rounded-lg whitespace-nowrap transition flex items-center gap-2">
-                            <x-icon name="{{ $category['icon'] }}" size="xs" />
-                            {{ $category['name'] }}
-                        </button>
-                        @endforeach
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-6 py-12">
+        
+        <!-- Title Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">
+                Que souhaitez-vous faire?
+            </h2>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Achats -->
+            <a href="{{ route('tickets.create', ['department' => 'achats']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">AC</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
                     </div>
                 </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Achats</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Demande d'achat · Commande fournisseur</p>
+            </a>
 
-                <!-- Modal Body -->
-                <div class="p-6 overflow-y-auto" style="max-height: 60vh;">
-                    <div class="grid grid-cols-2 gap-4">
-                        <template x-for="(widget, key) in filteredWidgets" :key="key">
-                            <div class="border border-gray-200 rounded-lg p-4 hover:border-amber-500 transition cursor-pointer"
-                                 @click="addWidgetToGrid(key)">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center">
-                                        <x-icon :name="widget.icon" size="md" class="text-amber-600" />
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="font-semibold text-gray-900" x-text="widget.name"></h3>
-                                        <p class="text-sm text-gray-600 mt-1" x-text="widget.description"></p>
-                                    </div>
-                                </div>
-                                <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
-                                    <span x-text="'Taille: ' + widget.default_size"></span>
-                                    <button class="text-amber-600 font-medium hover:text-amber-700">Ajouter</button>
-                                </div>
-                            </div>
-                        </template>
+            <!-- Finance -->
+            <a href="{{ route('tickets.create', ['department' => 'finance']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">FI</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Finance</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Demande de paiement · Budget · Facturation · Avance de fonds / note de frais</p>
+            </a>
+
+            <!-- Géologie -->
+            <a href="{{ route('tickets.create', ['department' => 'geologie']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">GÉ</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Géologie</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Échantillonnage · Données géologiques · Support logiciel SIG / modélisation · Matériel de terrain</p>
+            </a>
+
+            <!-- HSE -->
+            <a href="{{ route('tickets.create', ['department' => 'hse']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">HS</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">HSE</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Accident · Presqu'accident · Inspection · Observation</p>
+            </a>
+
+            <!-- Logistique -->
+            <a href="{{ route('tickets.create', ['department' => 'logistique']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">LO</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Logistique</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Véhicule · Transport · Carburant · Transport de personnel</p>
+            </a>
+
+            <!-- Production -->
+            <a href="{{ route('tickets.create', ['department' => 'production']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">PR</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Production</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Incident de production · Équipement de production · Anomalie de process · Arrêt de production</p>
+            </a>
+
+            <!-- RH -->
+            <a href="{{ route('tickets.create', ['department' => 'rh']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center group-hover:bg-pink-200 transition">
+                            <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">RH</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">RH</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Congé · Attestation · Recrutement · Formation</p>
+            </a>
+
+            <!-- IT -->
+            <a href="{{ route('tickets.create', ['department' => 'it']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center group-hover:bg-cyan-200 transition">
+                            <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">IT</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Informatique</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Support technique · Accès logiciel · Matériel informatique · Réseau</p>
+            </a>
+
+            <!-- Maintenance -->
+            <a href="{{ route('tickets.create', ['department' => 'maintenance']) }}" 
+               class="service-card group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">MA</div>
+                    </div>
+                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Maintenance</h3>
+                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-700">Réparation équipement · Maintenance préventive · Pièces de rechange</p>
+            </a>
+
+        </div>
+
+        <!-- Quick Stats Section -->
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('status_id', [3, 4])->count() }}</div>
+                        <div class="text-sm text-gray-600">Demandes résolues</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('status_id', [2])->count() }}</div>
+                        <div class="text-sm text-gray-600">En cours de traitement</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-900">< 2h</div>
+                        <div class="text-sm text-gray-600">Temps moyen de réponse</div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
-@push('scripts')
-<script>
-function dashboardCustomizer() {
-    return {
-        editMode: false,
-        showWidgetLibrary: false,
-        selectedCategory: null,
-        layout: @json($layout),
-        availableWidgets: @json($availableWidgets),
-        categories: @json($categories),
-
-        get filteredWidgets() {
-            if (!this.selectedCategory) return this.availableWidgets;
-            
-            return Object.fromEntries(
-                Object.entries(this.availableWidgets).filter(([key, widget]) => 
-                    widget.category === this.selectedCategory
-                )
-            );
-        },
-
-        addWidgetToGrid(widgetKey) {
-            const widget = this.availableWidgets[widgetKey];
-            const size = this.getSizeValues(widget.default_size);
-            
-            this.layout.grid.push({
-                widget: widgetKey,
-                position: {
-                    x: 0,
-                    y: this.layout.grid.length * 2,
-                    w: size.w,
-                    h: size.h
-                }
-            });
-
-            this.showWidgetLibrary = false;
-            this.loadWidgetData(widgetKey);
-        },
-
-        getSizeValues(size) {
-            const sizes = {
-                small: { w: 3, h: 2 },
-                medium: { w: 4, h: 3 },
-                large: { w: 8, h: 4 },
-            };
-            return sizes[size] || sizes.medium;
-        },
-
-        removeWidget(index) {
-            if (confirm('Supprimer ce widget ?')) {
-                this.layout.grid.splice(index, 1);
-            }
-        },
-
-        getWidgetName(widgetKey) {
-            return this.availableWidgets[widgetKey]?.name || widgetKey;
-        },
-
-        getWidgetIcon(widgetKey) {
-            return this.availableWidgets[widgetKey]?.icon || 'dashboard';
-        },
-
-        async loadWidgetData(widgetKey) {
-            try {
-                const response = await fetch(`/dashboard/widget/${widgetKey}/data`, {
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                });
-                const result = await response.json();
-                return result.html || '<div class="text-center py-4 text-gray-500">Erreur chargement</div>';
-            } catch (error) {
-                console.error('Erreur chargement widget:', error);
-                return '<div class="text-center py-4 text-red-500">Erreur de connexion</div>';
-            }
-        },
-
-        refreshWidget(widgetKey) {
-            // Force reload du widget
-            this.loadWidgetData(widgetKey);
-            location.reload(); // Reload simple pour l'instant
-        }
-
-        async saveLayout() {
-            try {
-                const response = await fetch('/dashboard/layout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ layout: this.layout.grid })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('✅ Dashboard sauvegardé !');
-                }
-            } catch (error) {
-                alert('❌ Erreur lors de la sauvegarde');
-            }
-        },
-
-        async resetLayout() {
-            if (!confirm('Réinitialiser au layout par défaut ?')) return;
-
-            try {
-                const response = await fetch('/dashboard/layout/reset', { method: 'POST' });
-                const result = await response.json();
-                if (result.success) {
-                    this.layout = result.layout;
-                    location.reload();
-                }
-            } catch (error) {
-                alert('❌ Erreur lors de la réinitialisation');
-            }
-        },
-
-        refreshWidget(widgetKey) {
-            this.loadWidgetData(widgetKey);
-        }
-    };
-}
-</script>
-@endpush
-
 @push('styles')
 <style>
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 1.5rem;
-    min-height: 400px;
+.service-card {
+    @apply bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-amber-400 transition-all cursor-pointer block;
 }
 
-.widget-container {
-    background: white;
-    border-radius: 0.75rem;
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.2s;
-}
-
-.edit-mode .widget-container {
-    cursor: move;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.widget-container:hover {
-    border-color: #daa520;
-}
-
-.widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #f3f4f6;
-    background: #fafbf8;
-}
-
-.widget-content {
-    flex: 1;
-    padding: 1rem;
-    overflow: auto;
+.service-card:hover {
+    transform: translateY(-2px);
 }
 </style>
 @endpush

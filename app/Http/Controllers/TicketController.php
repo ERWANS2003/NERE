@@ -66,13 +66,16 @@ class TicketController extends Controller
         return view('tickets.index', compact('tickets', 'statuts', 'priorites', 'categories', 'departements', 'sites', 'perPage'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = TicketCategory::with('team.departement')->where('actif', true)->orderBy('nom')->get();
         $departements = Departement::where('actif', true)->orderBy('nom')->get();
         $sites = Site::orderBy('nom')->get();
 
-        return view('tickets.create', compact('categories', 'departements', 'sites'));
+        // Pre-select department if passed from URL (from dashboard cards)
+        $selectedDepartment = $request->query('department');
+
+        return view('tickets.create', compact('categories', 'departements', 'sites', 'selectedDepartment'));
     }
 
     // Phase 4 : Créer un ticket (avec calcul de priorité, affectation et SLA automatiques)
