@@ -21,7 +21,6 @@ Thumbs.db
 
 # Laravel development
 .env.local
-.env.example
 storage/logs/*
 !storage/logs/.gitkeep
 bootstrap/cache/*
