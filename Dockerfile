@@ -123,6 +123,10 @@ if [ -n "$DATABASE_URL" ]; then
     
     # Enable debug mode to see errors
     sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" /var/www/html/.env
+    
+    # Set secure HTTPS URL for production
+    sed -i "s|^APP_URL=.*|APP_URL=https://adorable-patience-production-1697.up.railway.app|" /var/www/html/.env
+    sed -i "s|^APP_ENV=.*|APP_ENV=production|" /var/www/html/.env
 fi
 
 echo ""

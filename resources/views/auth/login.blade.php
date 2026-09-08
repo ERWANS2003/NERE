@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('login') }}" novalidate>
+    <form method="POST" action="{{ secure_url(route('login', [], false)) }}" novalidate>
         @csrf
 
         <div style="margin-bottom:1.15rem;">
