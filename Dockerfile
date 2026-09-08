@@ -101,8 +101,6 @@ echo "🚀 Starting Laravel ITSM on Railway..."
 # Railway provides DATABASE_URL in format: postgresql://user:pass@host:port/dbname
 if [ -n "$DATABASE_URL" ]; then
     echo "📦 Parsing Railway DATABASE_URL..."
-    # Parse PostgreSQL connection string
-    # Format: postgresql://user:password@host:port/database?sslmode=require
     
     DB_CONNECTION=pgsql
     DB_HOST=$(echo $DATABASE_URL | sed -E 's|.*@([^:]+).*|\1|')
@@ -116,13 +114,15 @@ if [ -n "$DATABASE_URL" ]; then
     echo "  ✅ DB_DATABASE=$DB_DATABASE"
     echo "  ✅ DB_USERNAME=$DB_USERNAME"
     
-    # Update .env with Railway config
     sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=$DB_CONNECTION|" /var/www/html/.env
     sed -i "s|^DB_HOST=.*|DB_HOST=$DB_HOST|" /var/www/html/.env
     sed -i "s|^DB_PORT=.*|DB_PORT=$DB_PORT|" /var/www/html/.env
     sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" /var/www/html/.env
     sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env
     sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" /var/www/html/.env
+    
+    # Enable debug mode to see errors
+    sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" /var/www/html/.env
 fi
 
 echo ""
@@ -151,14 +151,27 @@ echo ""
 echo "📊 Running migrations..."
 php artisan migrate --force 2>&1 | grep -E "DONE|ERROR|FAILED" | head -30 || true
 
+# Ensure APP_KEY is set
+if ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
+    echo "🔑 Generating APP_KEY..."
+    php artisan key:generate 2>/dev/null || true
+fi
+
 # Cache configuration
 echo ""
 echo "⚡ Optimizing Laravel..."
 php artisan config:cache 2>/dev/null || echo "⚠️ Config cache failed"
 php artisan route:cache 2>/dev/null || echo "⚠️ Route cache failed"
 
+# Create storage link if needed
+php artisan storage:link 2>/dev/null || true
+
 echo ""
 echo "🌐 Starting PHP-FPM and Nginx..."
+echo "📍 App URL: https://adorable-patience-production-1697.up.railway.app"
+echo ""
+
+# Tail PHP-FPM error log for debugging
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
 RUN chmod +x /entrypoint.sh
