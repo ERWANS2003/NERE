@@ -1,20 +1,11 @@
 # Multi-stage build for Laravel with PHP-FPM + Nginx
-FROM php:8.3-fpm as php
+FROM php:8.3-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    zip \
-    unzip \
-    postgresql-client \
-    libpq-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libzip-dev \
-    nginx \
-    supervisor \
+    git curl zip unzip postgresql-client libpq-dev \
+    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libzip-dev \
+    nginx supervisor \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip \
@@ -23,51 +14,27 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Create Nginx configuration for Laravel
-RUN echo 'server {\n\
-    listen 80;\n\
-    server_name localhost;\n\
+# Create minimal Nginx configuration
+RUN rm -rf /etc/nginx/sites-enabled/* && \
+    echo 'server {\n\
+    listen 80 default_server;\n\
+    server_name _;\n\
     root /var/www/html/public;\n\
-    index index.php index.html;\n\
+    index index.php;\n\
     \n\
-    # Security headers\n\
-    add_header X-Frame-Options "SAMEORIGIN" always;\n\
-    add_header X-XSS-Protection "1; mode=block" always;\n\
-    add_header X-Content-Type-Options "nosniff" always;\n\
-    \n\
-    # Laravel URL rewriting\n\
     location / {\n\
         try_files $uri $uri/ /index.php?$query_string;\n\
     }\n\
     \n\
-    # PHP processing\n\
-    location ~ \\.php$ {\n\
+    location ~ \.php$ {\n\
         fastcgi_pass 127.0.0.1:9000;\n\
-        fastcgi_index index.php;\n\
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;\n\
         include fastcgi_params;\n\
-        fastcgi_read_timeout 300;\n\
     }\n\
     \n\
-    # Security: deny access to sensitive files\n\
-    location ~ /\\. {\n\
-        deny all;\n\
-    }\n\
-    \n\
-    location ~ ^/(storage|bootstrap/cache)/ {\n\
-        deny all;\n\
-    }\n\
-    \n\
-    # Logging\n\
-    access_log /var/log/nginx/laravel_access.log;\n\
-    error_log /var/log/nginx/laravel_error.log;\n\
-}' > /etc/nginx/sites-available/laravel
-
-# Enable Laravel site - ensure it works
-RUN rm -f /etc/nginx/sites-enabled/default && \
-    ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel && \
-    mkdir -p /var/log/nginx && \
-    chown www-data:www-data /var/log/nginx
+    location ~ /\. { deny all; }\n\
+}' > /etc/nginx/sites-available/default && \
+    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Configure PHP-FPM
 RUN echo '[www]\n\
@@ -81,24 +48,17 @@ pm.max_children = 10\n\
 pm.start_servers = 2\n\
 pm.min_spare_servers = 1\n\
 pm.max_spare_servers = 3\n\
-pm.process_idle_timeout = 10s\n\
-pm.max_requests = 500\n\
-catch_workers_output = yes\n\
-php_admin_value[error_log] = /var/log/php-fpm.log\n\
-php_admin_flag[log_errors] = on' > /usr/local/etc/php-fpm.d/www.conf
+catch_workers_output = yes' > /usr/local/etc/php-fpm.d/www.conf
 
-# Create Supervisor configuration
+# Configure Supervisor
 RUN echo '[supervisord]\n\
 nodaemon=true\n\
 user=root\n\
-logfile=/var/log/supervisor/supervisord.log\n\
-pidfile=/var/run/supervisord.pid\n\
 \n\
 [program:php-fpm]\n\
 command=/usr/local/sbin/php-fpm --nodaemonize\n\
 autostart=true\n\
 autorestart=true\n\
-priority=5\n\
 stdout_logfile=/dev/stdout\n\
 stdout_logfile_maxbytes=0\n\
 stderr_logfile=/dev/stderr\n\
@@ -108,7 +68,6 @@ stderr_logfile_maxbytes=0\n\
 command=nginx -g "daemon off;"\n\
 autostart=true\n\
 autorestart=true\n\
-priority=10\n\
 stdout_logfile=/dev/stdout\n\
 stdout_logfile_maxbytes=0\n\
 stderr_logfile=/dev/stderr\n\
@@ -117,86 +76,34 @@ stderr_logfile_maxbytes=0' > /etc/supervisor/conf.d/supervisord.conf
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application code
+# Copy application
 COPY . .
 
-# Install PHP dependencies
-RUN echo "Installing Composer dependencies..." && \
-    composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist || \
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || \
     composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Build frontend assets if needed
-RUN if [ -f "package.json" ]; then \
-        echo "Setting up Node.js for frontend build..." && \
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-        apt-get install -y nodejs && \
-        npm install && \
-        (npm run build || npm run production || echo "Frontend build completed"); \
-    fi
-
-# Set proper permissions
-RUN mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache && \
+# Set permissions
+RUN mkdir -p storage/logs storage/framework && \
     chown -R www-data:www-data /var/www/html && \
-    chmod -R 755 storage bootstrap/cache && \
-    chmod -R 775 storage/logs storage/framework && \
-    mkdir -p /var/log/supervisor
+    chmod -R 755 storage bootstrap/cache
 
-# Create enhanced startup script
+# Create entrypoint
 RUN echo '#!/bin/bash\n\
 set -e\n\
-\n\
-echo "🚀 Starting Laravel ITSM with PHP-FPM + Nginx..."\n\
-\n\
-# Wait for database connection\n\
-echo "⏳ Checking database connection..."\n\
-max_attempts=15\n\
-attempt=1\n\
-while [ $attempt -le $max_attempts ]; do\n\
-    if timeout 10 php -r "\n\
-        try {\n\
-            \\$pdo = new PDO(\n\
-                \\\"pgsql:host={\\$_ENV[\\\"DB_HOST\\\"]};dbname={\\$_ENV[\\\"DB_DATABASE\\\"]}\\\",\n\
-                \\$_ENV[\\\"DB_USERNAME\\\"],\n\
-                \\$_ENV[\\\"DB_PASSWORD\\\"]\n\
-            );\n\
-            echo \\\"Connected\\\";\n\
-            exit(0);\n\
-        } catch(Exception \\$e) {\n\
-            exit(1);\n\
-        }\n\
-    " 2>/dev/null; then\n\
-        echo "✅ Database ready (attempt $attempt)"\n\
+echo "🚀 Starting Laravel..."\n\
+for i in {1..30}; do\n\
+    if php -r "new PDO(\"pgsql:host={$DB_HOST};dbname={$DB_DATABASE}\", \"$DB_USERNAME\", \"$DB_PASSWORD\");" 2>/dev/null; then\n\
         break\n\
     fi\n\
-    echo "⏳ Database not ready, attempt $attempt/$max_attempts..."\n\
-    sleep 2\n\
-    attempt=$((attempt + 1))\n\
+    sleep 1\n\
 done\n\
-\n\
-# Run database migrations\n\
-echo "📊 Running database migrations..."\n\
-php artisan migrate --force || echo "⚠️ Migrations completed with warnings"\n\
-\n\
-# Optimize Laravel\n\
-echo "⚡ Optimizing Laravel..."\n\
-php artisan config:cache || true\n\
-php artisan route:cache || true\n\
-php artisan view:cache || true\n\
-\n\
-# Verify Nginx config\n\
-echo "🔍 Verifying Nginx configuration..."\n\
-nginx -t || echo "Warning: Nginx config test failed"\n\
-\n\
-# Start services with Supervisor\n\
-echo "🌐 Starting PHP-FPM and Nginx..."\n\
+php artisan migrate --force 2>&1 | head -20 || true\n\
+php artisan config:cache 2>/dev/null || true\n\
+php artisan route:cache 2>/dev/null || true\n\
+echo "🌐 Starting services..."\n\
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
-# Expose port 80
 EXPOSE 80
-
-# Set environment variables
-ENV PHP_FPM_LISTEN=127.0.0.1:9000 \
-    NGINX_ROOT=/var/www/html/public
-
 ENTRYPOINT ["/entrypoint.sh"]
