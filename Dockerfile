@@ -83,7 +83,7 @@ pm.process_idle_timeout = 10s\n\
 pm.max_requests = 500\n\
 catch_workers_output = yes\n\
 php_admin_value[error_log] = /var/log/php-fpm.log\n\
-php_admin_flag[log_errors] = on' > /etc/php/8.3/fpm/pool.d/www.conf
+php_admin_flag[log_errors] = on' > /usr/local/etc/php-fpm.d/www.conf
 
 # Create Supervisor configuration
 RUN echo '[supervisord]\n\
@@ -93,7 +93,7 @@ logfile=/var/log/supervisor/supervisord.log\n\
 pidfile=/var/run/supervisord.pid\n\
 \n\
 [program:php-fpm]\n\
-command=php-fpm8.3 -F\n\
+command=php-fpm -F\n\
 autostart=true\n\
 autorestart=true\n\
 priority=5\n\
