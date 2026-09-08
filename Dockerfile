@@ -151,6 +151,11 @@ echo ""
 echo "📊 Running migrations..."
 php artisan migrate --force 2>&1 | grep -E "DONE|ERROR|FAILED" | head -30 || true
 
+# Seed admin user
+echo ""
+echo "👤 Seeding admin user..."
+php artisan db:seed --class=AdminSeeder --force 2>/dev/null || true
+
 # Ensure APP_KEY is set
 if ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
     echo "🔑 Generating APP_KEY..."
