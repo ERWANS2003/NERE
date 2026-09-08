@@ -1,227 +1,95 @@
-# Railway Deployment Guide - ITSM Nere Mining
+# Railway Deployment Guide - Laravel ITSM
 
-This guide walks you through deploying your Laravel ITSM application to Railway for free.
+## 🚂 Deployment Steps
 
-## Prerequisites
+### 1. Database Setup
+Railway provides PostgreSQL as a service. You'll add it after deployment.
 
-1. **GitHub Account** - Your code must be on GitHub
-2. **Railway Account** - Sign up at [railway.app](https://railway.app)
-3. **Push your code** - Ensure all changes are committed and pushed to your GitHub repository
+### 2. Deploy to Railway
 
----
+1. **Go to [railway.app](https://railway.app)**
+2. **Sign up/Login** with GitHub
+3. **Create New Project** → **Deploy from GitHub repo**
+4. **Select your repository**: `ERWANS2003/NERE`
+5. **Railway will auto-detect** the Dockerfile and start building
 
-## Step-by-Step Deployment
+### 3. Add PostgreSQL Database
 
-### Step 1: Push Your Code to GitHub
+1. **In your Railway project dashboard**
+2. **Click "+ New Service"**
+3. **Select "PostgreSQL"**
+4. **Railway will provision a database**
+
+### 4. Configure Environment Variables
+
+After deployment, add these environment variables:
+
+#### Go to your app service → Variables tab:
 
 ```bash
-git add .
-git commit -m "Add Railway deployment configuration"
-git push origin main
-```
-
-**Note:** Make sure you haven't committed `.env` file (it's in `.gitignore`). Only `.env.example` should be tracked.
-
----
-
-### Step 2: Create Railway Project
-
-1. Go to [railway.app](https://railway.app) and log in
-2. Click **"Create a new project"**
-3. Select **"Deploy from GitHub repo"**
-4. Authorize Railway to access your GitHub account
-5. Select your `itsm-nere-mining` repository
-6. Click **"Deploy"**
-
-Railway will automatically:
-- Detect the `Dockerfile`
-- Build your Docker image
-- Deploy the application
-
-**Expected wait time:** 5-10 minutes
-
----
-
-### Step 3: Add PostgreSQL Database
-
-1. In your Railway project dashboard, click **"+ New"** (top right)
-2. Select **"Add Service"** → **"Database"** → **"PostgreSQL"**
-3. A PostgreSQL instance will be created and automatically linked to your app
-
-Railway will automatically inject database credentials as environment variables.
-
----
-
-### Step 4: Configure Environment Variables
-
-Railway automatically sets some variables, but you need to add others:
-
-1. Click on your **app service** (the one running your Laravel code)
-2. Go to **"Variables"** tab
-3. Add these variables:
-
-```
-APP_NAME=ITSM Nere Mining
+# Application
+APP_NAME=ITSM NERE Mining
 APP_ENV=production
 APP_DEBUG=false
-APP_KEY=<leave empty, will be auto-generated>
-APP_URL=<your-railway-url.railway.app>
+APP_KEY=base64:YOUR_GENERATED_KEY
 
-QUEUE_CONNECTION=database
-SESSION_DRIVER=database
-CACHE_STORE=database
-LOG_CHANNEL=stack
+# Database (Railway will provide these)
+DB_CONNECTION=pgsql
+DB_HOST=${{Postgres.PGHOST}}
+DB_PORT=${{Postgres.PGPORT}}
+DB_DATABASE=${{Postgres.PGDATABASE}}
+DB_USERNAME=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
 
-# Mail - for production (optional)
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailtrap.io
-MAIL_PORT=587
-MAIL_USERNAME=<your-mailtrap-username>
-MAIL_PASSWORD=<your-mailtrap-password>
-MAIL_FROM_ADDRESS=noreply@itsm-nere-mining.com
-
-# File storage (using local disk)
-FILESYSTEM_DISK=local
+# Laravel optimizations
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+LOG_CHANNEL=stderr
+QUEUE_CONNECTION=sync
 ```
 
-**Important:** 
-- Railway will automatically add `DATABASE_URL` when you link PostgreSQL
-- The app will use this to connect to the database
+### 5. Generate Application Key
 
----
-
-### Step 5: Generate APP_KEY
-
-After deploying, you need to generate the Laravel app key:
-
-1. Go to **"Deployments"** tab
-2. Click on your latest deployment
-3. In the **"Logs"** tab, you'll see deployment logs
-4. Connect via Railway CLI or use the deployment logs to verify everything ran
-
-If `APP_KEY` wasn't auto-generated, run this command:
-
+Run this locally and add to Railway variables:
 ```bash
-railway run php artisan key:generate
+php artisan key:generate --show
 ```
 
-Or set it manually:
-- Generate locally: `php artisan key:generate --show` (get the key value)
-- Add to Railway Variables as `APP_KEY=base64:xxxxx`
+### 6. Railway Service Variables
 
----
+Railway automatically provides database connection variables. Use them like this in your Railway environment variables:
 
-### Step 6: Run Database Migrations
+- `DB_HOST`: `${{Postgres.PGHOST}}`
+- `DB_PORT`: `${{Postgres.PGPORT}}`  
+- `DB_DATABASE`: `${{Postgres.PGDATABASE}}`
+- `DB_USERNAME`: `${{Postgres.PGUSER}}`
+- `DB_PASSWORD`: `${{Postgres.PGPASSWORD}}`
 
-The Dockerfile includes a migration command in the entrypoint script, so migrations run automatically on deployment. However, if needed, you can manually run:
+### 7. Custom Domain (Optional)
 
-```bash
-railway run php artisan migrate --force
-```
+1. **Go to Settings → Domains**
+2. **Add your custom domain**
+3. **Update APP_URL** environment variable
 
----
+## 🎯 Current Status
 
-### Step 7: Verify Deployment
+✅ **Dockerfile optimized** - Fixed Apache MPM issues
+✅ **Database migrations** - Auto-run on deployment  
+✅ **Error handling** - Robust startup script
+✅ **Laravel optimization** - Caching configured
 
-1. Go to your Railway project dashboard
-2. Under your app service, click **"View Logs"** to see logs
-3. Click **"Open in Browser"** to view your deployed app
-4. You should see the login page
+## 🔧 Troubleshooting
 
----
+### If deployment fails:
+1. Check Railway build logs
+2. Ensure all environment variables are set
+3. Verify database is running
 
-## Accessing Your App
+### If app shows 500 error:
+1. Set `APP_DEBUG=true` temporarily
+2. Check Railway service logs
+3. Verify database connection
 
-Your app will be available at a URL like:
-```
-https://itsm-nere-mining-production.up.railway.app
-```
+## 🚀 Deploy Now!
 
-This URL is automatically generated by Railway. You can customize it in the **"Settings"** tab.
-
----
-
-## Useful Railway CLI Commands
-
-Install Railway CLI:
-```bash
-npm install -g @railway/cli
-```
-
-Connect to your project:
-```bash
-railway link
-```
-
-Run commands in production:
-```bash
-railway run php artisan tinker
-railway run php artisan migrate:rollback
-railway run php artisan db:seed
-```
-
-View logs:
-```bash
-railway logs
-```
-
----
-
-## Troubleshooting
-
-### "Database connection failed"
-- Verify PostgreSQL service is running in your Railway project
-- Check that `DATABASE_URL` environment variable is set
-- In Railway dashboard, click PostgreSQL service → Variables tab to copy connection string
-
-### "APP_KEY not set"
-- Go to Variables and set `APP_KEY=base64:xxxxx`
-- Get the key value by running locally: `php artisan key:generate --show`
-
-### "Assets not loading (CSS/JS)"
-- The Dockerfile runs `npm run build` automatically
-- If assets still don't load, check the `/public` directory is being served
-- Verify in deployment logs that `npm run build` completed successfully
-
-### "502 Bad Gateway"
-- Check app logs for errors
-- Ensure Apache/PHP is running in the Docker container
-- Verify `Dockerfile` entrypoint script has execute permissions
-
-### "Storage permission denied"
-- The Dockerfile sets storage directory permissions
-- If still failing, Railway may need restart (redeploy)
-
----
-
-## Free Tier Limits on Railway
-
-- **Compute:** 500 hours/month (covers ~16 hours/day)
-- **Database:** Shared with compute hours
-- **Bandwidth:** Reasonable limits for hobby projects
-- **Storage:** 1GB included
-
-**Tip:** To stay within free tier:
-- Set `sleepApplication: false` in `railway.json` (already done)
-- Monitor your usage in Railway dashboard
-- Disable unnecessary background jobs
-
----
-
-## Next Steps
-
-After successful deployment:
-
-1. **Set up SSL:** Railway provides free SSL automatically
-2. **Configure backups:** Enable PostgreSQL backups in settings
-3. **Monitor usage:** Check Railway dashboard for resource usage
-4. **Scale if needed:** When you hit limits, upgrade to paid plan ($5/month minimum)
-
----
-
-## Support
-
-- Railway Docs: https://docs.railway.app
-- Laravel Docs: https://laravel.com/docs
-- Create an issue on GitHub for bugs
-
+The Dockerfile is now optimized to handle the Apache configuration properly. Railway deployment should work smoothly!
