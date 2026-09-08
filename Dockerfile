@@ -92,13 +92,18 @@ RUN mkdir -p storage/logs storage/framework && \
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "🚀 Starting Laravel..."\n\
+echo "DB_HOST: $DB_HOST"\n\
 for i in {1..30}; do\n\
-    if php -r "new PDO(\"pgsql:host={$DB_HOST};dbname={$DB_DATABASE}\", \"$DB_USERNAME\", \"$DB_PASSWORD\");" 2>/dev/null; then\n\
+    if timeout 5 php artisan tinker --execute="DB::connection()->getPDO();" 2>/dev/null; then\n\
+        echo "✅ Database ready"\n\
         break\n\
     fi\n\
-    sleep 1\n\
+    echo "⏳ Attempt $i/30"\n\
+    sleep 2\n\
 done\n\
-php artisan migrate --force 2>&1 | head -20 || true\n\
+echo "📊 Running migrations..."\n\
+php artisan migrate --force 2>&1 | head -30 || true\n\
+echo "⚡ Caching config..."\n\
 php artisan config:cache 2>/dev/null || true\n\
 php artisan route:cache 2>/dev/null || true\n\
 echo "🌐 Starting services..."\n\
