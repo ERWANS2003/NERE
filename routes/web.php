@@ -32,6 +32,13 @@ Route::middleware('auth')->group(function () {
 
     // Phase 7 : Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Dashboard personnalisable avec widgets
+    Route::get('/dashboard/customizable', [\App\Http\Controllers\DashboardCustomizationController::class, 'index'])->name('dashboard.customizable');
+    Route::post('/dashboard/layout', [\App\Http\Controllers\DashboardCustomizationController::class, 'saveLayout'])->name('dashboard.layout.save');
+    Route::post('/dashboard/layout/reset', [\App\Http\Controllers\DashboardCustomizationController::class, 'resetLayout'])->name('dashboard.layout.reset');
+    Route::get('/dashboard/widget/{widget}/data', [\App\Http\Controllers\DashboardCustomizationController::class, 'getWidgetData'])->name('dashboard.widget.data');
+    Route::get('/dashboard/widgets/category', [\App\Http\Controllers\DashboardCustomizationController::class, 'getWidgetsByCategory'])->name('dashboard.widgets.category');
 
     // Phase 4 : Module Tickets
     Route::resource('tickets', TicketController::class);

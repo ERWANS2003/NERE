@@ -12,7 +12,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Enregistrer le Plugin Manager comme singleton
+        $this->app->singleton(\App\Core\PluginSystem\PluginManager::class, function ($app) {
+            return new \App\Core\PluginSystem\PluginManager();
+        });
     }
 
     /**
@@ -24,5 +27,9 @@ class AppServiceProvider extends ServiceProvider
         if (env('APP_ENV') === 'production') {
             URL::forceScheme('https');
         }
+
+        // Charger le système de plugins pour extensibilité infinie
+        $pluginManager = app(\App\Core\PluginSystem\PluginManager::class);
+        $pluginManager->loadAll();
     }
 }
