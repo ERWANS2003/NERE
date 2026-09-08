@@ -63,9 +63,11 @@ RUN echo 'server {\n\
     error_log /var/log/nginx/laravel_error.log;\n\
 }' > /etc/nginx/sites-available/laravel
 
-# Enable Laravel site
-RUN rm /etc/nginx/sites-enabled/default && \
-    ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel
+# Enable Laravel site - ensure it works
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/laravel && \
+    mkdir -p /var/log/nginx && \
+    chown www-data:www-data /var/log/nginx
 
 # Configure PHP-FPM
 RUN echo '[www]\n\
@@ -180,6 +182,10 @@ echo "⚡ Optimizing Laravel..."\n\
 php artisan config:cache || true\n\
 php artisan route:cache || true\n\
 php artisan view:cache || true\n\
+\n\
+# Verify Nginx config\n\
+echo "🔍 Verifying Nginx configuration..."\n\
+nginx -t || echo "Warning: Nginx config test failed"\n\
 \n\
 # Start services with Supervisor\n\
 echo "🌐 Starting PHP-FPM and Nginx..."\n\
