@@ -103,8 +103,15 @@
                 </div>
 
                 <!-- Widget Content -->
-                <div class="widget-content" x-html="getWidgetContent(item.widget)">
-                    <!-- Le contenu est chargé dynamiquement -->
+                <div class="widget-content" 
+                     x-data="{ loading: true, content: '' }"
+                     x-init="loadWidgetData(item.widget).then(html => { content = html; loading = false; })">
+                    <div x-show="loading" class="flex items-center justify-center h-full py-8">
+                        <div class="animate-spin text-amber-500">
+                            <x-icon name="refresh" size="lg" />
+                        </div>
+                    </div>
+                    <div x-show="!loading" x-html="content"></div>
                 </div>
             </div>
         </template>
@@ -251,18 +258,24 @@ function dashboardCustomizer() {
 
         async loadWidgetData(widgetKey) {
             try {
-                const response = await fetch(`/dashboard/widget/${widgetKey}/data`);
-                const data = await response.json();
-                // Mettre à jour le contenu du widget
+                const response = await fetch(`/dashboard/widget/${widgetKey}/data`, {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                const result = await response.json();
+                return result.html || '<div class="text-center py-4 text-gray-500">Erreur chargement</div>';
             } catch (error) {
                 console.error('Erreur chargement widget:', error);
+                return '<div class="text-center py-4 text-red-500">Erreur de connexion</div>';
             }
         },
 
-        getWidgetContent(widgetKey) {
-            // Retourne un loading par défaut
-            return '<div class="flex items-center justify-center h-full"><div class="animate-spin text-amber-500">⏳</div></div>';
-        },
+        refreshWidget(widgetKey) {
+            // Force reload du widget
+            this.loadWidgetData(widgetKey);
+            location.reload(); // Reload simple pour l'instant
+        }
 
         async saveLayout() {
             try {

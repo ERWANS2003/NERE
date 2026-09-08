@@ -92,11 +92,11 @@ class DashboardCustomizationController extends Controller
     }
 
     /**
-     * Données pour un widget spécifique
+     * Données pour un widget spécifique (retourne HTML)
      */
     public function getWidgetData(Request $request, string $widgetId)
     {
-        // Ici on peut charger les données selon le widget
+        // Charger les données selon le widget
         $data = match ($widgetId) {
             'my_tickets' => $this->getMyTicketsData(),
             'ticket_overview' => $this->getTicketOverviewData(),
@@ -104,10 +104,21 @@ class DashboardCustomizationController extends Controller
             'recent_activity' => $this->getRecentActivityData(),
             'sla_compliance' => $this->getSlaComplianceData(),
             'team_performance' => $this->getTeamPerformanceData(),
-            default => ['error' => 'Widget not found']
+            'quick_actions' => null, // Pas de données supplémentaires
+            default => null
         };
 
-        return response()->json($data);
+        // Retourner le HTML du widget
+        try {
+            $html = view("components.widgets.{$widgetId}", ['data' => $data])->render();
+            return response()->json(['html' => $html, 'success' => true]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'html' => '<div class="text-center py-4 text-gray-500">Widget non disponible</div>',
+                'error' => $e->getMessage(),
+                'success' => false
+            ]);
+        }
     }
 
     protected function getMyTicketsData(): array

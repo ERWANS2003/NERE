@@ -48,6 +48,13 @@ Route::middleware('auth')->group(function () {
     Route::post('tickets/{ticket}/refuser', [TicketController::class, 'refuser'])->name('tickets.reject');
     Route::post('tickets/{ticket}/commentaires', [TicketController::class, 'storeComment'])->name('tickets.comments.store');
     Route::post('tickets/{ticket}/pieces-jointes', [TicketController::class, 'storeAttachment'])->name('tickets.attachments.store');
+    
+    // Intelligence des Tickets - Suggestions automatiques
+    Route::post('/tickets/intelligence/analyze', [\App\Http\Controllers\TicketIntelligenceController::class, 'analyzeNewTicket'])->name('tickets.intelligence.analyze');
+    Route::get('/tickets/{ticket}/intelligence/suggest-assignee', [\App\Http\Controllers\TicketIntelligenceController::class, 'suggestAssignee'])->name('tickets.intelligence.suggest-assignee');
+    Route::get('/tickets/{ticket}/intelligence/estimate-time', [\App\Http\Controllers\TicketIntelligenceController::class, 'estimateResolutionTime'])->name('tickets.intelligence.estimate-time');
+    Route::get('/tickets/{ticket}/intelligence/actions', [\App\Http\Controllers\TicketIntelligenceController::class, 'getRecommendedActions'])->name('tickets.intelligence.actions');
+    Route::post('/tickets/{ticket}/intelligence/execute', [\App\Http\Controllers\TicketIntelligenceController::class, 'executeAction'])->name('tickets.intelligence.execute');
 
     // Phase 8 : Gestion des actifs
     Route::resource('actifs', AssetController::class)->only(['index', 'store'])->names('assets');
