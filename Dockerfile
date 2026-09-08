@@ -93,15 +93,49 @@ RUN cat > /entrypoint.sh << 'EOF'
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Laravel ITSM..."
-echo "Environment Check:"
-echo "  DB_HOST: ${DB_HOST:-NOT SET}"
-echo "  DB_DATABASE: ${DB_DATABASE:-NOT SET}"
+echo "🚀 Starting Laravel ITSM on Railway..."
+
+# Railway provides DATABASE_URL in format: postgresql://user:pass@host:port/dbname
+if [ -n "$DATABASE_URL" ]; then
+    echo "📦 Parsing Railway DATABASE_URL..."
+    # Parse PostgreSQL connection string
+    # Format: postgresql://user:password@host:port/database?sslmode=require
+    
+    DB_CONNECTION=pgsql
+    DB_HOST=$(echo $DATABASE_URL | sed -E 's|.*@([^:]+).*|\1|')
+    DB_PORT=$(echo $DATABASE_URL | sed -E 's|.*:([0-9]+)/.*|\1|')
+    DB_DATABASE=$(echo $DATABASE_URL | sed -E 's|.*/([^?]+).*|\1|')
+    DB_USERNAME=$(echo $DATABASE_URL | sed -E 's|.*://([^:]+).*|\1|')
+    DB_PASSWORD=$(echo $DATABASE_URL | sed -E 's|.*://[^:]+:([^@]+)@.*|\1|')
+    
+    echo "  ✅ DB_HOST=$DB_HOST"
+    echo "  ✅ DB_PORT=$DB_PORT"
+    echo "  ✅ DB_DATABASE=$DB_DATABASE"
+    echo "  ✅ DB_USERNAME=$DB_USERNAME"
+    
+    # Update .env with Railway config
+    sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=$DB_CONNECTION|" /var/www/html/.env
+    sed -i "s|^DB_HOST=.*|DB_HOST=$DB_HOST|" /var/www/html/.env
+    sed -i "s|^DB_PORT=.*|DB_PORT=$DB_PORT|" /var/www/html/.env
+    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" /var/www/html/.env
+    sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env
+    sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" /var/www/html/.env
+fi
+
+echo ""
+echo "🔧 Current Database Config:"
+echo "  DB_CONNECTION: $(grep '^DB_CONNECTION' /var/www/html/.env || echo 'NOT SET')"
+echo "  DB_HOST: $(grep '^DB_HOST' /var/www/html/.env || echo 'NOT SET')"
+echo "  DB_DATABASE: $(grep '^DB_DATABASE' /var/www/html/.env || echo 'NOT SET')"
+
+# Clear Laravel cache (old config might be cached)
+rm -f /var/www/html/bootstrap/cache/config.php
 
 # Wait for database
+echo ""
 echo "⏳ Waiting for database connection..."
 for i in {1..30}; do
-    if php artisan tinker --execute="DB::connection()->getPDO(); exit(0);" 2>/dev/null; then
+    if timeout 5 php artisan tinker --execute="DB::connection()->getPDO(); echo 'OK';" 2>/dev/null | grep -q "OK"; then
         echo "✅ Database connected!"
         break
     fi
@@ -110,14 +144,17 @@ for i in {1..30}; do
 done
 
 # Run migrations
+echo ""
 echo "📊 Running migrations..."
-php artisan migrate --force 2>&1 | grep -E "DONE|ERROR|FAILED" | head -20 || true
+php artisan migrate --force 2>&1 | grep -E "DONE|ERROR|FAILED" | head -30 || true
 
 # Cache configuration
+echo ""
 echo "⚡ Optimizing Laravel..."
 php artisan config:cache 2>/dev/null || echo "⚠️ Config cache failed"
 php artisan route:cache 2>/dev/null || echo "⚠️ Route cache failed"
 
+echo ""
 echo "🌐 Starting PHP-FPM and Nginx..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
