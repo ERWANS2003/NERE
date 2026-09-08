@@ -1,38 +1,30 @@
 #!/bin/bash
 
-echo "Starting Vercel build for Laravel ITSM..."
+echo "🚀 Starting Vercel build for Laravel..."
 
-# Install PHP dependencies
-echo "Installing Composer dependencies..."
-composer install --no-dev --optimize-autoloader --no-interaction
+# Install Composer dependencies
+echo "📦 Installing Composer dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Generate application key if not set
-echo "Configuring Laravel..."
+# Clear Laravel caches
+echo "🧹 Clearing Laravel caches..."
 php artisan config:clear || true
 php artisan cache:clear || true
+php artisan view:clear || true
 
-# Build frontend assets if package.json exists
-if [ -f "package.json" ]; then
-    echo "Installing Node dependencies..."
-    npm ci --only=production
-    
-    echo "Building frontend assets..."
-    npm run build || npm run production || true
-fi
-
-# Clear and cache Laravel configurations for production
-echo "Optimizing Laravel for production..."
-php artisan config:cache || true
-php artisan route:cache || true
-php artisan view:cache || true
-
-# Create required directories for Vercel
-echo "Setting up directories..."
+# Create required directories
+echo "📁 Creating storage directories..."
 mkdir -p storage/logs
-mkdir -p storage/framework/{cache,sessions,views}
+mkdir -p storage/framework/cache/data
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
 mkdir -p bootstrap/cache
 
-# Set permissions (not needed in serverless but good practice)
-chmod -R 755 storage bootstrap/cache
+# Build frontend assets if available
+if [ -f "package.json" ]; then
+    echo "🎨 Building frontend assets..."
+    npm ci --production
+    npm run build 2>/dev/null || npm run production 2>/dev/null || echo "⚠️ Frontend build skipped"
+fi
 
-echo "Vercel build completed!"
+echo "✅ Vercel build completed!"
