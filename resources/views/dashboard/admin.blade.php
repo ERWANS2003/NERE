@@ -126,8 +126,8 @@
                             </div>
                             <div class="flex flex-col items-end gap-1">
                                 <span class="px-2 py-1 border text-xs rounded-full inline-flex items-center"
-                                      style="background-color: {{ $ticket->priorite->couleur ?? '#666666' }}22; color: {{ $ticket->priorite->couleur ?? '#999999' }}; border-color: {{ $ticket->priorite->couleur ?? '#666666' }}44;">
-                                    {{ $ticket->priorite->nom }}
+                                      style="background-color: {{ $ticket->priorite?->couleur ?? '#666666' }}22; color: {{ $ticket->priorite?->couleur ?? '#999999' }}; border-color: {{ $ticket->priorite?->couleur ?? '#666666' }}44;">
+                                    {{ $ticket->priorite?->nom ?? 'Standard' }}
                                 </span>
                                 <span class="text-xs text-gray-500">{{ $ticket->created_at->diffForHumans() }}</span>
                             </div>
