@@ -86,8 +86,10 @@ class DashboardController extends Controller
     protected function userDashboard()
     {
         // Vue portail simple pour les demandeurs
-        // Pas besoin de passer de données complexes, la vue est simple
-        return view('dashboard.customizable');
+        return view('dashboard.simple', [
+            'title' => 'Accueil',
+            'message' => 'Bienvenue sur votre portail de services'
+        ]);
     }
 
     protected function ticketsVisibles()

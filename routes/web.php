@@ -30,6 +30,28 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 
+    // DEBUG: Test dashboard load
+    Route::get('/debug/dashboard', function() {
+        try {
+            $user = auth()->user();
+            return response()->json([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_role' => $user->role?->nom ?? 'null',
+                'has_admin_role' => $user->hasRole('admin'),
+                'is_technician' => $user->est_technicien,
+                'status' => 'OK'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->name('debug.dashboard');
+
     // Phase 7 : Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
