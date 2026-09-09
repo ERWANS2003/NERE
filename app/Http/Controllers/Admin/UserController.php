@@ -98,4 +98,12 @@ class UserController extends Controller
 
         return back()->with('success', 'Utilisateur désactivé.');
     }
+
+    public function toggle(User $user)
+    {
+        $user->update(['actif' => !$user->actif]);
+
+        $status = $user->actif ? 'activé' : 'désactivé';
+        return back()->with('success', "Utilisateur {$user->name} {$status}.");
+    }
 }

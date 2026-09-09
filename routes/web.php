@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
     // Phase 12 : Administration (réservé aux Admins)
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('utilisateurs', UserController::class)->only(['index', 'store', 'update', 'destroy'])->names('users')->parameters(['utilisateurs' => 'user']);
+        Route::patch('utilisateurs/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::resource('roles', RoleController::class);
 
         Route::get('parametres/departements', [SettingsController::class, 'departements'])->name('settings.departments');
