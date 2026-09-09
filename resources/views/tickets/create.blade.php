@@ -1,4 +1,4 @@
-@extends('layouts.app-new')
+@extends('layouts.portal')
 
 @section('titre', 'Nouvelle Demande')
 
