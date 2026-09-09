@@ -1,68 +1,292 @@
 @extends('layouts.portal')
 
 @section('titre', 'Portail de Services')
+@section('sous-titre', 'Choisissez le service dont vous avez besoin')
 
 @section('contenu')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-16 px-6">
-        <div class="max-w-7xl mx-auto">
-            <h1 class="text-4xl font-bold mb-4">
-                Néré Mining - Portail de Services
+<div class="p-6">
+    
+    <!-- Welcome Banner -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-800 rounded-xl p-8 mb-8 shadow-xl">
+        <div class="max-w-4xl">
+            <h1 class="text-3xl font-bold text-white mb-3">
+                Bienvenue, {{ auth()->user()->name }} 👋
             </h1>
-            <p class="text-xl text-gray-300 max-w-2xl">
+            <p class="text-primary-100 text-lg mb-6">
                 Une demande unique, dirigée automatiquement vers le bon service et suivie jusqu'à sa résolution.
             </p>
-            
-            <!-- Quick Action Button -->
-            <div class="mt-8">
-                <a href="{{ route('tickets.create') }}" 
-                   class="inline-flex items-center gap-3 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Créer une demande
-                </a>
-            </div>
+            <a href="{{ route('tickets.create') }}" 
+               class="inline-flex items-center gap-2 bg-white text-primary-700 px-6 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-all shadow-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Créer une demande
+            </a>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-6 py-12">
-        
-        <!-- Title Section -->
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">
-                Que souhaitez-vous faire?
-            </h2>
-        </div>
+    <!-- Services Section -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">
+            Que souhaitez-vous faire?
+        </h2>
+        <p class="text-gray-400">Cliquez sur le service concerné pour créer votre demande</p>
+    </div>
 
-        <!-- Services Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+    <!-- Services Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        
             <!-- Achats -->
             <a href="{{ route('tickets.create', ['department' => 'achats']) }}" 
-               class="service-card group">
+               class="service-card-dark group">
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center group-hover:bg-blue-600/30 transition border border-blue-600/30">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                         </div>
-                        <div class="text-2xl font-bold text-gray-900">AC</div>
+                        <div class="text-2xl font-bold text-white">AC</div>
                     </div>
-                    <div class="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700">
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
                         0
                     </div>
                 </div>
                 
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Achats</h3>
-                <p class="text-sm text-gray-600 mb-3">1 équipe de traitement</p>
-                <p class="text-sm text-gray-700">Demande d'achat · Commande fournisseur</p>
+                <h3 class="text-lg font-bold text-white mb-2">Achats</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Demande d'achat · Commande fournisseur</p>
             </a>
 
             <!-- Finance -->
+            <a href="{{ route('tickets.create', ['department' => 'finance']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center group-hover:bg-green-600/30 transition border border-green-600/30">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">FI</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Finance</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Demande de paiement · Budget · Facturation · Avance de fonds / note de frais</p>
+            </a>
+
+            <!-- Géologie -->
+            <a href="{{ route('tickets.create', ['department' => 'geologie']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center group-hover:bg-primary-600/30 transition border border-primary-600/30">
+                            <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">GÉ</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Géologie</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Échantillonnage · Données géologiques · Support logiciel SIG / modélisation · Matériel de terrain</p>
+            </a>
+
+            <!-- HSE -->
+            <a href="{{ route('tickets.create', ['department' => 'hse']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center group-hover:bg-red-600/30 transition border border-red-600/30">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">HS</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">HSE</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Accident · Presqu'accident · Inspection · Observation</p>
+            </a>
+
+            <!-- Logistique -->
+            <a href="{{ route('tickets.create', ['department' => 'logistique']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center group-hover:bg-purple-600/30 transition border border-purple-600/30">
+                            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">LO</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Logistique</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Véhicule · Transport · Carburant · Transport de personnel</p>
+            </a>
+
+            <!-- Production -->
+            <a href="{{ route('tickets.create', ['department' => 'production']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center group-hover:bg-indigo-600/30 transition border border-indigo-600/30">
+                            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">PR</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Production</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Incident de production · Équipement de production · Anomalie de process · Arrêt de production</p>
+            </a>
+
+            <!-- RH -->
+            <a href="{{ route('tickets.create', ['department' => 'rh']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-pink-600/20 flex items-center justify-center group-hover:bg-pink-600/30 transition border border-pink-600/30">
+                            <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">RH</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">RH</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Congé · Attestation · Recrutement · Formation</p>
+            </a>
+
+            <!-- IT -->
+            <a href="{{ route('tickets.create', ['department' => 'it']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-600/20 flex items-center justify-center group-hover:bg-cyan-600/30 transition border border-cyan-600/30">
+                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">IT</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Informatique</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Support technique · Accès logiciel · Matériel informatique · Réseau</p>
+            </a>
+
+            <!-- Maintenance -->
+            <a href="{{ route('tickets.create', ['department' => 'maintenance']) }}" 
+               class="service-card-dark group">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-orange-600/20 flex items-center justify-center group-hover:bg-orange-600/30 transition border border-orange-600/30">
+                            <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-white">MA</div>
+                    </div>
+                    <div class="px-3 py-1 bg-dark-800 rounded-full text-sm font-medium text-gray-400">
+                        0
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white mb-2">Maintenance</h3>
+                <p class="text-sm text-gray-400 mb-3">1 équipe de traitement</p>
+                <p class="text-sm text-gray-500">Réparation équipement · Maintenance préventive · Pièces de rechange</p>
+            </a>
+
+        </div>
+
+        <!-- Quick Stats Section -->
+        <h2 class="text-2xl font-bold text-white mb-4">
+            Statistiques rapides
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="stat-card">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-600/30">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-white">{{ \App\Models\Ticket::whereIn('ticket_status_id', [3, 4])->count() }}</div>
+                        <div class="text-sm text-gray-400">Demandes résolues</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center border border-primary-600/30">
+                        <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-white">{{ \App\Models\Ticket::whereIn('ticket_status_id', [2])->count() }}</div>
+                        <div class="text-sm text-gray-400">En cours de traitement</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-white">< 2h</div>
+                        <div class="text-sm text-gray-400">Temps moyen de réponse</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
             <a href="{{ route('tickets.create', ['department' => 'finance']) }}" 
                class="service-card group">
                 <div class="flex items-start justify-between mb-4">
@@ -291,13 +515,18 @@
 
 @push('styles')
 <style>
-.service-card {
-    @apply bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md hover:border-amber-400 transition-all cursor-pointer block;
+.service-card-dark {
+    @apply bg-dark-800 hover:bg-dark-700 rounded-xl p-6 border border-dark-700 hover:border-primary-600 transition-all cursor-pointer block shadow-lg hover:shadow-primary-900/20;
 }
 
-.service-card:hover {
+.service-card-dark:hover {
     transform: translateY(-2px);
+}
+
+.stat-card {
+    @apply bg-dark-800 rounded-xl p-6 border border-dark-700;
 }
 </style>
 @endpush
 @endsection
+
