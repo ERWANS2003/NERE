@@ -251,7 +251,7 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('status_id', [3, 4])->count() }}</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('ticket_status_id', [3, 4])->count() }}</div>
                         <div class="text-sm text-gray-600">Demandes résolues</div>
                     </div>
                 </div>
@@ -265,7 +265,7 @@
                         </svg>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('status_id', [2])->count() }}</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ \App\Models\Ticket::whereIn('ticket_status_id', [2])->count() }}</div>
                         <div class="text-sm text-gray-600">En cours de traitement</div>
                     </div>
                 </div>
