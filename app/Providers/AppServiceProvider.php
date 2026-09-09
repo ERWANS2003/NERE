@@ -28,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Charger le système de plugins pour extensibilité infinie
-        $pluginManager = app(\App\Core\PluginSystem\PluginManager::class);
-        $pluginManager->loadAll();
+        // DISABLED: Charger le système de plugins - causes 500 errors
+        // $pluginManager = app(\App\Core\PluginSystem\PluginManager::class);
+        // $pluginManager->loadAll();
     }
 }
