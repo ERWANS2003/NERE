@@ -36,7 +36,9 @@ class DashboardController extends Controller
         $stats = [
             'total_tickets' => Ticket::count(),
             'tickets_ouverts' => Ticket::whereHas('statut', fn($q) => $q->whereIn('slug', ['nouveau', 'assigne', 'en_cours']))->count(),
-            'tickets_critiques' => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 4))->where('ticket_status_id', '!=', 4)->count(),
+            'tickets_critiques' => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 4))
+                ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'clos']))
+                ->count(),
             'utilisateurs_actifs' => User::where('actif', true)->count(),
             'techniciens_disponibles' => User::where('est_technicien', true)->where('disponible', true)->count(),
             'sla_depasse' => Ticket::where('sla_depasse', true)->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'clos']))->count(),
