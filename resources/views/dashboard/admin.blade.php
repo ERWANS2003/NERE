@@ -99,7 +99,7 @@
     <!-- Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Recent Tickets -->
+    <!-- Recent Tickets -->
         <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@
                 Tickets récents
             </h3>
             <div class="space-y-3">
-                @forelse($recentTickets as $ticket)
+                @forelse($recentTickets ?? [] as $ticket)
                     <a href="{{ route('tickets.show', $ticket) }}" class="block p-3 rounded-lg bg-dark-900 hover:bg-dark-700 transition border border-dark-700 hover:border-primary-600">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex-1 min-w-0">
