@@ -106,14 +106,13 @@ class MiningCompanyDataSeeder extends Seeder
 
         // Create ticket statuses
         $statuses = [
-            ['nom' => 'Nouveau', 'slug' => 'new', 'ordre' => 1, 'couleur' => '#3b82f6'],
-            ['nom' => 'Ouvert', 'slug' => 'open', 'ordre' => 2, 'couleur' => '#f59e0b'],
-            ['nom' => 'Assigné', 'slug' => 'assigned', 'ordre' => 3, 'couleur' => '#f97316'],
-            ['nom' => 'En Cours', 'slug' => 'in_progress', 'ordre' => 4, 'couleur' => '#eab308'],
-            ['nom' => 'En Attente', 'slug' => 'waiting', 'ordre' => 5, 'couleur' => '#8b5cf6'],
-            ['nom' => 'Résolu', 'slug' => 'resolved', 'ordre' => 6, 'couleur' => '#10b981'],
-            ['nom' => 'Fermé', 'slug' => 'closed', 'ordre' => 7, 'couleur' => '#6b7280'],
-            ['nom' => 'Rejeté', 'slug' => 'rejected', 'ordre' => 8, 'couleur' => '#ef4444'],
+            ['nom' => 'Nouveau', 'slug' => 'nouveau', 'ordre' => 1, 'couleur' => '#3b82f6'],
+            ['nom' => 'Assigné', 'slug' => 'assigne', 'ordre' => 2, 'couleur' => '#f59e0b'],
+            ['nom' => 'En cours', 'slug' => 'en_cours', 'ordre' => 3, 'couleur' => '#f97316'],
+            ['nom' => 'En attente', 'slug' => 'en_attente', 'ordre' => 4, 'couleur' => '#8b5cf6'],
+            ['nom' => 'Résolu', 'slug' => 'resolu', 'ordre' => 5, 'couleur' => '#10b981'],
+            ['nom' => 'Fermé', 'slug' => 'clos', 'ordre' => 6, 'couleur' => '#6b7280'],
+            ['nom' => 'Annulé', 'slug' => 'annule', 'ordre' => 7, 'couleur' => '#ef4444'],
         ];
 
         foreach ($statuses as $statusData) {
