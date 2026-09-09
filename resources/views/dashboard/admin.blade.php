@@ -9,6 +9,98 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Tickets -->
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-gray-500">Total</span>
+            </div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['total_tickets'] ?? 0 }}</div>
+            <div class="text-sm text-gray-400">Tickets système</div>
+        </div>
+
+        <!-- Tickets Ouverts -->
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center border border-primary-600/30">
+                    <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-gray-500">Actifs</span>
+            </div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_ouverts'] ?? 0 }}</div>
+            <div class="text-sm text-gray-400">Tickets ouverts</div>
+        </div>
+
+        <!-- Critiques -->
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center border border-red-600/30">
+                    <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-gray-500">Urgent</span>
+            </div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_critiques'] ?? 0 }}</div>
+            <div class="text-sm text-gray-400">Tickets critiques</div>
+        </div>
+
+        <!-- Utilisateurs Actifs -->
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-600/30">
+                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-gray-500">Actifs</span>
+            </div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['utilisateurs_actifs'] ?? 0 }}</div>
+            <div class="text-sm text-gray-400">Utilisateurs actifs</div>
+        </div>
+    </div>
+
+    <!-- Recent Tickets -->
+    <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
+        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Tickets récents
+        </h3>
+        <div class="space-y-3">
+            @forelse($recentTickets ?? [] as $ticket)
+                <a href="{{ route('tickets.show', $ticket) }}" class="block p-3 rounded-lg bg-dark-900 hover:bg-dark-700 transition border border-dark-700 hover:border-primary-600">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-sm font-medium text-white truncate">{{ $ticket->titre ?? 'Titre' }}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-gray-400">
+                                <span>{{ $ticket->reference ?? 'REF' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            @empty
+                <div class="text-center py-8 text-gray-500">
+                    <p>Aucun ticket récent</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
+
+</div>
+@endsection
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Tickets -->
         <div class="stat-card">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
