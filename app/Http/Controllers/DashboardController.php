@@ -31,8 +31,6 @@ class DashboardController extends Controller
     
     protected function adminDashboard()
     {
-        $tickets = $this->ticketsVisibles();
-        
         $stats = [
             'total_tickets' => Ticket::count(),
             'tickets_ouverts' => Ticket::whereHas('statut', fn($q) => $q->whereIn('slug', ['nouveau', 'assigne', 'en_cours']))->count(),
@@ -99,6 +97,7 @@ class DashboardController extends Controller
     protected function userDashboard()
     {
         // Vue portail simple pour les demandeurs
+        // Pas besoin de passer de données complexes, la vue est simple
         return view('dashboard.customizable');
     }
 
