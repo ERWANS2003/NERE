@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Portail de Services')
+@section('titre', 'Portail de Services')
 
-@section('content')
+@section('contenu')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
     <!-- Hero Section -->
     <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-16 px-6">

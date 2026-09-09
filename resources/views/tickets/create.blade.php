@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Nouvelle Demande')
+@section('titre', 'Nouvelle Demande')
 
-@section('content')
+@section('contenu')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 px-6">
     <div class="max-w-5xl mx-auto">
         
