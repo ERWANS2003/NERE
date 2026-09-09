@@ -121,11 +121,12 @@
                                 <div class="flex items-center gap-3 text-xs text-gray-400">
                                     <span>{{ $ticket->reference }}</span>
                                     <span>•</span>
-                                    <span>{{ $ticket->demandeur->name }}</span>
+                                    <span>{{ $ticket->demandeur?->name ?? 'Utilisateur supprimé' }}</span>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-1">
-                                <span class="px-2 py-1 bg-{{ $ticket->priorite->couleur ?? 'gray' }}-600/20 border border-{{ $ticket->priorite->couleur ?? 'gray' }}-600/30 text-{{ $ticket->priorite->couleur ?? 'gray' }}-400 text-xs rounded-full">
+                                <span class="px-2 py-1 border text-xs rounded-full inline-flex items-center"
+                                      style="background-color: {{ $ticket->priorite->couleur ?? '#666666' }}22; color: {{ $ticket->priorite->couleur ?? '#999999' }}; border-color: {{ $ticket->priorite->couleur ?? '#666666' }}44;">
                                     {{ $ticket->priorite->nom }}
                                 </span>
                                 <span class="text-xs text-gray-500">{{ $ticket->created_at->diffForHumans() }}</span>
@@ -205,7 +206,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('admin.settings') }}" class="flex items-center gap-3 p-4 bg-dark-900 hover:bg-dark-700 rounded-lg border border-dark-700 hover:border-primary-600 transition">
+            <a href="{{ route('admin.settings.departments') }}" class="flex items-center gap-3 p-4 bg-dark-900 hover:bg-dark-700 rounded-lg border border-dark-700 hover:border-primary-600 transition">
                 <svg class="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
