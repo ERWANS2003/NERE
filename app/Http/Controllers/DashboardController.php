@@ -15,12 +15,13 @@ class DashboardController extends Controller
     {
         try {
             $user = auth()->user();
-            return view('dashboard.minimal', ['stats' => []]);
+            return view('dashboard.minimal-html');
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => $e->getMessage(),
                 'file' => basename($e->getFile()),
                 'line' => $e->getLine(),
+                'trace' => substr($e->getTraceAsString(), 0, 500),
             ], 500);
         }
     }
