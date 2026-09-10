@@ -30,6 +30,19 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 
+    // Route test - affiche l'erreur exacte
+    Route::get('/test-dashboard', function() {
+        try {
+            $user = auth()->user();
+            if ($user->hasRole('admin')) {
+                return view('dashboard.minimal', ['stats' => []]);
+            }
+            return response('User role: ' . ($user->role?->slug ?? 'no role'));
+        } catch (\Throwable $e) {
+            return response('<pre>' . $e->getMessage() . "\n\n" . $e->getTraceAsString() . '</pre>', 500);
+        }
+    });
+
     // Phase 7 : Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
