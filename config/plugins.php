@@ -11,16 +11,16 @@ return [
     |
     */
     'enabled' => [
-        'AssetManagement' => true,
-        'SafetyManagement' => true,
-        'MaintenanceScheduler' => true,
-        'InventoryControl' => true,
-        'ProductionTracking' => true,
-        'VehicleFleet' => true,
-        'EnvironmentalCompliance' => true,
-        'ContractorManagement' => true,
-        'TrainingCertification' => true,
-        'QualityAssurance' => true,
+        'AssetManagement' => false,
+        'SafetyManagement' => false,
+        'MaintenanceScheduler' => false,
+        'InventoryControl' => false,
+        'ProductionTracking' => false,
+        'VehicleFleet' => false,
+        'EnvironmentalCompliance' => false,
+        'ContractorManagement' => false,
+        'TrainingCertification' => false,
+        'QualityAssurance' => false,
     ],
 
     /*
