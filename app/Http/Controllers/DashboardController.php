@@ -37,34 +37,27 @@ class DashboardController extends Controller
     {
         try {
             $stats = [
-                'total_tickets' => Ticket::count(),
+                'total_tickets' => 0,
                 'tickets_ouverts' => 0,
                 'tickets_critiques' => 0,
-                'utilisateurs_actifs' => User::where('actif', true)->count(),
-                'techniciens_disponibles' => 0,
-                'sla_depasse' => 0,
+                'utilisateurs_actifs' => 0,
             ];
             
-            $recentTickets = collect(); // Empty collection for now
-            $ticketsParDepartement = collect();
+            $recentTickets = [];
+            $ticketsParDepartement = [];
             
             return view('dashboard.admin', compact('stats', 'recentTickets', 'ticketsParDepartement'));
         } catch (\Exception $e) {
-            \Log::error('Admin dashboard error: ' . $e->getMessage(), ['exception' => $e]);
-            return view('dashboard.simple', [
-                'title' => 'Tableau de Bord Admin',
-                'message' => 'Erreur lors du chargement du tableau de bord: ' . $e->getMessage()
-            ]);
+            \Log::error('Admin dashboard error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response('Admin Dashboard Error: ' . $e->getMessage(), 500);
         }
     }
     
     protected function technicianDashboard()
     {
         try {
-            $user = auth()->user();
-            
-            $myTickets = collect();
-            $teamTickets = collect();
+            $myTickets = [];
+            $teamTickets = [];
             
             $stats = [
                 'mes_tickets' => 0,
@@ -75,11 +68,8 @@ class DashboardController extends Controller
             
             return view('dashboard.technician', compact('myTickets', 'teamTickets', 'stats'));
         } catch (\Exception $e) {
-            \Log::error('Technician dashboard error: ' . $e->getMessage(), ['exception' => $e]);
-            return view('dashboard.simple', [
-                'title' => 'Mes Tickets',
-                'message' => 'Erreur lors du chargement: ' . $e->getMessage()
-            ]);
+            \Log::error('Technician dashboard error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response('Technician Dashboard Error: ' . $e->getMessage(), 500);
         }
     }
     
