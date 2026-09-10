@@ -13,25 +13,24 @@ class DashboardController extends Controller
     // Portail de services - Adapté selon le rôle
     public function index()
     {
+        $user = auth()->user();
+        
         try {
-            $user = auth()->user();
+            // Admin: Vue avec statistiques complètes + gestion
+            if ($user->hasRole('admin')) {
+                return $this->adminDashboard();
+            }
             
-            // Return JSON to bypass Blade completely
-            return response()->json([
-                'status' => 'ok',
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'user_role' => $user->role?->slug ?? 'no_role',
-                'has_admin_role' => $user->hasRole('admin'),
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ], 500);
+            // Technicien: Vue avec tickets assignés + files d'attente
+            if ($user->est_technicien || $user->hasRole('technicien')) {
+                return $this->technicianDashboard();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Dashboard error: ' . $e->getMessage(), ['exception' => $e]);
         }
+        
+        // Demandeur: Vue portail de services simple
+        return $this->userDashboard();
     }
     
     protected function adminDashboard()

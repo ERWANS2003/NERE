@@ -1,4 +1,4 @@
-@extends('layouts.portal')
+@extends('layouts.portal-minimal')
 
 @section('titre', 'Mes Tickets')
 @section('sous-titre', 'Vue technicien - Tickets assignés et file d\'attente')
