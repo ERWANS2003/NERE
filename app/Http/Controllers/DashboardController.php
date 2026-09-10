@@ -15,24 +15,22 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Return raw HTML to test if Blade is the problem
-        return response(<<<'HTML'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-dark-900 text-white">
-    <div class="p-8">
-        <h1 class="text-2xl font-bold mb-4">Dashboard Test</h1>
-        <p class="mb-2">If you see this, the dashboard is working!</p>
-        <p class="text-gray-400">User: SYSTEM_OK</p>
-    </div>
-</body>
-</html>
-HTML
-        )->header('Content-Type', 'text/html');
+        try {
+            // Admin: Vue avec statistiques complètes + gestion
+            if ($user->hasRole('admin')) {
+                return $this->adminDashboard();
+            }
+            
+            // Technicien: Vue avec tickets assignés + files d'attente
+            if ($user->est_technicien || $user->hasRole('technicien')) {
+                return $this->technicianDashboard();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Dashboard error: ' . $e->getMessage(), ['exception' => $e]);
+        }
+        
+        // Demandeur: Vue portail de services simple
+        return $this->userDashboard();
     }
     
     protected function adminDashboard()
