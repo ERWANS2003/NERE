@@ -28,6 +28,15 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Register custom Blade directives
+        \Illuminate\Support\Facades\Blade::if('hasRole', function (string $role) {
+            return auth()->check() && auth()->user()->hasRole($role);
+        });
+
+        \Illuminate\Support\Facades\Blade::if('can', function (string $permission) {
+            return auth()->check() && auth()->user()->hasPermission($permission);
+        });
+
         // DISABLED: Charger le système de plugins - causes 500 errors
         // $pluginManager = app(\App\Core\PluginSystem\PluginManager::class);
         // $pluginManager->loadAll();

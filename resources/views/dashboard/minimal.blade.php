@@ -1,4 +1,4 @@
-@extends('layouts.portal-minimal')
+@extends('layouts.portal')
 
 @section('titre', 'Dashboard')
 @section('sous-titre', 'Test')

@@ -1,4 +1,4 @@
-@extends('layouts.portal-minimal')
+@extends('layouts.portal')
 
 @section('titre', 'Tableau de Bord Admin')
 @section('sous-titre', 'Vue d\'ensemble système')
