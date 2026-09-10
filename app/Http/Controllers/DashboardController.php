@@ -35,42 +35,20 @@ class DashboardController extends Controller
     
     protected function adminDashboard()
     {
-        try {
-            $stats = [
-                'total_tickets' => 0,
-                'tickets_ouverts' => 0,
-                'tickets_critiques' => 0,
-                'utilisateurs_actifs' => 0,
-            ];
-            
-            $recentTickets = [];
-            $ticketsParDepartement = [];
-            
-            return view('dashboard.admin', compact('stats', 'recentTickets', 'ticketsParDepartement'));
-        } catch (\Exception $e) {
-            \Log::error('Admin dashboard error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response('Admin Dashboard Error: ' . $e->getMessage(), 500);
-        }
+        $stats = ['total_tickets' => 0, 'tickets_ouverts' => 0];
+        $recentTickets = [];
+        $ticketsParDepartement = [];
+        
+        return view('dashboard.minimal', compact('stats', 'recentTickets', 'ticketsParDepartement'));
     }
     
     protected function technicianDashboard()
     {
-        try {
-            $myTickets = [];
-            $teamTickets = [];
-            
-            $stats = [
-                'mes_tickets' => 0,
-                'tickets_critiques' => 0,
-                'en_attente_assignment' => 0,
-                'resolus_aujourdhui' => 0,
-            ];
-            
-            return view('dashboard.technician', compact('myTickets', 'teamTickets', 'stats'));
-        } catch (\Exception $e) {
-            \Log::error('Technician dashboard error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return response('Technician Dashboard Error: ' . $e->getMessage(), 500);
-        }
+        $myTickets = [];
+        $teamTickets = [];
+        $stats = ['mes_tickets' => 0, 'tickets_critiques' => 0];
+        
+        return view('dashboard.minimal', compact('myTickets', 'teamTickets', 'stats'));
     }
     
     protected function userDashboard()
