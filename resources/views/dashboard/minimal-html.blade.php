@@ -1,8 +1,8 @@
-@extends('layouts.portal-minimal')
+@extends('layouts.portal')
 
 @section('contenu')
 <div style="padding: 20px;">
-    <h1>Extends Test Works!</h1>
+    <h1>Portal Layout Test!</h1>
     <p>User: {{ auth()->user()->name }}</p>
 </div>
 @endsection

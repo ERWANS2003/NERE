@@ -51,27 +51,29 @@
         }
         
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-        /* Sidebar */
+        /* Sidebar links - replaces @apply which breaks with CDN Tailwind */
         .sidebar-link {
-            @apply flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-dark-800 hover:text-white rounded-lg transition-all;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background-color: #212529;
+            color: white;
         }
         .sidebar-link.active {
-            @apply bg-primary-600 text-white;
+            background-color: #c26803;
+            color: white;
         }
     </style>
     @stack('styles')
