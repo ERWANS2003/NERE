@@ -18,10 +18,10 @@
                 <p>Auth check passed</p>
             @endauth
             
-            <!-- Test @hasRole directive -->
-            @hasRole('admin')
-                <p>Has admin role</p>
-            @endhasRole
+            <!-- Test using if instead of @hasRole -->
+            @if(auth()->user()->hasRole('admin'))
+                <p>Has admin role (using if)</p>
+            @endif
             
             <!-- Test accessing user properties -->
             <p>User: {{ auth()->user()->name ?? 'no name' }}</p>
