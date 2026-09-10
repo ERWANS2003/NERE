@@ -15,14 +15,7 @@ class DashboardController extends Controller
     {
         try {
             $user = auth()->user();
-            
-            // DEBUG: Return simple response first
-            return response()->json([
-                'message' => 'Dashboard works',
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'user_role' => $user->role?->slug ?? 'null',
-            ]);
+            return view('dashboard.minimal', ['stats' => []]);
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => $e->getMessage(),
