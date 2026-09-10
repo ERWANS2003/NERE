@@ -13,44 +13,74 @@ class DashboardController extends Controller
     // Portail de services - Adapté selon le rôle
     public function index()
     {
+        $user = auth()->user();
+        
         try {
-            $user = auth()->user();
-            return view('dashboard.minimal-html');
-        } catch (\Throwable $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'file' => basename($e->getFile()),
-                'line' => $e->getLine(),
-                'trace' => substr($e->getTraceAsString(), 0, 500),
-            ], 500);
+            if ($user->hasRole('admin')) {
+                return $this->adminDashboard();
+            }
+            if ($user->est_technicien || $user->hasRole('technicien')) {
+                return $this->technicianDashboard();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Dashboard error: ' . $e->getMessage(), ['exception' => $e]);
         }
+        
+        return $this->userDashboard();
     }
     
     protected function adminDashboard()
     {
-        $stats = ['total_tickets' => 0, 'tickets_ouverts' => 0];
-        $recentTickets = [];
-        $ticketsParDepartement = [];
-        
-        return view('dashboard.minimal', compact('stats', 'recentTickets', 'ticketsParDepartement'));
+        $stats = [
+            'total_tickets'       => Ticket::count(),
+            'tickets_ouverts'     => Ticket::whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+            'tickets_critiques'   => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 3))->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+            'utilisateurs_actifs' => User::where('actif', true)->count(),
+        ];
+
+        $recentTickets = Ticket::with(['statut', 'priorite', 'user'])
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        $ticketsParDepartement = collect();
+
+        return view('dashboard.admin', compact('stats', 'recentTickets', 'ticketsParDepartement'));
     }
     
     protected function technicianDashboard()
     {
-        $myTickets = [];
-        $teamTickets = [];
-        $stats = ['mes_tickets' => 0, 'tickets_critiques' => 0];
-        
-        return view('dashboard.minimal', compact('myTickets', 'teamTickets', 'stats'));
+        $user = auth()->user();
+
+        $myTickets = Ticket::with(['statut', 'priorite', 'user'])
+            ->where('assigned_to', $user->id)
+            ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        $teamTickets = collect();
+
+        $stats = [
+            'mes_tickets'            => $myTickets->count(),
+            'tickets_critiques'      => $myTickets->filter(fn($t) => $t->priorite?->niveau >= 3)->count(),
+            'en_attente_assignment'  => Ticket::whereNull('assigned_to')->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+            'resolus_aujourdhui'     => Ticket::where('assigned_to', $user->id)->whereDate('updated_at', today())->whereHas('statut', fn($q) => $q->where('slug', 'resolu'))->count(),
+        ];
+
+        return view('dashboard.technician', compact('myTickets', 'teamTickets', 'stats'));
     }
     
     protected function userDashboard()
     {
-        // Vue portail simple pour les demandeurs
-        return view('dashboard.simple', [
-            'title' => 'Accueil',
-            'message' => 'Bienvenue sur votre portail de services'
-        ]);
+        $user = auth()->user();
+        $myTickets = Ticket::with(['statut', 'priorite'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('dashboard.user', compact('myTickets'));
     }
 
     protected function ticketsVisibles()
