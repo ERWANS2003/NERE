@@ -121,7 +121,7 @@ if [ -n "$DATABASE_URL" ]; then
     sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env
     sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" /var/www/html/.env
     
-    # Enable debug mode to see errors
+# Enable debug mode to see errors
     sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" /var/www/html/.env
     
     # Set secure HTTPS URL for production
@@ -137,6 +137,12 @@ echo "  DB_DATABASE: $(grep '^DB_DATABASE' /var/www/html/.env || echo 'NOT SET')
 
 # Clear Laravel cache (old config might be cached)
 rm -f /var/www/html/bootstrap/cache/config.php
+
+# Test bootstrap
+echo ""
+echo "🧪 Testing Laravel bootstrap..."
+php /var/www/html/test-bootstrap.php || echo "⚠️ Bootstrap test completed with status $?"
+echo ""
 
 # Wait for database
 echo ""
