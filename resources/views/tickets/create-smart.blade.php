@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Créer un Ticket - Intelligence Assistée')
+@section('titre', 'Créer un Ticket - Intelligence Assistée')
 
-@section('content')
+@section('contenu')
 <div class="max-w-7xl mx-auto" x-data="smartTicketCreation()">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Créer un Nouveau Ticket</h1>

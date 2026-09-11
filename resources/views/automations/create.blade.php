@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Créer une Automation')
+@section('titre', 'Créer une Automation')
 
-@section('content')
+@section('contenu')
 <div class="max-w-7xl mx-auto" x-data="workflowBuilder()">
     <!-- Header -->
     <div class="mb-8">

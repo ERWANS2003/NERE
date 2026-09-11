@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Catalogue de Services')
+@section('titre', 'Catalogue de Services')
 
-@section('content')
+@section('contenu')
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="mb-8">

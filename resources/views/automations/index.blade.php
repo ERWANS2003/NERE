@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Automations Workflow')
+@section('titre', 'Automations Workflow')
 
-@section('content')
+@section('contenu')
 <div class="max-w-7xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">

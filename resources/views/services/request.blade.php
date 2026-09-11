@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', $service->name)
+@section('titre', $service->name)
 
-@section('content')
+@section('contenu')
 <div class="max-w-4xl mx-auto">
     <!-- Breadcrumb -->
     <nav class="mb-6">

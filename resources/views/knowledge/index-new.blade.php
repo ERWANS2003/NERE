@@ -1,8 +1,8 @@
 @extends('layouts.app-new')
 
-@section('title', 'Base de Connaissances')
+@section('titre', 'Base de Connaissances')
 
-@section('content')
+@section('contenu')
 <div class="max-w-7xl mx-auto" x-data="knowledgeSearch()">
     <!-- Hero Search Section -->
     <div class="bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl shadow-lg p-12 mb-8 text-white">
