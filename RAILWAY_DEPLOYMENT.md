@@ -1,37 +1,38 @@
-# Railway Deployment Guide - Laravel ITSM (PHP-FPM + Nginx)
+# 🚀 Déploiement ITSM Néré Mining sur Railway
 
-## 🎯 **SOLUTION FINALE : PHP-FPM + Nginx**
+## ⚡ Quick Start (5 minutes)
 
-**Problème résolu :** L'erreur "Apache is running a threaded MPM, but your PHP Module is not compiled to be threadsafe" est maintenant éliminée en utilisant PHP-FPM avec Nginx au lieu d'Apache.
+### 1. Créer un projet Railway
+```bash
+# Via CLI
+npm i -g @railway/cli
+railway login
+railway init
 
-## 🚂 **Déploiement Railway**
+# Ou via https://railway.app - cliquez sur "New Project"
+```
 
-### 1. **Configuration Automatique**
-Railway détecte automatiquement le Dockerfile et utilise notre stack optimisée :
-- ✅ **PHP-FPM 8.3** (thread-safe par design)
-- ✅ **Nginx** (serveur web performant)  
-- ✅ **Supervisor** (gestion des processus)
-- ✅ **PostgreSQL** (base de données Railway)
+### 2. Configurer la base de données
+```bash
+railway add
+# Sélectionner PostgreSQL
+```
 
-### 2. **Déployez sur Railway**
-
-1. **Allez sur [railway.app](https://railway.app)**
-2. **Connectez votre GitHub** : `ERWANS2003/NERE`
-3. **Railway build automatiquement** avec le nouveau Dockerfile
-4. **Ajoutez PostgreSQL** : New Service → PostgreSQL
-
-### 3. **Variables d'Environnement Railway**
-
-Dans votre service app → Variables :
+### 3. Ajouter les secrets/variables d'environnement
+Via le dashboard Railway ou via CLI :
 
 ```bash
-# Application
-APP_NAME=ITSM NERE Mining
+railway variables
+```
+
+Variables minimales requises :
+```
+APP_NAME=ITSM Néré Mining
 APP_ENV=production
 APP_DEBUG=false
-APP_KEY=base64:VOTRE_CLÉ_ARTISAN
+APP_URL=https://<your-railway-domain>.up.railway.app
+APP_KEY=base64:<generate-with-php-artisan-key-generate>
 
-# Base de données (Railway auto-fournit)
 DB_CONNECTION=pgsql
 DB_HOST=${{Postgres.PGHOST}}
 DB_PORT=${{Postgres.PGPORT}}
@@ -39,64 +40,75 @@ DB_DATABASE=${{Postgres.PGDATABASE}}
 DB_USERNAME=${{Postgres.PGUSER}}
 DB_PASSWORD=${{Postgres.PGPASSWORD}}
 
-# Optimisations
-CACHE_DRIVER=file
-SESSION_DRIVER=file
-LOG_CHANNEL=stderr
-QUEUE_CONNECTION=sync
+MAIL_MAILER=log
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+FILESYSTEM_DISK=local
 ```
 
-### 4. **Générer la Clé Application**
+### 4. Connecter le repository GitHub
+1. Allez sur https://railway.app/dashboard
+2. Connectez votre GitHub
+3. Sélectionnez le repository `NERE`
+4. Railway détecte le `Procfile` automatiquement
 
-Localement, générez votre clé Laravel :
+### 5. Déployer
 ```bash
-php artisan key:generate --show
+# Automatique à chaque push sur main
+git push origin main
+
+# Ou déploiement manuel
+railway up
 ```
 
-Copiez la sortie (ex: `base64:abc123...`) dans `APP_KEY` sur Railway.
-
-## ✅ **Avantages de PHP-FPM + Nginx**
-
-1. **🔒 Thread-Safe** - Élimine les erreurs Apache MPM
-2. **⚡ Performance** - Nginx + FPM est plus rapide qu'Apache
-3. **🛡️ Sécurité** - Meilleure isolation des processus
-4. **📊 Stabilité** - Supervisor gère les processus automatiquement
-5. **🔧 Railway-Optimized** - Conçu spécifiquement pour les containers
-
-## 🎯 **Status du Déploiement**
-
-### ✅ **Résolu Définitivement :**
-- ❌ ~~Apache MPM conflicts~~ → ✅ **Utilise PHP-FPM**
-- ❌ ~~Thread-safety issues~~ → ✅ **Processus séparés** 
-- ❌ ~~Configuration conflicts~~ → ✅ **Stack propre**
-- ❌ ~~Restart loops~~ → ✅ **Supervisor gestion**
-
-### 🚀 **Processus de Démarrage :**
-1. **Container démarre** → Supervisor lance PHP-FPM et Nginx
-2. **Connexion DB** → Attente intelligente PostgreSQL Railway
-3. **Migrations** → Exécution automatique des 32 tables  
-4. **Optimisation** → Cache Laravel (config/routes/views)
-5. **Service Ready** → Application accessible sur port 80
-
-## 🔧 **Troubleshooting**
-
-Si problème, vérifiez les logs Railway :
+## 📊 Vérifier le déploiement
 
 ```bash
-# Les logs devraient montrer :
-🚀 Starting Laravel ITSM with PHP-FPM + Nginx...
-✅ Database ready
-📊 Running database migrations...
-⚡ Optimizing Laravel...
-🌐 Starting PHP-FPM and Nginx...
+# Voir les logs en temps réel
+railway logs
+
+# Vérifier la connexion DB
+railway run php artisan tinker
+>>> DB::connection()->getPdo()
+
+# Voir tous les utilisateurs
+railway run php artisan tinker
+>>> App\Models\User::count()
 ```
 
-### 🛠️ **Support**
+## 🔗 Accéder à l'application
 
-- **Railway Logs** : Surveillez les messages de Supervisor
-- **Database** : PostgreSQL Railway auto-configuré
-- **Scaling** : Railway ajuste automatiquement les ressources
+- URL générée automatiquement par Railway
+- Format: `https://<project-name>-production.up.railway.app`
+- Admin: voir `.env` pour les credentials de test
 
-## 🎉 **Déployement Maintenant !**
+## 💡 Tips
 
-Cette solution PHP-FPM + Nginx va **fonctionner immédiatement** sur Railway. Plus d'erreurs Apache ! 💪
+- **Logs**: `railway logs` pour dépanner
+- **SSH**: `railway shell` pour accès à la machine
+- **Database**: `railway connect postgres` pour SQL shell
+- **Scale**: Augmenter les ressources via le dashboard
+
+## ✅ Checklist de production
+
+- [ ] APP_DEBUG=false
+- [ ] APP_ENV=production
+- [ ] APP_KEY généré
+- [ ] MAIL_MAILER configuré
+- [ ] HTTPS activé (Railway par défaut)
+- [ ] Migrations exécutées
+- [ ] Assets compilés (`npm run build`)
+- [ ] Sessions stockées en DB
+- [ ] Cache en DB
+- [ ] Logs archivés
+
+## 📞 Support
+
+- Docs: https://docs.railway.app
+- CLI Help: `railway help`
+- Discord: https://discord.gg/railway
+
+---
+
+Pour déploiement manuel complet, voir `DEPLOYMENT.md`

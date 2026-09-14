@@ -1,0 +1,95 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testing
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, pdo, pdo_pgsql, fileinfo
+        coverage: xdebug
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Cache composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-npm-
+
+    - name: Install dependencies
+      run: |
+        composer install --no-interaction --prefer-dist
+        npm install
+
+    - name: Copy .env
+      run: cp .env.example .env
+
+    - name: Generate APP_KEY
+      run: php artisan key:generate
+
+    - name: Build assets
+      run: npm run build
+
+    - name: Run migrations
+      run: php artisan migrate:fresh --seed
+      env:
+        DB_HOST: 127.0.0.1
+        DB_PORT: 5432
+        DB_DATABASE: testing
+        DB_USERNAME: postgres
+        DB_PASSWORD: password
+        DB_CONNECTION: pgsql
+
+    - name: Execute tests
+      run: php artisan test
+      env:
+        DB_HOST: 127.0.0.1
+        DB_PORT: 5432
+        DB_DATABASE: testing
+        DB_USERNAME: postgres
+        DB_PASSWORD: password
+        DB_CONNECTION: pgsql
+
+    - name: Upload coverage to Codecov
+      if: always()
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
