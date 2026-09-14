@@ -121,6 +121,8 @@ Route::middleware('auth')->group(function () {
         Route::get('rapports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
         Route::get('rapports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
         Route::get('rapports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
+        Route::get('rapports/analytics', [ReportController::class, 'analytics'])->name('reports.analytics');
+        Route::get('rapports/team-performance', [ReportController::class, 'teamPerformance'])->name('reports.team-performance');
     });
 
     // Phase 12 : Administration (réservé aux Admins)

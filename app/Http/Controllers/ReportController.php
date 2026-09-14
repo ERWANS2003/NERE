@@ -121,4 +121,126 @@ class ReportController extends Controller
             fclose($out);
         }, 'rapport-tickets.csv');
     }
-}
+
+    /**
+     * Get advanced analytics data for dashboard
+     */
+    public function analytics(Request $request)
+    {
+        $period = $request->query('period', '30'); // days
+        $startDate = now()->subDays($period);
+
+        // Trend data (tickets created over time)
+        $driver = DB::connection()->getDriverName();
+        $dateFormatExpr = match ($driver) {
+            'pgsql' => "DATE_TRUNC('day', created_at)::date",
+            'sqlite' => "date(created_at)",
+            default => "DATE(created_at)",
+        };
+
+        $trendData = Ticket::selectRaw("{$dateFormatExpr} as date, count(*) as count")
+            ->where('created_at', '>=', $startDate)
+            ->groupByRaw($dateFormatExpr)
+            ->orderBy('date')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'date' => $item->date,
+                    'count' => $item->count,
+                ];
+            });
+
+        // Priority distribution
+        $priorityDistribution = Ticket::where('created_at', '>=', $startDate)
+            ->join('ticket_priorities', 'tickets.priorite_id', '=', 'ticket_priorities.id')
+            ->groupBy('ticket_priorities.nom')
+            ->selectRaw('ticket_priorities.nom as label, count(*) as value')
+            ->get();
+
+        // Status distribution
+        $statusDistribution = Ticket::where('created_at', '>=', $startDate)
+            ->join('ticket_statuses', 'tickets.status_id', '=', 'ticket_statuses.id')
+            ->groupBy('ticket_statuses.nom')
+            ->selectRaw('ticket_statuses.nom as label, count(*) as value')
+            ->get();
+
+        // Category distribution
+        $categoryDistribution = Ticket::where('created_at', '>=', $startDate)
+            ->join('ticket_categories', 'tickets.ticket_category_id', '=', 'ticket_categories.id')
+            ->groupBy('ticket_categories.nom')
+            ->selectRaw('ticket_categories.nom as label, count(*) as value')
+            ->get();
+
+        // Resolution time trend
+        $diffHourExpr = match ($driver) {
+            'pgsql' => "EXTRACT(EPOCH FROM (date_resolution - created_at)) / 3600",
+            'sqlite' => "((julianday(date_resolution) - julianday(created_at)) * 24)",
+            default => "TIMESTAMPDIFF(HOUR, created_at, date_resolution)",
+        };
+
+        $resolutionTimeTrend = Ticket::selectRaw("{$dateFormatExpr} as date, AVG({$diffHourExpr}) as avg_hours, COUNT(*) as count")
+            ->whereNotNull('date_resolution')
+            ->where('created_at', '>=', $startDate)
+            ->groupByRaw($dateFormatExpr)
+            ->orderBy('date')
+            ->get();
+
+        // SLA compliance rate
+        $totalTickets = Ticket::where('created_at', '>=', $startDate)->count();
+        $slaCompliant = Ticket::where('created_at', '>=', $startDate)->where('sla_depasse', false)->count();
+        $slaComplianceRate = $totalTickets > 0 ? round(($slaCompliant / $totalTickets) * 100, 1) : 0;
+
+        return response()->json([
+            'trend' => $trendData,
+            'priority' => $priorityDistribution,
+            'status' => $statusDistribution,
+            'category' => $categoryDistribution,
+            'resolutionTime' => $resolutionTimeTrend,
+            'slaCompliance' => $slaComplianceRate,
+            'period' => $period,
+        ]);
+    }
+
+    /**
+     * Get team performance analytics
+     */
+    public function teamPerformance(Request $request)
+    {
+        $period = $request->query('period', '30');
+        $startDate = now()->subDays($period);
+
+        $driver = DB::connection()->getDriverName();
+        $diffHourExpr = match ($driver) {
+            'pgsql' => "EXTRACT(EPOCH FROM (tickets.date_resolution - tickets.created_at)) / 3600",
+            'sqlite' => "((julianday(tickets.date_resolution) - julianday(tickets.created_at)) * 24)",
+            default => "TIMESTAMPDIFF(HOUR, tickets.created_at, tickets.date_resolution)",
+        };
+
+        $performanceData = Ticket::join('users', 'tickets.assigned_to', '=', 'users.id')
+            ->selectRaw("
+                users.name as technician,
+                COUNT(*) as total_assigned,
+                SUM(CASE WHEN tickets.date_resolution IS NOT NULL THEN 1 ELSE 0 END) as resolved,
+                AVG({$diffHourExpr}) as avg_resolution_hours,
+                SUM(CASE WHEN tickets.sla_depasse = false THEN 1 ELSE 0 END) as sla_compliant
+            ")
+            ->where('tickets.created_at', '>=', $startDate)
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('resolved')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'technician' => $item->technician,
+                    'assigned' => $item->total_assigned,
+                    'resolved' => $item->resolved,
+                    'resolution_rate' => $item->total_assigned > 0 ? round(($item->resolved / $item->total_assigned) * 100, 1) : 0,
+                    'avg_resolution_hours' => round($item->avg_resolution_hours ?? 0, 1),
+                    'sla_compliance' => $item->total_assigned > 0 ? round(($item->sla_compliant / $item->total_assigned) * 100, 1) : 0,
+                ];
+            });
+
+        return response()->json([
+            'team_performance' => $performanceData,
+            'period' => $period,
+        ]);
+    }
