@@ -6,6 +6,7 @@ use App\Models\TicketTemplate;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class TicketTemplateController extends Controller
 {
@@ -14,10 +15,15 @@ class TicketTemplateController extends Controller
      */
     public function index()
     {
-        $templates = TicketTemplate::with(['category', 'priorite', 'creator'])
-            ->where('actif', true)
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        // Check if 'actif' column exists before using it
+        $query = TicketTemplate::with(['category', 'priorite', 'creator']);
+        
+        // Only filter by actif if the column exists
+        if (Schema::hasColumn('ticket_templates', 'actif')) {
+            $query->where('actif', true);
+        }
+        
+        $templates = $query->orderByDesc('created_at')->paginate(20);
 
         return view('templates.index', compact('templates'));
     }
