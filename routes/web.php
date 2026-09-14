@@ -63,6 +63,13 @@ Route::middleware('auth')->group(function () {
     Route::post('tickets/{ticket}/commentaires', [TicketController::class, 'storeComment'])->name('tickets.comments.store');
     Route::post('tickets/{ticket}/pieces-jointes', [TicketController::class, 'storeAttachment'])->name('tickets.attachments.store');
 
+    // Advanced Ticket Search
+    Route::get('search', [\App\Http\Controllers\TicketSearchController::class, 'index'])->name('search.index');
+    Route::get('search/quick', [\App\Http\Controllers\TicketSearchController::class, 'quickSearch'])->name('search.quick');
+    Route::post('search/save', [\App\Http\Controllers\TicketSearchController::class, 'save'])->name('search.save');
+    Route::post('search/load/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'load'])->name('search.load');
+    Route::delete('search/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'deleteSaved'])->name('search.delete');
+
     // Phase 4B : Kanban Board
     Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
     Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');

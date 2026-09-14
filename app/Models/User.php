@@ -91,6 +91,11 @@ class User extends Authenticatable
         return $this->hasMany(KnowledgeArticle::class, 'auteur_id');
     }
 
+    public function savedSearches(): HasMany
+    {
+        return $this->hasMany(SavedSearch::class);
+    }
+
     // Helpers permissions/rôles
     public function hasRole(string $slug): bool
     {
