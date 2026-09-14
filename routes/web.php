@@ -62,6 +62,10 @@ Route::middleware('auth')->group(function () {
     Route::post('tickets/{ticket}/refuser', [TicketController::class, 'refuser'])->name('tickets.reject');
     Route::post('tickets/{ticket}/commentaires', [TicketController::class, 'storeComment'])->name('tickets.comments.store');
     Route::post('tickets/{ticket}/pieces-jointes', [TicketController::class, 'storeAttachment'])->name('tickets.attachments.store');
+
+    // Phase 4B : Kanban Board
+    Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
+    Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');
     
     // Intelligence des Tickets - Suggestions automatiques
     Route::post('/tickets/intelligence/analyze', [\App\Http\Controllers\TicketIntelligenceController::class, 'analyzeNewTicket'])->name('tickets.intelligence.analyze');

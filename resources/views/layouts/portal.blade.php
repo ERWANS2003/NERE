@@ -127,11 +127,20 @@
                     @can('view_all_tickets')
                         <!-- All Tickets (Admin/Tech) -->
                         <a href="{{ route('tickets.index') }}" 
-                           class="sidebar-link">
+                           class="sidebar-link {{ request()->routeIs('tickets.index') && !request()->routeIs('kanban.*') ? 'active' : '' }}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
                             <span>Tous les tickets</span>
+                        </a>
+
+                        <!-- Kanban Board -->
+                        <a href="{{ route('kanban.index') }}" 
+                           class="sidebar-link {{ request()->routeIs('kanban.*') ? 'active' : '' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 4H5a2 2 0 00-2 2v14a2 2 0 002 2h4m0-21h10a2 2 0 012 2v14a2 2 0 01-2 2m-10-21v21m0-21H9m10 0h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m0-21v21"></path>
+                            </svg>
+                            <span>Tableau Kanban</span>
                         </a>
                     @endcan
 
