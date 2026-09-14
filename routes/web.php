@@ -89,7 +89,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Phase 8 : Gestion des actifs
-    Route::resource('actifs', AssetController::class)->only(['index', 'store'])->names('assets');
+    Route::resource('actifs', AssetController::class)->names('assets');
     Route::post('actifs/{asset}/lier-ticket', [AssetController::class, 'lierTicket'])->name('assets.link-ticket');
 
     // Phase 9 : Base de connaissances

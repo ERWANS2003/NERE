@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetType;
+use App\Models\Departement;
+use App\Models\Site;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AssetController extends Controller
 {
-    // Phase 8 : Gestion des actifs
+    /**
+     * Display list of assets
+     */
     public function index(Request $request)
     {
         $perPage = in_array((int) $request->query('per_page'), [10, 20, 25, 50, 100], true)
@@ -35,29 +41,111 @@ class AssetController extends Controller
         return view('assets.index', compact('assets', 'perPage'));
     }
 
+    /**
+     * Show create form
+     */
+    public function create()
+    {
+        $types = AssetType::orderBy('nom')->get();
+        $departements = Departement::where('actif', true)->orderBy('nom')->get();
+        $sites = Site::orderBy('nom')->get();
+        $users = User::where('actif', true)->orderBy('name')->get();
+
+        return view('assets.create', compact('types', 'departements', 'sites', 'users'));
+    }
+
+    /**
+     * Store asset
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'asset_type_id' => 'required|exists:asset_types,id',
             'nom' => 'required|string|max:255',
             'code_inventaire' => 'required|string|unique:assets,code_inventaire',
-            'marque' => 'nullable|string',
-            'modele' => 'nullable|string',
-            'numero_serie' => 'nullable|string',
+            'marque' => 'nullable|string|max:100',
+            'modele' => 'nullable|string|max:100',
+            'numero_serie' => 'nullable|string|max:100',
             'user_id' => 'nullable|exists:users,id',
             'departement_id' => 'nullable|exists:departements,id',
             'site_id' => 'nullable|exists:sites,id',
             'statut' => 'required|in:En stock,En service,En maintenance,Hors service,Réformé',
             'date_acquisition' => 'nullable|date',
             'date_garantie_fin' => 'nullable|date',
+            'description' => 'nullable|string',
+            'cout' => 'nullable|numeric|min:0',
         ]);
 
         $asset = Asset::create($data);
 
-        return redirect()->route('assets.index')->with('success', "Actif {$asset->code_inventaire} créé.");
+        return redirect()->route('assets.show', $asset)->with('success', "Actif {$asset->code_inventaire} créé avec succès.");
     }
 
-    // Lier un actif à un ticket
+    /**
+     * Show asset details
+     */
+    public function show(Asset $asset)
+    {
+        $asset->load(['type', 'utilisateur', 'departement', 'site', 'tickets']);
+
+        return view('assets.show', compact('asset'));
+    }
+
+    /**
+     * Show edit form
+     */
+    public function edit(Asset $asset)
+    {
+        $asset->load(['type', 'utilisateur', 'departement', 'site']);
+        $types = AssetType::orderBy('nom')->get();
+        $departements = Departement::where('actif', true)->orderBy('nom')->get();
+        $sites = Site::orderBy('nom')->get();
+        $users = User::where('actif', true)->orderBy('name')->get();
+
+        return view('assets.edit', compact('asset', 'types', 'departements', 'sites', 'users'));
+    }
+
+    /**
+     * Update asset
+     */
+    public function update(Request $request, Asset $asset)
+    {
+        $data = $request->validate([
+            'asset_type_id' => 'required|exists:asset_types,id',
+            'nom' => 'required|string|max:255',
+            'code_inventaire' => 'required|string|unique:assets,code_inventaire,' . $asset->id,
+            'marque' => 'nullable|string|max:100',
+            'modele' => 'nullable|string|max:100',
+            'numero_serie' => 'nullable|string|max:100',
+            'user_id' => 'nullable|exists:users,id',
+            'departement_id' => 'nullable|exists:departements,id',
+            'site_id' => 'nullable|exists:sites,id',
+            'statut' => 'required|in:En stock,En service,En maintenance,Hors service,Réformé',
+            'date_acquisition' => 'nullable|date',
+            'date_garantie_fin' => 'nullable|date',
+            'description' => 'nullable|string',
+            'cout' => 'nullable|numeric|min:0',
+        ]);
+
+        $asset->update($data);
+
+        return redirect()->route('assets.show', $asset)->with('success', 'Actif mis à jour avec succès.');
+    }
+
+    /**
+     * Delete asset
+     */
+    public function destroy(Asset $asset)
+    {
+        $code = $asset->code_inventaire;
+        $asset->delete();
+
+        return redirect()->route('assets.index')->with('success', "Actif {$code} supprimé.");
+    }
+
+    /**
+     * Link asset to ticket
+     */
     public function lierTicket(Request $request, Asset $asset)
     {
         $request->validate(['ticket_id' => 'required|exists:tickets,id']);
