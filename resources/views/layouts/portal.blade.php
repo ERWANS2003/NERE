@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+        <meta name="api-token" content="{{ auth()->user()->createToken('web')->plainTextToken }}">
+    @endauth
     <title>@yield('titre', 'Portail') · ITSM Néré Mining</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo-nere-mining.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -215,6 +218,9 @@
                     </div>
                     
                     <div class="flex items-center gap-3">
+                        <!-- Notification Bell -->
+                        @include('partials.notification-bell')
+                        
                         <!-- Quick Actions -->
                         <a href="{{ route('tickets.create') }}" 
                            class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition">

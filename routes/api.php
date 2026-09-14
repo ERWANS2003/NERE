@@ -15,6 +15,14 @@ Route::post('auth/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'user']);
+    
+    // Notifications API
+    Route::get('dashboard-notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('dashboard-notifications/{notification}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::post('dashboard-notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+    Route::delete('dashboard-notifications/{notification}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy']);
+    Route::delete('dashboard-notifications', [\App\Http\Controllers\Api\NotificationController::class, 'deleteAll']);
+    
     Route::get('notifications', [AuthController::class, 'notifications']);
     Route::patch('notifications/{notification}/read', [AuthController::class, 'markNotificationRead']);
 
