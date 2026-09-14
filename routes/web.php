@@ -66,6 +66,13 @@ Route::middleware('auth')->group(function () {
     // Phase 4B : Kanban Board
     Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
     Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');
+
+    // Phase 9 : SLA Management
+    Route::resource('sla', \App\Http\Controllers\SlaController::class)->names('sla');
+    Route::post('sla/tickets/{ticket}/pause', [\App\Http\Controllers\SlaController::class, 'pauseTicket'])->name('sla.pause-ticket');
+    Route::post('sla/tickets/{ticket}/resume', [\App\Http\Controllers\SlaController::class, 'resumeTicket'])->name('sla.resume-ticket');
+    Route::post('sla/tickets/{ticket}/escalate', [\App\Http\Controllers\SlaController::class, 'escalateTicket'])->name('sla.escalate-ticket');
+    Route::get('sla/tickets/{ticket}/progress', [\App\Http\Controllers\SlaController::class, 'getTicketProgress'])->name('sla.ticket-progress');
     
     // Intelligence des Tickets - Suggestions automatiques
     Route::post('/tickets/intelligence/analyze', [\App\Http\Controllers\TicketIntelligenceController::class, 'analyzeNewTicket'])->name('tickets.intelligence.analyze');
