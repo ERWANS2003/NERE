@@ -16,31 +16,50 @@
             theme: {
                 extend: {
                     colors: {
+                        // Néré Mining Brand Colors
                         primary: {
-                            50: '#fef8e7',
-                            100: '#fdedc3',
-                            200: '#fbda8a',
-                            300: '#f9c247',
-                            400: '#f7a614',
-                            500: '#e18a07',
-                            600: '#c26803',
-                            700: '#9b4906',
-                            800: '#7f390c',
-                            900: '#6c2f0d',
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
                         },
+                        // Enhanced mining/charcoal theme
                         dark: {
-                            50: '#f8f9fa',
-                            100: '#e9ecef',
-                            200: '#dee2e6',
-                            300: '#ced4da',
-                            400: '#adb5bd',
-                            500: '#6c757d',
-                            600: '#495057',
-                            700: '#343a40',
-                            800: '#212529',
-                            900: '#0d1117',
-                            950: '#010409',
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        },
+                        // Mining accent colors
+                        ore: {
+                            light: '#fbbf24',
+                            main: '#f59e0b',
+                            dark: '#d97706',
+                        },
+                        slate: {
+                            main: '#1f2937',
                         }
+                    },
+                    // Enhanced font
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    },
+                    // Box shadows for mining theme
+                    boxShadow: {
+                        'ore-glow': '0 0 20px rgba(245, 158, 11, 0.15)',
                     }
                 }
             }
@@ -90,17 +109,15 @@
         <aside class="w-64 bg-dark-950 border-r border-dark-800 flex flex-col" x-data="{ open: true }">
             <!-- Logo -->
             <div class="p-6 border-b border-dark-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <img src="{{ asset('images/logo-nere-mining.png') }}" alt="Néré Mining" class="w-8 h-8 object-contain">
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-white">Néré Mining</h1>
-                        <p class="text-xs text-gray-400">ITSM Platform</p>
+                        <h1 class="text-base font-bold text-white leading-tight">ITSM</h1>
+                        <p class="text-xs text-primary-300 font-semibold">Néré Mining</p>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Navigation -->
