@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\TicketHistory;
+use App\Exports\TicketsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -64,7 +66,7 @@ class ReportController extends Controller
             ->limit(50)
             ->get();
 
-        return view('reports.index', compact(
+        return view('reports.dashboard', compact(
             'ticketsParMois',
             'ticketsParSite',
             'ticketsParCategorie',
@@ -78,12 +80,24 @@ class ReportController extends Controller
 
     public function exportPdf()
     {
-        abort(501, 'Installer barryvdh/laravel-dompdf pour activer cet export.');
+        $tickets = Ticket::with(['categorie', 'priorite', 'statut', 'site', 'assigned_to'])->get();
+
+        $data = [
+            'tickets' => $tickets,
+            'generatedAt' => now()->format('d M Y H:i'),
+            'totalTickets' => $tickets->count(),
+        ];
+
+        $pdf = \PDF::loadView('reports.pdf-export', $data);
+        return $pdf->download('rapport-tickets-' . now()->format('Y-m-d') . '.pdf');
     }
 
     public function exportExcel()
     {
-        abort(501, 'Installer maatwebsite/excel pour activer cet export.');
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TicketsExport(),
+            'rapport-tickets-' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 
     public function exportCsv()
