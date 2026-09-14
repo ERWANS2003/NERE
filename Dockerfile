@@ -36,6 +36,9 @@ RUN rm -rf /etc/nginx/sites-enabled/* && \
 }' > /etc/nginx/sites-available/default && \
     ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
+# Configure PHP for error display
+RUN echo 'display_errors = On\nerror_reporting = E_ALL\nlog_errors = On' > /usr/local/etc/php/conf.d/errors.ini
+
 # Configure PHP-FPM
 RUN echo '[www]\n\
 user = www-data\n\
@@ -48,7 +51,10 @@ pm.max_children = 10\n\
 pm.start_servers = 2\n\
 pm.min_spare_servers = 1\n\
 pm.max_spare_servers = 3\n\
-catch_workers_output = yes' > /usr/local/etc/php-fpm.d/www.conf
+catch_workers_output = yes\n\
+php_flag[display_errors] = on\n\
+php_admin_value[error_log] = /dev/stderr\n\
+php_admin_flag[log_errors] = on' > /usr/local/etc/php-fpm.d/www.conf
 
 # Configure Supervisor
 RUN echo '[supervisord]\n\
@@ -121,12 +127,12 @@ if [ -n "$DATABASE_URL" ]; then
     sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env
     sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" /var/www/html/.env
     
-# Enable debug mode to see errors
+    # Enable debug mode to see errors in browser
     sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" /var/www/html/.env
     
     # Set secure HTTPS URL for production
     sed -i "s|^APP_URL=.*|APP_URL=https://adorable-patience-production-1697.up.railway.app|" /var/www/html/.env
-    sed -i "s|^APP_ENV=.*|APP_ENV=production|" /var/www/html/.env
+    sed -i "s|^APP_ENV=.*|APP_ENV=local|" /var/www/html/.env
 fi
 
 echo ""
