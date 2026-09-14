@@ -31,7 +31,9 @@ class KnowledgeArticleController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        return view('knowledge.index', compact('articles', 'perPage'));
+        $categories = \App\Models\TicketCategory::where('actif', true)->orderBy('nom')->get();
+
+        return view('knowledge.index', compact('articles', 'perPage', 'categories'));
     }
 
     // Utilisé en AJAX avant la création d'un ticket pour suggérer des articles pertinents
