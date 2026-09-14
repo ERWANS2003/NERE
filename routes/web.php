@@ -70,6 +70,10 @@ Route::middleware('auth')->group(function () {
     Route::post('search/load/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'load'])->name('search.load');
     Route::delete('search/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'deleteSaved'])->name('search.delete');
 
+    // Ticket Templates
+    Route::resource('templates', \App\Http\Controllers\TicketTemplateController::class)->names('templates');
+    Route::get('templates/{template}/use', [\App\Http\Controllers\TicketTemplateController::class, 'use'])->name('templates.use');
+
     // Phase 4B : Kanban Board
     Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
     Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');
