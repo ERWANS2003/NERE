@@ -1,30 +1,26 @@
 #!/bin/bash
-set -e
 
-echo "🚀 Starting ITSM deployment build..."
+# Build script for Railway deployment
+echo "=== Building application ==="
 
-# Install PHP dependencies
-echo "📦 Installing PHP dependencies..."
-composer install --no-dev --no-interaction --prefer-dist
+# Install composer dependencies
+echo "Installing PHP dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction
 
-# Generate app key if not set
-if [ -z "$APP_KEY" ]; then
-    echo "🔑 Generating application key..."
-    php artisan key:generate --force
-fi
-
-# Install Node dependencies
-echo "📦 Installing Node dependencies..."
-npm install --omit=dev
-
-# Build frontend assets
-echo "🎨 Building frontend assets..."
+# Install npm dependencies and build assets
+echo "Installing and building frontend assets..."
+npm install
 npm run build
 
-# Cache config and views
-echo "💾 Caching configuration..."
-php artisan config:cache
-php artisan view:cache
-php artisan event:cache
+# Fix permissions
+echo "Setting permissions..."
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
 
-echo "✅ Build completed successfully!"
+# Clear caches
+echo "Clearing caches..."
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+
+echo "=== Build complete ==="

@@ -23,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Ensure storage directories have proper permissions
+        if (file_exists(storage_path())) {
+            @chmod(storage_path(), 0775);
+            @chmod(storage_path('logs'), 0775);
+            @chmod(storage_path('app'), 0775);
+        }
+        if (file_exists(base_path('bootstrap/cache'))) {
+            @chmod(base_path('bootstrap/cache'), 0775);
+        }
+
         // Force HTTPS on production (Railway)
         if (env('APP_ENV') === 'production') {
             URL::forceScheme('https');
