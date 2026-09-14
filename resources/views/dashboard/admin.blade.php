@@ -101,7 +101,7 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Tickets -->
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center border border-blue-600/30">
                     <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,12 +110,12 @@
                 </div>
                 <span class="text-xs text-gray-500">Total</span>
             </div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['total_tickets'] }}</div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['total_tickets'] ?? 0 }}</div>
             <div class="text-sm text-gray-400">Tickets système</div>
         </div>
 
         <!-- Tickets Ouverts -->
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-primary-600/20 flex items-center justify-center border border-primary-600/30">
                     <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,12 +124,12 @@
                 </div>
                 <span class="text-xs text-gray-500">Actifs</span>
             </div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_ouverts'] }}</div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_ouverts'] ?? 0 }}</div>
             <div class="text-sm text-gray-400">Tickets ouverts</div>
         </div>
 
         <!-- Critiques -->
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center border border-red-600/30">
                     <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,12 +138,12 @@
                 </div>
                 <span class="text-xs text-gray-500">Urgent</span>
             </div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_critiques'] }}</div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['tickets_critiques'] ?? 0 }}</div>
             <div class="text-sm text-gray-400">Tickets critiques</div>
         </div>
 
         <!-- Users -->
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center border border-green-600/30">
                     <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,14 +152,14 @@
                 </div>
                 <span class="text-xs text-gray-500">Actifs</span>
             </div>
-            <div class="text-3xl font-bold text-white mb-1">{{ $stats['utilisateurs_actifs'] }}</div>
+            <div class="text-3xl font-bold text-white mb-1">{{ $stats['utilisateurs_actifs'] ?? 0 }}</div>
             <div class="text-sm text-gray-400">Utilisateurs</div>
         </div>
     </div>
 
     <!-- Additional Stats -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-cyan-600/20 flex items-center justify-center border border-cyan-600/30">
                     <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,13 +167,13 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-white">{{ $stats['techniciens_disponibles'] }}</div>
+                    <div class="text-2xl font-bold text-white">{{ $stats['techniciens_disponibles'] ?? 0 }}</div>
                     <div class="text-sm text-gray-400">Techniciens disponibles</div>
                 </div>
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-orange-600/20 flex items-center justify-center border border-orange-600/30">
                     <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +181,7 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="text-2xl font-bold text-white">{{ $stats['sla_depasse'] }}</div>
+                    <div class="text-2xl font-bold text-white">{{ $stats['sla_depasse'] ?? 0 }}</div>
                     <div class="text-sm text-gray-400">SLA dépassés</div>
                 </div>
             </div>
@@ -313,11 +313,4 @@
 
 </div>
 
-@push('styles')
-<style>
-.stat-card {
-    @apply bg-dark-800 rounded-xl p-6 border border-dark-700;
-}
-</style>
-@endpush
 @endsection

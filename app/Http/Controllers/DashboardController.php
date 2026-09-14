@@ -31,11 +31,13 @@ class DashboardController extends Controller
     {
         try {
             $stats = [
-                'total_tickets'       => Ticket::count(),
-                'tickets_ouverts'     => Ticket::whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
-                'tickets_critiques'   => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 3))
-                                               ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
-                'utilisateurs_actifs' => User::where('actif', true)->count(),
+                'total_tickets'           => Ticket::count(),
+                'tickets_ouverts'         => Ticket::whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+                'tickets_critiques'       => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 3))
+                                                   ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+                'utilisateurs_actifs'     => User::where('actif', true)->count(),
+                'techniciens_disponibles' => User::where('est_technicien', true)->where('actif', true)->where('disponible', true)->count(),
+                'sla_depasse'             => Ticket::where('sla_depasse', true)->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
             ];
 
             $recentTickets = Ticket::with(['statut', 'priorite', 'demandeur'])
