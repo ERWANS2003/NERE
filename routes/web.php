@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentManagementController;
 use App\Http\Controllers\KnowledgeArticleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SafetyIncidentController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -96,6 +97,12 @@ Route::middleware('auth')->group(function () {
     Route::get('base-connaissances/suggestions', [KnowledgeArticleController::class, 'suggerer'])->name('knowledge.suggest');
     Route::post('base-connaissances', [KnowledgeArticleController::class, 'store'])->name('knowledge.store');
     Route::get('base-connaissances/{article}', [KnowledgeArticleController::class, 'show'])->name('knowledge.show');
+
+    // Phase 10 : Gestion Incidents Sécurité
+    Route::resource('incidents', SafetyIncidentController::class);
+    Route::post('incidents/{incident}/assign-investigation', [SafetyIncidentController::class, 'assignInvestigation'])->name('incidents.assign-investigation');
+    Route::post('incidents/{incident}/resolve', [SafetyIncidentController::class, 'resolve'])->name('incidents.resolve');
+    Route::get('incidents-statistics', [SafetyIncidentController::class, 'statistics'])->name('incidents.statistics');
 
     // Phase 11 : Rapports (Réservé à la DSI, aux Directeurs et Admins - exclus pour demandeurs et techniciens)
     Route::middleware('role:dsi,directeur_departement,admin')->group(function () {
