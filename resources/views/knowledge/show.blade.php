@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.portal')
 
 @section('titre', $article->titre)
 @section('styles') @include('partials.module-styles') @endsection

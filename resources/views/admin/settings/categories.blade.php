@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.portal')
 @section('titre','Paramètres · Catégories')
 @section('styles') @include('partials.module-styles') @endsection
 @section('contenu')

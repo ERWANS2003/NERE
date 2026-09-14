@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.portal')
 
 @section('titre', 'Gestion des Actifs (CMDB)')
 @section('styles') @include('partials.module-styles') @endsection
