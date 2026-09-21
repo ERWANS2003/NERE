@@ -328,6 +328,46 @@ php artisan sla:verifier
 
 ## 11. HTTPS et réseau interne
 
+### Utiliser l'application mobile sur le réseau local
+
+L'application mobile ne doit pas utiliser `127.0.0.1` pour joindre Windows Server depuis un téléphone réel. Cette adresse désigne le téléphone lui-même. Utiliser l'adresse IPv4 locale du serveur, par exemple `192.168.1.50`.
+
+Dans le dossier `mobile`, créer un fichier `.env` :
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://192.168.1.50/api
+```
+
+Lancer ensuite Expo :
+
+```powershell
+Set-Location C:\Sites\itsm-nere-mining\mobile
+npm install
+npx expo start
+```
+
+Correspondance des adresses :
+
+- **Téléphone réel sur le Wi-Fi local** : `http://IP_DU_SERVEUR/api`, par exemple `http://192.168.1.50/api`.
+- **Émulateur Android** : `http://10.0.2.2/api` si Laravel écoute sur le port HTTP 80 d'IIS. Pour `php artisan serve --host=0.0.0.0 --port=8000`, utiliser `http://10.0.2.2:8000/api`.
+- **Simulateur iOS** : `http://127.0.0.1/api` peut fonctionner si le serveur tourne sur le même ordinateur.
+
+Autoriser le trafic HTTP temporaire sur le port utilisé par IIS ou Laravel :
+
+```powershell
+New-NetFirewallRule -DisplayName 'ITSM LAN HTTP' -Direction Inbound -Protocol TCP -LocalPort 80 -Action Allow -Profile Private
+```
+
+Pour un téléphone réel, le serveur et le téléphone doivent être sur le même réseau privé. Tester depuis le téléphone avec l'URL `http://IP_DU_SERVEUR/up`. En production interne, préférer HTTPS et remplacer l'URL mobile par `https://itsm-mine.local/api` avec un certificat reconnu par les appareils.
+
+L'API utilise Sanctum avec des tokens Bearer. Le mobile appelle donc l'API ainsi :
+
+```text
+Authorization: Bearer <token>
+```
+
+Le code mobile gère déjà la connexion, les tickets, les notifications et le catalogue. Il faut reconstruire ou redémarrer Expo après chaque changement de `EXPO_PUBLIC_API_URL`.
+
 Pour un usage interne sérieux, utiliser un certificat TLS d'entreprise ou un certificat généré par la PKI interne. Dans IIS :
 
 1. Ajouter un binding `https` sur le port `443`.
