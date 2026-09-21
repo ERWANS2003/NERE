@@ -1,64 +1,12 @@
 @extends('layouts.portal')
 
-@section('titre', 'Portail de services')
-@section('sous-titre', 'Créez et suivez vos demandes')
+@section('titre', 'Mon espace')
+@section('sous-titre', 'Demandes, services et suivi personnel')
 
 @section('contenu')
-<div class="p-6 space-y-6">
-
-    <!-- Actions rapides -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <a href="{{ route('tickets.create', ['type' => 'demande']) }}"
-           class="flex items-center gap-4 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-primary-600 rounded-xl p-5 transition group">
-            <div class="w-12 h-12 rounded-xl bg-primary-600/20 border border-primary-600/30 flex items-center justify-center group-hover:bg-primary-600/30">
-                <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-            </div>
-            <div>
-                <p class="font-semibold text-white">Créer une demande</p>
-                <p class="text-sm text-gray-400">Demande de service, accès, matériel…</p>
-            </div>
-        </a>
-
-        <a href="{{ route('tickets.create', ['type' => 'incident']) }}"
-           class="flex items-center gap-4 bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-red-600 rounded-xl p-5 transition group">
-            <div class="w-12 h-12 rounded-xl bg-red-600/20 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/30">
-                <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="font-semibold text-white">Signaler un incident</p>
-                <p class="text-sm text-gray-400">Panne, problème urgent, dysfonctionnement…</p>
-            </div>
-        </a>
-    </div>
-
-    <!-- Mes tickets récents -->
-    <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">Mes demandes récentes</h3>
-            <a href="{{ route('tickets.index') }}" class="text-sm text-primary-400 hover:text-primary-300">Voir tout →</a>
-        </div>
-        <div class="space-y-3">
-            @forelse($myTickets as $ticket)
-                <a href="{{ route('tickets.show', $ticket) }}"
-                   class="flex items-center justify-between p-3 rounded-lg bg-dark-900 hover:bg-dark-700 border border-dark-700 hover:border-primary-600 transition">
-                    <div class="min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ $ticket->titre }}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">{{ $ticket->reference }} · {{ $ticket->created_at->diffForHumans() }}</p>
-                    </div>
-                    <span class="ml-3 text-xs px-2 py-1 rounded-full flex-shrink-0"
-                          style="background: {{ $ticket->statut?->couleur ?? '#374151' }}33; color: {{ $ticket->statut?->couleur ?? '#9ca3af' }}">
-                        {{ $ticket->statut?->nom ?? 'En cours' }}
-                    </span>
-                </a>
-            @empty
-                <p class="text-center text-gray-500 py-6">Aucune demande pour l'instant.</p>
-            @endforelse
-        </div>
-    </div>
-
+<div class="p-6 lg:p-8 space-y-7">
+    <section class="flex flex-col lg:flex-row lg:items-end justify-between gap-5"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-primary-700 mb-2">Espace collaborateur</p><h1 class="text-3xl lg:text-4xl font-bold tracking-tight text-gray-900">Bonjour, {{ auth()->user()->name }}</h1><p class="text-gray-500 mt-2">Que souhaitez-vous faire aujourd'hui ?</p></div><a href="{{ route('tickets.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition"><span class="text-lg leading-none">+</span> Créer une demande</a></section>
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4"><a href="{{ route('tickets.create', ['type' => 'demande']) }}" class="group bg-[#17211f] rounded-xl p-5 text-white shadow-sm hover:-translate-y-0.5 transition"><div class="flex items-center justify-between"><span class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-[#e2a05b]">↗</span><span class="text-white/40 group-hover:text-[#e2a05b]">→</span></div><h2 class="font-bold text-lg mt-5">Demander un service</h2><p class="text-sm text-white/60 mt-2">Accès, équipement, assistance ou ressource interne.</p></a><a href="{{ route('tickets.create', ['type' => 'incident']) }}" class="group bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:border-red-300 transition"><div class="flex items-center justify-between"><span class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-700">!</span><span class="text-gray-300 group-hover:text-red-700">→</span></div><h2 class="font-bold text-lg text-gray-900 mt-5">Signaler un incident</h2><p class="text-sm text-gray-500 mt-2">Panne, risque opérationnel ou événement à traiter.</p></a><a href="{{ route('services.index') }}" class="group bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:border-[#b96b2c] transition"><div class="flex items-center justify-between"><span class="w-10 h-10 rounded-lg bg-[#f7eee7] flex items-center justify-center text-[#8f4b1d]">≡</span><span class="text-gray-300 group-hover:text-[#b96b2c]">→</span></div><h2 class="font-bold text-lg text-gray-900 mt-5">Parcourir le catalogue</h2><p class="text-sm text-gray-500 mt-2">Accéder aux services structurés de la mine.</p></a></section>
+    <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"><div class="flex items-center justify-between px-5 sm:px-6 py-5 border-b border-gray-200"><div><h2 class="font-bold text-gray-900">Mes demandes récentes</h2><p class="text-sm text-gray-500 mt-1">Suivez les dernières évolutions de vos tickets.</p></div><a href="{{ route('tickets.index') }}" class="text-sm font-semibold text-primary-700">Voir toutes</a></div>@forelse($myTickets as $ticket)<a href="{{ route('tickets.show', $ticket) }}" class="flex items-center justify-between gap-4 px-5 sm:px-6 py-4 hover:bg-gray-50 transition"><div class="min-w-0"><p class="font-semibold text-gray-800 truncate">{{ $ticket->titre }}</p><p class="text-xs text-gray-500 mt-1">{{ $ticket->reference }} · {{ $ticket->created_at->diffForHumans() }}</p></div><span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0" style="background:{{ $ticket->statut?->couleur ?? '#71807b' }}18;color:{{ $ticket->statut?->couleur ?? '#53615c' }}">{{ $ticket->statut?->nom ?? 'En cours' }}</span></a>@empty<div class="px-6 py-14 text-center"><p class="font-semibold text-gray-800">Aucune demande pour le moment.</p><p class="text-sm text-gray-500 mt-1">Votre prochaine demande apparaîtra ici.</p></div>@endforelse</section>
 </div>
 @endsection

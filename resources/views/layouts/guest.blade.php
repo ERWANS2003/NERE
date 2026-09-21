@@ -9,18 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --graphite: #1b1f23;
-            --graphite-soft: #262b31;
-            --graphite-line: #383f47;
-            --ivoire: #f7f5f1;
-            --ambre: #e0a52f;
-            --ambre-clair: #ffc247;
-            --vert-actif: #3fa66b;
-            --rouge-alerte: #d9362e;
-            --texte-clair: #eceae6;
-            --texte-att: #a9aeb4;
-        }
+        :root { --ink: #17211f; --ink-soft: #22302d; --paper: #f4f2ed; --copper: #b96b2c; --copper-light: #e2a05b; --teal: #176b67; --muted: #71807b; --line: #e0e3de; }
 
         * { box-sizing: border-box; }
 
@@ -28,14 +17,15 @@
             margin: 0;
             height: 100%;
             font-family: 'Inter', system-ui, sans-serif;
-            color: var(--texte-clair);
-            background: var(--graphite);
+            color: var(--ink);
+            background: var(--paper);
         }
 
         .ecran {
             min-height: 100vh;
             display: grid;
-            grid-template-columns: 1.05fr 1fr;
+            grid-template-columns: minmax(420px, .9fr) minmax(420px, 1.1fr);
+            background: var(--paper);
         }
 
         @media (max-width: 860px) {
@@ -46,13 +36,13 @@
         /* ---------- Panneau gauche : identité / statut des sites ---------- */
         .panneau-marque {
             position: relative;
-            background: var(--graphite);
+            background: var(--ink);
             padding: 3.5rem 3.25rem;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             overflow: hidden;
-            border-right: 1px solid var(--graphite-line);
+            border-right: 1px solid rgba(255,255,255,.1);
         }
 
         .panneau-marque::before {
@@ -60,8 +50,8 @@
             position: absolute;
             inset: 0;
             background-image:
-                radial-gradient(circle at 18% 15%, rgba(255,194,71,0.18), transparent 42%),
-                repeating-radial-gradient(circle at 78% 68%, transparent 0, transparent 26px, rgba(255,255,255,0.028) 27px, transparent 28px, transparent 54px);
+                radial-gradient(circle at 18% 15%, rgba(226,160,91,.22), transparent 42%),
+                repeating-radial-gradient(circle at 78% 68%, transparent 0, transparent 26px, rgba(255,255,255,.035) 27px, transparent 28px, transparent 54px);
             background-size: 150% 150%, 135% 135%;
             animation: mouvement-fond 14s ease-in-out infinite alternate;
             pointer-events: none;
@@ -72,8 +62,8 @@
             position: absolute;
             inset: -20%;
             background:
-                radial-gradient(ellipse at 18% 30%, rgba(255,194,71,0.25), transparent 30%),
-                radial-gradient(ellipse at 82% 75%, rgba(217,54,46,0.16), transparent 32%);
+                radial-gradient(ellipse at 18% 30%, rgba(185,107,44,.22), transparent 30%),
+                radial-gradient(ellipse at 82% 75%, rgba(23,107,103,.2), transparent 32%);
             background-size: 125% 125%, 140% 140%;
             opacity: 0.72;
             animation: halo-fond 9s ease-in-out infinite alternate;
@@ -119,7 +109,7 @@
         }
 
         .accroche p {
-            color: var(--texte-att);
+            color: rgba(239,242,237,.68);
             font-size: 0.96rem;
             line-height: 1.6;
             margin: 0;
@@ -132,8 +122,8 @@
 
         /* ---------- Panneau droit : formulaire ---------- */
         .panneau-formulaire {
-            background: var(--ivoire);
-            color: var(--graphite);
+            background: var(--paper);
+            color: var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -142,7 +132,7 @@
 
         .conteneur-formulaire {
             width: 100%;
-            max-width: 380px;
+            max-width: 430px;
         }
 
         .marque-mobile {
@@ -157,11 +147,11 @@
         .pied-formulaire {
             margin-top: 2.25rem;
             font-size: 0.78rem;
-            color: #8a8579;
+            color: var(--muted);
             text-align: center;
         }
 
-        .pied-formulaire a { color: #6b6558; }
+        .pied-formulaire a { color: var(--copper); }
     </style>
 </head>
 <body>
