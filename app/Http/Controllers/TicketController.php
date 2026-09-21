@@ -57,13 +57,21 @@ class TicketController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        $visibleTickets = $this->ticketsVisibles();
+        $ticketStats = [
+            'total' => (clone $visibleTickets)->count(),
+            'ouverts' => (clone $visibleTickets)->whereHas('statut', fn($q) => $q->where('est_final', false))->count(),
+            'en_cours' => (clone $visibleTickets)->whereHas('statut', fn($q) => $q->whereIn('slug', ['assigne', 'en_cours']))->count(),
+            'urgents' => (clone $visibleTickets)->whereHas('priorite', fn($q) => $q->where('niveau', '>=', 3))->whereHas('statut', fn($q) => $q->where('est_final', false))->count(),
+        ];
+
         $statuts = TicketStatus::orderBy('ordre')->get();
         $priorites = TicketPriority::orderByDesc('niveau')->get();
         $categories = TicketCategory::where('actif', true)->orderBy('nom')->get();
         $departements = Departement::where('actif', true)->orderBy('nom')->get();
         $sites = Site::orderBy('nom')->get();
 
-        return view('tickets.index', compact('tickets', 'statuts', 'priorites', 'categories', 'departements', 'sites', 'perPage'));
+        return view('tickets.index', compact('tickets', 'statuts', 'priorites', 'categories', 'departements', 'sites', 'perPage', 'ticketStats'));
     }
 
     public function create(Request $request)

@@ -203,25 +203,6 @@
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-        /* Sidebar links - replaces @apply which breaks with CDN Tailwind */
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: #d1d5db;
-            border-radius: 0.5rem;
-            transition: all 0.15s;
-            text-decoration: none;
-        }
-        .sidebar-link:hover {
-            background-color: #212529;
-            color: white;
-        }
-        .sidebar-link.active {
-            background-color: #c26803;
-            color: white;
-        }
     </style>
     @stack('styles')
 </head>
@@ -322,6 +303,24 @@
                         </svg>
                         <span>Base de connaissances</span>
                     </a>
+
+                    <a href="{{ route('services.index') }}"
+                       class="sidebar-link {{ request()->routeIs('services.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10"></path>
+                        </svg>
+                        <span>Catalogue de services</span>
+                    </a>
+
+                    @if(auth()->user()->hasPermission('safety.view'))
+                        <a href="{{ route('safety.index') }}"
+                           class="sidebar-link {{ request()->routeIs('safety.*') ? 'active' : '' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l8 4v5c0 4.8-3.4 8.7-8 10-4.6-1.3-8-5.2-8-10V7l8-4zM12 8v4m0 3h.01"></path>
+                            </svg>
+                            <span>HSE & conformité</span>
+                        </a>
+                    @endif
 
                     @hasRole('admin')
                         <!-- Divider -->
