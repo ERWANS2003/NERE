@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ServiceCatalog;
 use App\Models\ServiceRequest;
+use App\Models\Ticket;
+use App\Models\TicketPriority;
+use App\Models\TicketStatus;
 use Illuminate\Http\Request;
 
 /**
@@ -183,15 +186,20 @@ class ServiceCatalogController extends Controller
             ->map(fn($value, $key) => "**{$key}:** {$value}")
             ->join("\n");
 
-        return \App\Models\Ticket::create([
-            'title' => "Service: {$service->name}",
+        $category = $service->category()->with('team')->first();
+        $priority = TicketPriority::where('nom', 'Normale')->first() ?? TicketPriority::orderBy('niveau')->firstOrFail();
+        $status = TicketStatus::where('slug', 'nouveau')->firstOrFail();
+
+        return Ticket::create([
+            'titre' => "Service: {$service->name}",
             'description' => "Demande de service soumise via le catalogue.\n\n{$formattedData}",
-            'requester_id' => $serviceRequest->requester_id,
-            'category_id' => $service->category_id,
+            'user_id' => $serviceRequest->requester_id,
+            'departement_id' => $category?->team?->departement_id,
+            'ticket_category_id' => $service->category_id,
             'assigned_to' => $service->default_assignee_id,
             'team_id' => $service->default_team_id,
-            'status_id' => \App\Models\TicketStatus::where('slug', 'new')->first()?->id,
-            'priority_id' => \App\Models\TicketPriority::where('slug', 'normal')->first()?->id,
+            'ticket_status_id' => $status->id,
+            'ticket_priority_id' => $priority->id,
         ]);
     }
 }

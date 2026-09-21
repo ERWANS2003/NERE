@@ -363,7 +363,8 @@ class TicketController extends Controller
 
     protected function peutModifier(Ticket $ticket): bool
     {
-        return $ticket->user_id === Auth::id() || Auth::user()->hasRole('admin');
+        return ! $ticket->statut?->est_final
+            && ($ticket->user_id === Auth::id() || Auth::user()->hasRole('admin'));
     }
 
     protected function peutAffecter(): bool

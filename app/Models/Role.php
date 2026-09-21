@@ -22,6 +22,7 @@ class Role extends Model
 
     public function hasPermission(string $slug): bool
     {
-        return $this->permissions()->where('slug', $slug)->exists();
+        return $this->slug === 'admin'
+            || $this->permissions()->whereIn('slug', [$slug, '*'])->exists();
     }
 }

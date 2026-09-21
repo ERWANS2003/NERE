@@ -185,6 +185,40 @@
         </div>
     </div>
 
+    <!-- Pilotage ITSM & HSE -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <a href="{{ route('safety.index', ['unresolved' => 1]) }}" class="bg-dark-800 rounded-xl border border-red-600/30 p-6 hover:border-red-500 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">Incidents HSE ouverts</p>
+                    <p class="text-3xl font-bold text-white mt-2">{{ $securite['incidents_ouverts'] ?? 0 }}</p>
+                </div>
+                <span class="text-red-400 text-2xl">!</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">Accéder au registre et aux actions correctives</p>
+        </a>
+        <a href="{{ route('safety.index', ['critical' => 1, 'unresolved' => 1]) }}" class="bg-dark-800 rounded-xl border border-orange-600/30 p-6 hover:border-orange-500 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">Critiques à traiter</p>
+                    <p class="text-3xl font-bold text-orange-300 mt-2">{{ $securite['incidents_critiques'] ?? 0 }}</p>
+                </div>
+                <span class="text-orange-300 text-2xl">&#9888;</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">Priorité à l'investigation et à la résolution</p>
+        </a>
+        <a href="{{ route('tickets.index', ['sla_depasse' => 1]) }}" class="bg-dark-800 rounded-xl border border-primary-600/30 p-6 hover:border-primary-500 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">Tickets hors SLA</p>
+                    <p class="text-3xl font-bold text-primary-300 mt-2">{{ $stats['sla_depasse'] ?? 0 }}</p>
+                </div>
+                <span class="text-primary-300 text-2xl">&#9201;</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">Surveiller les engagements de service</p>
+        </a>
+    </div>
+
     <!-- Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Departement;
+use App\Models\SafetyIncident;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -34,7 +36,7 @@ class DashboardController extends Controller
                 'total_tickets'           => Ticket::count(),
                 'tickets_ouverts'         => Ticket::whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
                 'tickets_critiques'       => Ticket::whereHas('priorite', fn($q) => $q->where('niveau', '>=', 3))
-                                                   ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
+                    ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
                 'utilisateurs_actifs'     => User::where('actif', true)->count(),
                 'techniciens_disponibles' => User::where('est_technicien', true)->where('actif', true)->where('disponible', true)->count(),
                 'sla_depasse'             => Ticket::where('sla_depasse', true)->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))->count(),
@@ -44,16 +46,31 @@ class DashboardController extends Controller
                 ->latest()
                 ->limit(8)
                 ->get();
-
         } catch (\Exception $e) {
             \Log::error('Admin dashboard query error: ' . $e->getMessage());
             $stats = ['total_tickets' => 0, 'tickets_ouverts' => 0, 'tickets_critiques' => 0, 'utilisateurs_actifs' => 0];
             $recentTickets = collect();
         }
 
-        $ticketsParDepartement = collect();
+        try {
+            $ticketsParDepartement = Departement::withCount('tickets')
+                ->where('actif', true)
+                ->orderByDesc('tickets_count')
+                ->get()
+                ->mapWithKeys(fn($departement) => [$departement->nom => $departement->tickets_count]);
 
-        return view('dashboard.admin', compact('stats', 'recentTickets', 'ticketsParDepartement'));
+            $securite = [
+                'incidents_ouverts' => SafetyIncident::unresolved()->count(),
+                'incidents_critiques' => SafetyIncident::critical()->whereNull('resolved_at')->count(),
+                'incidents_recents' => SafetyIncident::recent(30)->count(),
+            ];
+        } catch (\Throwable $e) {
+            \Log::warning('Admin compliance dashboard query error: ' . $e->getMessage());
+            $ticketsParDepartement = collect();
+            $securite = ['incidents_ouverts' => 0, 'incidents_critiques' => 0, 'incidents_recents' => 0];
+        }
+
+        return view('dashboard.admin', compact('stats', 'recentTickets', 'ticketsParDepartement', 'securite'));
     }
 
     protected function technicianDashboard()
@@ -72,14 +89,13 @@ class DashboardController extends Controller
                 'mes_tickets'           => $myTickets->count(),
                 'tickets_critiques'     => $myTickets->filter(fn($t) => ($t->priorite?->niveau ?? 0) >= 3)->count(),
                 'en_attente_assignment' => Ticket::whereNull('assigned_to')
-                                                 ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))
-                                                 ->count(),
+                    ->whereHas('statut', fn($q) => $q->whereNotIn('slug', ['resolu', 'ferme']))
+                    ->count(),
                 'resolus_aujourdhui'    => Ticket::where('assigned_to', $user->id)
-                                                 ->whereDate('updated_at', today())
-                                                 ->whereHas('statut', fn($q) => $q->where('slug', 'resolu'))
-                                                 ->count(),
+                    ->whereDate('updated_at', today())
+                    ->whereHas('statut', fn($q) => $q->where('slug', 'resolu'))
+                    ->count(),
             ];
-
         } catch (\Exception $e) {
             \Log::error('Technician dashboard query error: ' . $e->getMessage());
             $myTickets = collect();

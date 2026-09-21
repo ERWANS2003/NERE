@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('approve-service-requests', function ($user): bool {
+            return $user->hasRole('admin')
+                || $user->hasRole('dsi')
+                || $user->hasRole('directeur_departement')
+                || $user->hasPermission('services.approve');
+        });
+
         // Ensure storage directories have proper permissions
         if (file_exists(storage_path())) {
             @chmod(storage_path(), 0775);

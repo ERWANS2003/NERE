@@ -15,7 +15,7 @@ return new class extends Migration
             $table->json('layout'); // Configuration grid des widgets
             $table->boolean('is_default')->default(false);
             $table->timestamps();
-            
+
             $table->unique('user_id');
         });
 
@@ -137,28 +137,13 @@ return new class extends Migration
             $table->boolean('enabled')->default(true);
             $table->json('config')->nullable(); // Config spécifique
             $table->timestamps();
-            
-            $table->unique(['user_id', 'channel', 'event_type']);
-        });
 
-        // Templates de tickets pour faciliter la création
-        Schema::create('ticket_templates', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained('ticket_categories');
-            $table->foreignId('priority_id')->nullable()->constrained('ticket_priorities');
-            $table->json('default_fields'); // Valeurs pré-remplies
-            $table->json('required_fields')->nullable();
-            $table->boolean('is_public')->default(false);
-            $table->foreignId('created_by')->constrained('users');
-            $table->timestamps();
+            $table->unique(['user_id', 'channel', 'event_type']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('ticket_templates');
         Schema::dropIfExists('notification_preferences');
         Schema::dropIfExists('metric_snapshots');
         Schema::dropIfExists('kb_article_tags');

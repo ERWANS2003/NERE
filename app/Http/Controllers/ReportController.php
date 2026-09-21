@@ -244,3 +244,4 @@ class ReportController extends Controller
             'period' => $period,
         ]);
     }
+}

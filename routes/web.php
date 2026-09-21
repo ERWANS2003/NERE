@@ -31,22 +31,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/deconnexion', [AuthController::class, 'logout'])->name('logout');
 
-    // Route test - affiche l'erreur exacte
-    Route::get('/test-dashboard', function() {
-        try {
-            $user = auth()->user();
-            if ($user->hasRole('admin')) {
-                return view('dashboard.minimal', ['stats' => []]);
-            }
-            return response('User role: ' . ($user->role?->slug ?? 'no role'));
-        } catch (\Throwable $e) {
-            return response('<pre>' . $e->getMessage() . "\n\n" . $e->getTraceAsString() . '</pre>', 500);
-        }
-    });
-
     // Phase 7 : Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Dashboard personnalisable avec widgets
     Route::get('/dashboard/customizable', [\App\Http\Controllers\DashboardCustomizationController::class, 'index'])->name('dashboard.customizable');
     Route::post('/dashboard/layout', [\App\Http\Controllers\DashboardCustomizationController::class, 'saveLayout'])->name('dashboard.layout.save');
@@ -84,7 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::post('sla/tickets/{ticket}/resume', [\App\Http\Controllers\SlaController::class, 'resumeTicket'])->name('sla.resume-ticket');
     Route::post('sla/tickets/{ticket}/escalate', [\App\Http\Controllers\SlaController::class, 'escalateTicket'])->name('sla.escalate-ticket');
     Route::get('sla/tickets/{ticket}/progress', [\App\Http\Controllers\SlaController::class, 'getTicketProgress'])->name('sla.ticket-progress');
-    
+
     // Intelligence des Tickets - Suggestions automatiques
     Route::post('/tickets/intelligence/analyze', [\App\Http\Controllers\TicketIntelligenceController::class, 'analyzeNewTicket'])->name('tickets.intelligence.analyze');
     Route::get('/tickets/{ticket}/intelligence/suggest-assignee', [\App\Http\Controllers\TicketIntelligenceController::class, 'suggestAssignee'])->name('tickets.intelligence.suggest-assignee');
@@ -121,10 +108,11 @@ Route::middleware('auth')->group(function () {
     Route::get('base-connaissances/{article}', [KnowledgeArticleController::class, 'show'])->name('knowledge.show');
 
     // Phase 10 : Gestion Incidents Sécurité
-    Route::resource('incidents', SafetyIncidentController::class);
-    Route::post('incidents/{incident}/assign-investigation', [SafetyIncidentController::class, 'assignInvestigation'])->name('incidents.assign-investigation');
-    Route::post('incidents/{incident}/resolve', [SafetyIncidentController::class, 'resolve'])->name('incidents.resolve');
-    Route::get('incidents-statistics', [SafetyIncidentController::class, 'statistics'])->name('incidents.statistics');
+    Route::resource('incidents', SafetyIncidentController::class)->only(['index', 'show'])->names('safety')->middleware('permission:safety.view');
+    Route::resource('incidents', SafetyIncidentController::class)->only(['create', 'store', 'edit', 'update', 'destroy'])->names('safety')->middleware('permission:safety.manage');
+    Route::post('incidents/{incident}/assign-investigation', [SafetyIncidentController::class, 'assignInvestigation'])->name('safety.assignInvestigation')->middleware('permission:safety.manage');
+    Route::post('incidents/{incident}/resolve', [SafetyIncidentController::class, 'resolve'])->name('safety.resolve')->middleware('permission:safety.manage');
+    Route::get('incidents-statistics', [SafetyIncidentController::class, 'statistics'])->name('safety.statistics')->middleware('permission:safety.view');
 
     // Phase 11 : Rapports (Réservé à la DSI, aux Directeurs et Admins - exclus pour demandeurs et techniciens)
     Route::middleware('role:dsi,directeur_departement,admin')->group(function () {

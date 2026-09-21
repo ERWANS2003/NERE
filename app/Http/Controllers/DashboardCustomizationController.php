@@ -60,7 +60,7 @@ class DashboardCustomizationController extends Controller
     public function resetLayout()
     {
         $defaultLayout = $this->widgetManager->getDefaultLayout();
-        
+
         $success = $this->widgetManager->saveDashboardLayout(
             auth()->id(),
             $defaultLayout
@@ -124,7 +124,7 @@ class DashboardCustomizationController extends Controller
     protected function getMyTicketsData(): array
     {
         $tickets = \App\Models\Ticket::where('assigned_to', auth()->id())
-            ->with(['status', 'priority', 'category'])
+            ->with(['statut', 'priorite', 'categorie'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -132,24 +132,33 @@ class DashboardCustomizationController extends Controller
         return [
             'total' => $tickets->count(),
             'tickets' => $tickets,
-            'by_status' => $tickets->groupBy('status.name')->map->count(),
+            'by_status' => $tickets->groupBy('statut.nom')->map->count(),
         ];
     }
 
     protected function getTicketOverviewData(): array
     {
-        $tickets = \App\Models\Ticket::with(['status', 'priority']);
-        
+        $tickets = \App\Models\Ticket::query()->with(['statut', 'priorite']);
+        if (! auth()->user()->hasPermission('tickets.view')) {
+            $tickets->where('user_id', auth()->id());
+        }
+
+        $ticketList = $tickets->get();
+
         return [
-            'total' => $tickets->count(),
-            'by_status' => $tickets->get()->groupBy('status.name')->map->count(),
-            'by_priority' => $tickets->get()->groupBy('priority.name')->map->count(),
+            'total' => $ticketList->count(),
+            'by_status' => $ticketList->groupBy('statut.nom')->map->count(),
+            'by_priority' => $ticketList->groupBy('priorite.nom')->map->count(),
             'trend' => [], // Tendance 7 derniers jours
         ];
     }
 
     protected function getSafetyAlertsData(): array
     {
+        if (! auth()->user()->hasPermission('safety.view')) {
+            return ['critical_count' => 0, 'alerts' => collect()];
+        }
+
         $alerts = \App\Models\SafetyIncident::where('severity', 'critical')
             ->whereNull('resolved_at')
             ->orderBy('created_at', 'desc')
@@ -164,6 +173,10 @@ class DashboardCustomizationController extends Controller
 
     protected function getRecentActivityData(): array
     {
+        if (! auth()->user()->hasPermission('reports.view')) {
+            return ['activities' => collect()];
+        }
+
         $activities = \App\Models\AuditLog::with('user')
             ->orderBy('created_at', 'desc')
             ->limit(15)
@@ -176,10 +189,18 @@ class DashboardCustomizationController extends Controller
 
     protected function getSlaComplianceData(): array
     {
+        $query = \App\Models\Ticket::query();
+        if (! auth()->user()->hasPermission('tickets.view')) {
+            $query->where('user_id', auth()->id());
+        }
+
+        $total = (clone $query)->count();
+        $breached = (clone $query)->where('sla_depasse', true)->count();
+
         return [
-            'compliance_rate' => 85.5,
-            'at_risk' => 12,
-            'breached' => 3,
+            'compliance_rate' => $total > 0 ? round((($total - $breached) / $total) * 100, 1) : 100,
+            'at_risk' => (clone $query)->whereNotNull('date_echeance_resolution')->whereBetween('date_echeance_resolution', [now(), now()->addHours(24)])->count(),
+            'breached' => $breached,
         ];
     }
 
