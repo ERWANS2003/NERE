@@ -116,6 +116,10 @@ class MonPlugin extends BasePlugin {
 
 ## 📦 Installation
 
+### Déploiement Windows Server
+
+Pour installer l'application sur un serveur Windows local avec IIS, PHP FastCGI, PostgreSQL, le worker de queue et le scheduler Laravel, consultez le [guide de déploiement Windows Server](WINDOWS_SERVER_DEPLOYMENT.md).
+
 ### Prérequis
 - PHP >= 8.2
 - Composer

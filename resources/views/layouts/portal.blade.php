@@ -67,9 +67,134 @@
     </script>
     <style>
         [x-cloak] { display: none !important; }
+
+        :root {
+            --portal-ink: #17211f;
+            --portal-ink-soft: #22302d;
+            --portal-surface: #f6f5f1;
+            --portal-panel: #ffffff;
+            --portal-line: #e2e4df;
+            --portal-muted: #71807b;
+            --portal-copper: #b96b2c;
+            --portal-copper-dark: #8f4b1d;
+            --portal-teal: #176b67;
+            --portal-shadow: 0 18px 45px rgba(23, 33, 31, .08);
+        }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            font-family: 'Instrument Sans', 'Segoe UI', sans-serif;
+            background: var(--portal-surface);
+            color: var(--portal-ink);
+            letter-spacing: 0;
+        }
+
+        .portal-shell { background: var(--portal-surface); }
+        .portal-sidebar {
+            width: 17.5rem;
+            background: var(--portal-ink);
+            border-right: 1px solid rgba(255,255,255,.08);
+            box-shadow: 12px 0 35px rgba(23,33,31,.08);
+            z-index: 40;
+        }
+        .portal-brand {
+            padding: 1.35rem 1.35rem 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,.09);
+        }
+        .portal-brand-mark {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: .85rem;
+            background: linear-gradient(145deg, #e2a05b, var(--portal-copper-dark));
+            box-shadow: 0 8px 18px rgba(185,107,44,.25);
+        }
+        .portal-nav { padding: 1rem .8rem; }
+        .portal-nav-label {
+            color: rgba(239,242,237,.42);
+            font-size: .64rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            padding: .85rem .8rem .45rem;
+        }
+        .sidebar-link {
+            gap: .7rem;
+            padding: .7rem .8rem;
+            color: rgba(239,242,237,.72);
+            border: 1px solid transparent;
+            border-radius: .7rem;
+            font-size: .84rem;
+        }
+        .sidebar-link svg { color: rgba(239,242,237,.46); transition: color .15s; }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,.07);
+            color: #fff;
+            border-color: rgba(255,255,255,.08);
+        }
+        .sidebar-link:hover svg, .sidebar-link.active svg { color: #e2a05b; }
+        .sidebar-link.active {
+            background: linear-gradient(90deg, rgba(185,107,44,.24), rgba(185,107,44,.08));
+            border-color: rgba(226,160,91,.26);
+            color: #fff;
+            box-shadow: inset 3px 0 0 #e2a05b;
+        }
+        .portal-user-card { border-color: rgba(255,255,255,.09) !important; }
+        .portal-main { background: var(--portal-surface); }
+        .portal-topbar {
+            background: rgba(255,255,255,.9);
+            border-bottom: 1px solid var(--portal-line);
+            box-shadow: 0 1px 0 rgba(255,255,255,.8);
+        }
+        .portal-topbar h2 { color: var(--portal-ink) !important; font-size: 1.08rem; letter-spacing: -.01em; }
+        .portal-topbar p { color: var(--portal-muted) !important; }
+        .portal-content { background: var(--portal-surface); }
+        .portal-content > div { max-width: 1500px; margin: 0 auto; }
+        .portal-content .bg-dark-800, .portal-content .bg-dark-900,
+        .portal-content .bg-white {
+            background: var(--portal-panel) !important;
+            border-color: var(--portal-line) !important;
+            box-shadow: var(--portal-shadow);
+        }
+        .portal-content .text-white, .portal-content .text-gray-100,
+        .portal-content .text-gray-200, .portal-content .text-gray-300 { color: var(--portal-ink) !important; }
+        .portal-content .text-gray-400, .portal-content .text-gray-500 { color: var(--portal-muted) !important; }
+        .portal-content .bg-dark-700, .portal-content .bg-dark-600 { background: #eef0ec !important; }
+        .portal-content .border-dark-700, .portal-content .border-dark-800 { border-color: var(--portal-line) !important; }
+        .portal-content input, .portal-content select, .portal-content textarea {
+            background: #fbfcfa !important;
+            color: var(--portal-ink) !important;
+            border-color: #d6dbd5 !important;
+        }
+        .portal-content input::placeholder, .portal-content textarea::placeholder { color: #9aa7a1 !important; }
+        .portal-content .bg-primary-600 { background: var(--portal-copper) !important; }
+        .portal-content .hover\:bg-primary-700:hover { background: var(--portal-copper-dark) !important; }
+        .portal-content .text-primary-400, .portal-content .text-primary-300 { color: var(--portal-copper-dark) !important; }
+        .portal-content table thead { background: #f0f2ee !important; }
+        .portal-content table tbody tr:hover { background: #f5f7f3 !important; }
+        .portal-content .rounded-xl { border-radius: .8rem; }
+        .portal-content .rounded-lg { border-radius: .65rem; }
+        .portal-content .shadow-sm, .portal-content .shadow-md { box-shadow: var(--portal-shadow); }
+        .portal-mobile-toggle { display: none; }
+        .portal-overlay { display: none; }
+
+        @media (max-width: 1024px) {
+            .portal-sidebar { width: 16rem; }
+        }
+        @media (max-width: 768px) {
+            .portal-sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                transform: translateX(-105%);
+                transition: transform .2s ease;
+            }
+            .portal-sidebar.is-open { transform: translateX(0); }
+            .portal-overlay.is-open { display: block; position: fixed; inset: 0; background: rgba(23,33,31,.42); z-index: 30; }
+            .portal-mobile-toggle { display: inline-flex; }
+            .portal-topbar { padding-left: 1rem !important; padding-right: 1rem !important; }
+            .portal-topbar .topbar-copy { min-width: 0; }
+            .portal-topbar .topbar-copy h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .portal-topbar .topbar-copy p { display: none; }
+            .portal-topbar .quick-action-label { display: none; }
+            .portal-content > div { padding-left: 1rem !important; padding-right: 1rem !important; }
         }
         
         /* Custom Scrollbar */
@@ -103,14 +228,15 @@
 <body class="bg-dark-900 text-gray-100 min-h-screen">
     
     <!-- Layout with Sidebar -->
-    <div class="flex h-screen overflow-hidden">
+    <div class="portal-shell flex h-screen overflow-hidden" x-data="{ sidebarOpen: false }">
         
         <!-- Sidebar -->
-        <aside class="w-64 bg-dark-950 border-r border-dark-800 flex flex-col" x-data="{ open: true }">
+        <div class="portal-overlay" :class="sidebarOpen ? 'is-open' : ''" @click="sidebarOpen = false"></div>
+        <aside class="portal-sidebar flex flex-col" :class="sidebarOpen ? 'is-open' : ''">
             <!-- Logo -->
-            <div class="p-6 border-b border-dark-800">
+            <div class="portal-brand">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <div class="portal-brand-mark flex items-center justify-center shrink-0">
                         <img src="{{ asset('images/logo-nere-mining.png') }}" alt="Néré Mining" class="w-8 h-8 object-contain">
                     </div>
                     <div>
@@ -121,7 +247,7 @@
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <nav class="portal-nav flex-1 space-y-1 overflow-y-auto">
                 @auth
                     <!-- Dashboard -->
                     <a href="{{ route('dashboard') }}" 
@@ -159,7 +285,7 @@
                         <span>Modèles de Tickets</span>
                     </a>
 
-                    @can('view_all_tickets')
+                    @if(auth()->user()->hasPermission('tickets.view'))
                         <!-- All Tickets (Admin/Tech) -->
                         <a href="{{ route('tickets.index') }}" 
                            class="sidebar-link {{ request()->routeIs('tickets.index') && !request()->routeIs('kanban.*') ? 'active' : '' }}">
@@ -186,7 +312,7 @@
                             </svg>
                             <span>Gestion SLA</span>
                         </a>
-                    @endcan
+                    @endif
 
                     <!-- Knowledge Base -->
                     <a href="{{ route('knowledge.index') }}" 
@@ -202,7 +328,7 @@
                         <div class="my-4 border-t border-dark-800"></div>
 
                         <!-- Admin Section -->
-                        <div class="px-4 py-2">
+                        <div class="portal-nav-label">
                             <p class="text-xs font-semibold text-gray-500 uppercase">Administration</p>
                         </div>
 
@@ -236,9 +362,9 @@
 
             <!-- User Profile -->
             @auth
-            <div class="p-4 border-t border-dark-800">
+            <div class="portal-user-card p-4 border-t">
                 <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-full bg-linear-to-br from-primary-400 to-primary-600 flex items-center justify-center">
                         <span class="text-white font-semibold text-sm">{{ substr(auth()->user()->name, 0, 2) }}</span>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -263,11 +389,16 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             
             <!-- Top Bar -->
-            <header class="bg-dark-950 border-b border-dark-800 px-6 py-4">
+            <header class="portal-topbar px-6 py-4">
                 <div class="flex items-center justify-between">
-                    <div>
+                    <div class="topbar-copy flex items-center gap-3">
+                        <button type="button" class="portal-mobile-toggle p-2 rounded-lg text-gray-600 hover:bg-gray-100" @click="sidebarOpen = true" aria-label="Ouvrir le menu">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
+                        <div>
                         <h2 class="text-xl font-semibold text-white">@yield('titre', 'Tableau de bord')</h2>
                         <p class="text-sm text-gray-400 mt-0.5">@yield('sous-titre', 'Bienvenue sur votre portail ITSM')</p>
+                        </div>
                     </div>
                     
                     <div class="flex items-center gap-3">
@@ -280,7 +411,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
-                            <span>Nouvelle demande</span>
+                            <span class="quick-action-label">Nouvelle demande</span>
                         </a>
                     </div>
                 </div>
@@ -291,7 +422,7 @@
                 @if(session('success'))
                     <div class="bg-green-900/50 border border-green-700 rounded-lg p-4 mb-4">
                         <div class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <p class="text-green-100">{{ session('success') }}</p>
@@ -302,7 +433,7 @@
                 @if(session('error'))
                     <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-4">
                         <div class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <p class="text-red-100">{{ session('error') }}</p>
@@ -313,7 +444,7 @@
                 @if ($errors->any())
                     <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-4">
                         <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <div class="flex-1">
@@ -330,7 +461,7 @@
             </div>
 
             <!-- Main Content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="portal-content flex-1 overflow-y-auto">
                 @yield('contenu')
             </main>
 
