@@ -1,0 +1,635 @@
+// ========================================
+// Néré Mining Theme - Animations & Effects
+// ========================================
+// Built on top of Light Blue template with custom Néré animations
+
+@import 'nere-variables';
+
+// ========================================
+// Keyframe Animations
+// ========================================
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes goldGlow {
+  0%, 100% {
+    box-shadow: $animation-gold-glow;
+  }
+  50% {
+    box-shadow: $animation-gold-glow-intense;
+  }
+}
+
+@keyframes crimsonPulse {
+  0%, 100% {
+    box-shadow: $animation-crimson-glow;
+  }
+  50% {
+    box-shadow: $animation-crimson-glow-intense;
+  }
+}
+
+@keyframes scalePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes rotateBorder {
+  0% {
+    border-color: rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    border-color: rgba(211, 47, 47, 0.3);
+  }
+  100% {
+    border-color: rgba(255, 215, 0, 0.3);
+  }
+}
+
+@keyframes spinMining {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounceMining {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+// ========================================
+// Animation Utility Classes
+// ========================================
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.gold-glow {
+  animation: goldGlow 2s ease-in-out infinite;
+}
+
+.crimson-pulse {
+  animation: crimsonPulse 2s ease-in-out infinite;
+}
+
+.scale-pulse {
+  animation: scalePulse 2s ease-in-out infinite;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 215, 0, 0),
+    rgba(255, 215, 0, 0.2),
+    rgba(255, 215, 0, 0)
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.rotating-border {
+  animation: rotateBorder 3s ease-in-out infinite;
+}
+
+.spin-mining {
+  animation: spinMining 2s linear infinite;
+  color: $nere-gold;
+}
+
+.bounce-mining {
+  animation: bounceMining 1s ease-in-out infinite;
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+// ========================================
+// Hover Effects
+// ========================================
+
+.hover-lift {
+  transition: $transition-base;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+.hover-glow-gold {
+  transition: $transition-base;
+  
+  &:hover {
+    box-shadow: $shadow-gold;
+  }
+}
+
+.hover-glow-crimson {
+  transition: $transition-base;
+  
+  &:hover {
+    box-shadow: $shadow-crimson;
+  }
+}
+
+// ========================================
+// Button Styles - Néré Mining
+// ========================================
+
+.btn-mining-primary {
+  background: linear-gradient(135deg, $nere-gold 0%, $nere-gold-light 100%);
+  color: $nere-charcoal;
+  border: none;
+  font-weight: 600;
+  box-shadow: $shadow-gold;
+  transition: $transition-fast;
+  
+  &:hover {
+    background: linear-gradient(135deg, $nere-gold-dark 0%, $nere-gold 100%);
+    box-shadow: $animation-gold-glow-intense;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-mining-secondary {
+  background: linear-gradient(135deg, $nere-crimson 0%, $nere-crimson-light 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  box-shadow: $shadow-crimson;
+  transition: $transition-fast;
+  
+  &:hover {
+    background: linear-gradient(135deg, $nere-crimson-dark 0%, $nere-crimson 100%);
+    box-shadow: $animation-crimson-glow-intense;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-mining-outline {
+  background: transparent;
+  border: 2px solid $nere-gold;
+  color: $nere-gold;
+  font-weight: 600;
+  transition: $transition-fast;
+  
+  &:hover {
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: $animation-gold-glow;
+  }
+}
+
+// ========================================
+// Card Styles - Néré Mining
+// ========================================
+
+.card-mining {
+  background: $widget-bg;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 0.5rem;
+  transition: $transition-base;
+  
+  &:hover {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: $shadow-gold;
+  }
+}
+
+.card-mining-accent {
+  &.accent-gold {
+    border-left: 4px solid $nere-gold;
+    box-shadow: $shadow-gold;
+  }
+  
+  &.accent-crimson {
+    border-left: 4px solid $nere-crimson;
+    box-shadow: $shadow-crimson;
+  }
+  
+  &.accent-blue {
+    border-left: 4px solid $light-blue-primary;
+  }
+}
+
+.card-mining-title {
+  color: $nere-gold;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-mining-value {
+  color: $text-color;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.card-mining-subtitle {
+  color: $text-muted;
+  font-size: 0.875rem;
+}
+
+// ========================================
+// Badge Styles - Néré Mining
+// ========================================
+
+.badge-mining {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  transition: $transition-fast;
+}
+
+.badge-mining-success {
+  background: $badge-bg-resolved;
+  color: #2d8515;
+  border: 1px solid #2d8515;
+}
+
+.badge-mining-warning {
+  background: rgba(228, 148, 0, 0.15);
+  color: #e49400;
+  border: 1px solid #e49400;
+}
+
+.badge-mining-danger {
+  background: $badge-bg-critical;
+  color: $nere-crimson;
+  border: 1px solid $nere-crimson;
+}
+
+.badge-mining-gold {
+  background: rgba(255, 215, 0, 0.15);
+  color: $nere-gold;
+  border: 1px solid $nere-gold;
+}
+
+.badge-mining-info {
+  background: $badge-bg-open;
+  color: $light-blue-primary;
+  border: 1px solid $light-blue-primary;
+}
+
+.badge-mining-default {
+  background: rgba(89, 93, 120, 0.15);
+  color: #595d78;
+  border: 1px solid #595d78;
+}
+
+// ========================================
+// Alert Styles - Néré Mining
+// ========================================
+
+.alert-mining {
+  border-left: 4px solid $nere-gold;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  transition: $transition-base;
+  
+  &.alert-success {
+    background: $success-light-bg;
+    border-left-color: $success-color;
+    color: $success-color;
+  }
+  
+  &.alert-warning {
+    background: $warning-light-bg;
+    border-left-color: $warning-color;
+    color: $warning-color;
+  }
+  
+  &.alert-danger {
+    background: $danger-light-bg;
+    border-left-color: $danger-color;
+    color: $danger-color;
+  }
+  
+  &.alert-info {
+    background: $info-light-bg;
+    border-left-color: $info-color;
+    color: $info-color;
+  }
+}
+
+// ========================================
+// Stat Card - Néré Mining
+// ========================================
+
+.stat-card-mining {
+  background: $widget-bg;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: $transition-base;
+  
+  &:hover {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: $shadow-gold;
+    transform: translateY(-4px);
+  }
+  
+  &.stat-gold {
+    border-left: 4px solid $nere-gold;
+    
+    .stat-value {
+      color: $nere-gold;
+    }
+  }
+  
+  &.stat-crimson {
+    border-left: 4px solid $nere-crimson;
+    
+    .stat-value {
+      color: $nere-crimson;
+    }
+  }
+  
+  &.stat-blue {
+    border-left: 4px solid $light-blue-primary;
+    
+    .stat-value {
+      color: $light-blue-primary;
+    }
+  }
+  
+  &.stat-green {
+    border-left: 4px solid $success-color;
+    
+    .stat-value {
+      color: $success-color;
+    }
+  }
+}
+
+.stat-icon-mining {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.stat-title-mining {
+  color: $text-muted;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-trend-mining {
+  font-size: 0.75rem;
+  font-weight: 600;
+  
+  &.trend-up {
+    color: $success-color;
+  }
+  
+  &.trend-down {
+    color: $danger-color;
+  }
+}
+
+// ========================================
+// Table Styles - Néré Mining
+// ========================================
+
+.table-mining {
+  color: $text-color;
+  
+  thead {
+    background: rgba(255, 215, 0, 0.05);
+    
+    th {
+      color: $nere-gold;
+      font-weight: 600;
+      border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+      padding: 1rem;
+    }
+  }
+  
+  tbody {
+    tr {
+      transition: $transition-fast;
+      
+      &:hover {
+        background: rgba(255, 215, 0, 0.05);
+      }
+      
+      td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0.75rem 1rem;
+      }
+    }
+  }
+}
+
+// ========================================
+// Input/Form Styles - Néré Mining
+// ========================================
+
+.form-control-mining {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: $text-color;
+  transition: $transition-fast;
+  
+  &:focus {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: $nere-gold;
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+    color: $text-color;
+  }
+  
+  &::placeholder {
+    color: $text-muted;
+  }
+}
+
+.input-group-mining {
+  .input-group-text {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: $nere-gold;
+  }
+}
+
+// ========================================
+// Sidebar Enhancement - Néré Mining
+// ========================================
+
+.sidebar-mining {
+  background: linear-gradient(135deg, #1B1E3F 0%, #2d2f5c 100%);
+  
+  .sidebar-item {
+    transition: $transition-base;
+    border-left: 3px solid transparent;
+    
+    &:hover {
+      border-left-color: $nere-gold;
+      background: rgba(255, 215, 0, 0.05);
+    }
+    
+    &.active {
+      border-left-color: $nere-gold;
+      background: rgba(255, 215, 0, 0.1);
+      color: $nere-gold;
+    }
+  }
+}
+
+// ========================================
+// Header Enhancement - Néré Mining
+// ========================================
+
+.header-mining {
+  background: linear-gradient(90deg, #1B1E3F 0%, #2d2f5c 50%, rgba(255, 215, 0, 0.05) 100%);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  
+  .header-title {
+    color: $nere-gold;
+    font-weight: 600;
+  }
+}
+
+// ========================================
+// Text Gradient Effect
+// ========================================
+
+.text-gradient-gold-crimson {
+  background: linear-gradient(135deg, $nere-gold 0%, $nere-crimson 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// ========================================
+// Utility Classes
+// ========================================
+
+.text-gold {
+  color: $nere-gold !important;
+}
+
+.text-crimson {
+  color: $nere-crimson !important;
+}
+
+.text-charcoal {
+  color: $nere-charcoal !important;
+}
+
+.bg-gold {
+  background-color: rgba(255, 215, 0, 0.1) !important;
+}
+
+.bg-crimson {
+  background-color: rgba(211, 47, 47, 0.1) !important;
+}
+
+.bg-charcoal {
+  background-color: rgba(13, 13, 13, 0.1) !important;
+}
+
+.border-gold {
+  border-color: $nere-gold !important;
+}
+
+.border-crimson {
+  border-color: $nere-crimson !important;
+}
+
+.border-gold-glow {
+  box-shadow: $shadow-gold;
+}
+
+.border-crimson-glow {
+  box-shadow: $shadow-crimson;
+}

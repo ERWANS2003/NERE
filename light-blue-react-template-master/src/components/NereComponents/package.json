@@ -1,0 +1,19 @@
+{
+  "name": "@nere/mining-components",
+  "version": "1.0.0",
+  "description": "Néré Mining themed components for Light Blue React Template ITSM platform",
+  "main": "index.js",
+  "author": "Néré Mining ITSM Team",
+  "license": "MIT",
+  "components": [
+    "MiningButton",
+    "MiningCard",
+    "MiningBadge",
+    "MiningAlert",
+    "MiningStatCard"
+  ],
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "classnames": "^2.2.6"
+  }
+}

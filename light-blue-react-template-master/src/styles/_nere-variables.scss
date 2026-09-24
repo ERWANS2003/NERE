@@ -1,0 +1,185 @@
+// ========================================
+// Néré Mining - Custom Color Palette
+// ========================================
+// Integrated Light Blue template design with Néré Mining brand colors
+// Gold (#ffd700), Crimson (#d32f2f), Charcoal (#0d0d0d)
+
+// Primary Colors - Light Blue + Néré Gold
+$nere-gold: #ffd700 !default;
+$nere-gold-light: #ffed7c !default;
+$nere-gold-dark: #ccaa00 !default;
+$nere-gold-lighter: #fffef2 !default;
+
+// Accent Colors - Néré Crimson
+$nere-crimson: #d32f2f !default;
+$nere-crimson-light: #ff6565 !default;
+$nere-crimson-dark: #8b1818 !default;
+$nere-crimson-lighter: #ffe8e8 !default;
+
+// Background Colors - Néré Charcoal
+$nere-charcoal: #0d0d0d !default;
+$nere-charcoal-dark: #050505 !default;
+$nere-charcoal-light: #1a1a1a !default;
+
+// Keep Light Blue's professional base but enhance with Néré colors
+$light-blue-primary: #2477ff !default;
+$light-blue-bg: #1B1E3F !default;
+$light-blue-gradient: radial-gradient(farthest-side ellipse at 10% 0, #333867 20%, #17193B);
+
+// ========================================
+// Override Light Blue Theme Colors
+// ========================================
+
+// Primary accent - blend Light Blue with Néré Gold for CTAs
+$primary-blend: mix($light-blue-primary, $nere-gold, 60%);
+
+// Theme color overrides
+$theme-colors: (
+  primary: $nere-gold,                    // Gold for primary actions
+  secondary: rgba(255, 255, 255, 0.9),   // Light for secondary
+  success: #2d8515,                       // Keep Green for success
+  info: mix($light-blue-primary, $nere-gold, 70%), // Blue-Gold blend
+  warning: #e49400,                       // Keep Orange for warnings
+  danger: $nere-crimson,                  // Crimson for danger/alerts
+  dark: #3c484f,                          // Keep dark for text
+  inverse: #30314e,                       // Keep inverse
+  gray: #595d78,                          // Keep gray
+  lime: #8cbf26,                          // Keep lime
+  light: #f8f9fa,                         // Keep light
+  default: #474d84,                       // Keep default
+  // New Néré-specific colors
+  gold: $nere-gold,
+  crimson: $nere-crimson,
+  charcoal: $nere-charcoal,
+  gold-light: $nere-gold-lighter,
+  crimson-light: $nere-crimson-lighter,
+  charcoal-light: $nere-charcoal-light,
+);
+
+// ========================================
+// Widget & Component Colors with Néré branding
+// ========================================
+
+// Widget background - blend Light Blue dark with hint of gold
+$widget-bg: rgba(26, 30, 63, 0.9);  // Blend of Light Blue BG
+$widget-bg-color: rgba(26, 30, 63, 0.9);
+
+// Widget title - use gold for emphasis
+$widget-title-color: #ffed7c;
+
+// Widget shadow - add gold glow
+$widget-shadow: 
+  0 25px 20px -20px rgba(0, 0, 0, 0.1),
+  0 0 15px rgba(0, 0, 0, 0.06),
+  0 0 8px rgba(255, 215, 0, 0.08);
+
+// Button styling with Néré gold
+$btn-primary-bg: $nere-gold;
+$btn-primary-border: $nere-gold;
+$btn-primary-color: #1a1a1a;
+
+$btn-secondary-bg: $nere-crimson;
+$btn-secondary-border: $nere-crimson;
+$btn-secondary-color: white;
+
+// ========================================
+// Sidebar with Néré branding
+// ========================================
+
+$sidebar-bg-color: linear-gradient(135deg, #1B1E3F 0%, #2d2f5c 100%);
+$sidebar-item-active-color: $nere-gold;
+$sidebar-item-active-bg: rgba(255, 215, 0, 0.1);
+$sidebar-item-hover-bg-color: rgba(255, 215, 0, 0.05);
+$sidebar-border-left: 3px solid $nere-gold;
+
+// ========================================
+// Header with Néré accent
+// ========================================
+
+$header-bg: linear-gradient(90deg, #1B1E3F 0%, #2d2f5c 50%, rgba(255, 215, 0, 0.05) 100%);
+$header-border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+
+// ========================================
+// Status & Badge Colors
+// ========================================
+
+$status-open: #2477ff;           // Light Blue for open
+$status-in-progress: $nere-gold; // Gold for in progress
+$status-resolved: #2d8515;       // Green for resolved
+$status-closed: $nere-charcoal;  // Charcoal for closed
+$status-critical: $nere-crimson; // Crimson for critical
+
+// Badge backgrounds with transparency
+$badge-bg-open: rgba(36, 119, 255, 0.15);
+$badge-bg-in-progress: rgba(255, 215, 0, 0.15);
+$badge-bg-resolved: rgba(45, 133, 21, 0.15);
+$badge-bg-closed: rgba(13, 13, 13, 0.15);
+$badge-bg-critical: rgba(211, 47, 47, 0.15);
+
+// ========================================
+// Input & Form Elements
+// ========================================
+
+$input-focus-border-color: $nere-gold;
+$input-focus-box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+
+// ========================================
+// Text & Link Colors
+// ========================================
+
+$text-color: rgba(255, 255, 255, 0.9);
+$text-muted: rgba(255, 255, 255, 0.6);
+$link-color: $nere-gold;
+$link-hover-color: $nere-gold-light;
+
+// ========================================
+// Animation Colors
+// ========================================
+
+$animation-gold-glow: 0 0 20px rgba(255, 215, 0, 0.3);
+$animation-crimson-glow: 0 0 20px rgba(211, 47, 47, 0.3);
+$animation-gold-glow-intense: 0 0 40px rgba(255, 215, 0, 0.5);
+$animation-crimson-glow-intense: 0 0 40px rgba(211, 47, 47, 0.5);
+
+// ========================================
+// Utility Colors
+// ========================================
+
+$success-color: #2d8515;
+$warning-color: #e49400;
+$danger-color: $nere-crimson;
+$info-color: mix($light-blue-primary, $nere-gold, 70%);
+
+$success-light-bg: rgba(45, 133, 21, 0.1);
+$warning-light-bg: rgba(228, 148, 0, 0.1);
+$danger-light-bg: rgba(211, 47, 47, 0.1);
+$info-light-bg: rgba(36, 119, 255, 0.1);
+
+// ========================================
+// Transitions & Animations
+// ========================================
+
+$transition-base: all 0.3s ease-in-out;
+$transition-fast: all 0.15s ease-in-out;
+$transition-slow: all 0.5s ease-in-out;
+
+// ========================================
+// Responsive Breakpoints (keep Light Blue defaults)
+// ========================================
+
+// $screen-xs: 0 !default;
+// $screen-sm: 576px !default;
+// $screen-md: 768px !default;
+// $screen-lg: 992px !default;
+// $screen-xl: 1200px !default;
+
+// ========================================
+// Shadows with Néré gold accents
+// ========================================
+
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+$shadow-gold: 0 0 15px rgba(255, 215, 0, 0.2);
+$shadow-crimson: 0 0 15px rgba(211, 47, 47, 0.2);
+$shadow-gold-dark: -4px 0 20px rgba(255, 215, 0, 0.1);
