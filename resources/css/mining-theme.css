@@ -1,0 +1,259 @@
+/* Néré Mining Theme - Animations & Effects */
+
+/* Gradient text animation */
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.gradient-animate {
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+}
+
+/* Gold glow effect */
+@keyframes goldGlow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
+    }
+}
+
+.gold-glow-animated {
+    animation: goldGlow 2s ease-in-out infinite;
+}
+
+/* Crimson pulse */
+@keyframes crimsonPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(211, 47, 47, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(211, 47, 47, 0.5);
+    }
+}
+
+.crimson-pulse {
+    animation: crimsonPulse 2s ease-in-out infinite;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Scale pulse animation */
+@keyframes scalePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.scale-pulse {
+    animation: scalePulse 2s ease-in-out infinite;
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s ease-out;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.5s ease-out;
+}
+
+/* Rotating border animation */
+@keyframes rotateBorder {
+    0% {
+        border-color: rgba(255, 215, 0, 0.3);
+    }
+    50% {
+        border-color: rgba(211, 47, 47, 0.3);
+    }
+    100% {
+        border-color: rgba(255, 215, 0, 0.3);
+    }
+}
+
+.rotating-border {
+    animation: rotateBorder 3s ease-in-out infinite;
+}
+
+/* Hover lift effect */
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Text gradient effect */
+.text-gradient-gold-crimson {
+    background: linear-gradient(135deg, #ffd700, #d32f2f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 215, 0, 0),
+        rgba(255, 215, 0, 0.2),
+        rgba(255, 215, 0, 0)
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Border gradient animation */
+@keyframes borderGradient {
+    0% {
+        border-image-source: linear-gradient(90deg, #ffd700, #d32f2f, #ffd700);
+        border-image-slice: 1;
+    }
+    100% {
+        border-image-source: linear-gradient(90deg, #d32f2f, #ffd700, #d32f2f);
+        border-image-slice: 1;
+    }
+}
+
+.border-gradient-animated {
+    border: 2px solid;
+    animation: borderGradient 3s linear infinite;
+}
+
+/* Loading spinner */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin-mining {
+    animation: spin 2s linear infinite;
+    color: #ffd700;
+}
+
+/* Bounce animation */
+@keyframes bounce-mining {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.bounce-mining {
+    animation: bounce-mining 1s ease-in-out infinite;
+}
+
+/* Focus ring styles */
+.focus-ring-gold:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1), 0 0 0 4px rgba(255, 215, 0, 0.3);
+}
+
+.focus-ring-crimson:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1), 0 0 0 4px rgba(211, 47, 47, 0.3);
+}
+
+/* Smooth transitions */
+* {
+    @apply transition-colors duration-200;
+}
+
+button, a, input, select, textarea {
+    @apply transition-all duration-200;
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark mode utilities */
+.dark-mode-gradient {
+    background: linear-gradient(135deg, rgba(13, 13, 13, 0.8), rgba(26, 26, 26, 0.6));
+}
+
+.dark-surface {
+    background: rgba(13, 13, 13, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+/* Mining theme borders */
+.border-gold-accent {
+    @apply border border-gold-500/30;
+}
+
+.border-crimson-accent {
+    @apply border border-crimson-500/30;
+}
+
+.border-gradient-gold-crimson {
+    border: 2px solid transparent;
+    background-image: linear-gradient(rgba(13, 13, 13, 0.8), rgba(13, 13, 13, 0.8)), linear-gradient(135deg, #ffd700, #d32f2f);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
