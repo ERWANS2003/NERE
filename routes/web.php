@@ -108,8 +108,12 @@ Route::middleware('auth')->group(function () {
     Route::get('base-connaissances/{article}', [KnowledgeArticleController::class, 'show'])->name('knowledge.show');
 
     // Phase 10 : Gestion Incidents Sécurité
-    Route::resource('incidents', SafetyIncidentController::class)->only(['index', 'show'])->names('safety')->middleware('permission:safety.view');
+    // `create`/`store` must be registered before the `{incident}` wildcard,
+    // otherwise /incidents/create is swallowed by `show` and Laravel tries to
+    // resolve a ticket id from the literal string "create".
+    Route::resource('incidents', SafetyIncidentController::class)->only(['index'])->names('safety')->middleware('permission:safety.view');
     Route::resource('incidents', SafetyIncidentController::class)->only(['create', 'store', 'edit', 'update', 'destroy'])->names('safety')->middleware('permission:safety.manage');
+    Route::resource('incidents', SafetyIncidentController::class)->only(['show'])->names('safety')->middleware('permission:safety.view');
     Route::post('incidents/{incident}/assign-investigation', [SafetyIncidentController::class, 'assignInvestigation'])->name('safety.assignInvestigation')->middleware('permission:safety.manage');
     Route::post('incidents/{incident}/resolve', [SafetyIncidentController::class, 'resolve'])->name('safety.resolve')->middleware('permission:safety.manage');
     Route::get('incidents-statistics', [SafetyIncidentController::class, 'statistics'])->name('safety.statistics')->middleware('permission:safety.view');

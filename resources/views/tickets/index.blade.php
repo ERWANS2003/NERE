@@ -3,57 +3,453 @@
 @section('titre', 'Tickets')
 @section('sous-titre', auth()->user()->hasRole('demandeur') ? 'Vos demandes et leur avancement' : 'Centre de service et de support')
 
+@section('styles')
+    <style>
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @media (min-width: 768px) {
+            .page-header {
+                flex-direction: row;
+                align-items: flex-end;
+                justify-content: space-between;
+            }
+        }
+
+        .page-header h1 {
+            font: 700 clamp(1.75rem, 3vw, 2rem) 'Open Sans', sans-serif;
+            color: #fff;
+            margin: 0.5rem 0 0;
+            letter-spacing: -0.02em;
+        }
+
+        .page-header p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.5rem;
+        }
+
+        .kpis-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.1s;
+            animation-fill-mode: both;
+        }
+
+        @media (min-width: 1280px) {
+            .kpis-row {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .filters-card {
+            background: rgba(0, 0, 0, 0.24);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease-out 0.2s;
+            animation-fill-mode: both;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        @media (min-width: 640px) {
+            .filters-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .filters-grid {
+                grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            }
+        }
+
+        .form-group label {
+            display: block;
+            font: 700 0.7rem 'Open Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 0.75rem;
+            width: 1rem;
+            height: 1rem;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-wrapper .form-control {
+            padding-left: 2.5rem;
+        }
+
+        .tickets-card {
+            background: rgba(0, 0, 0, 0.24);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out 0.3s;
+            animation-fill-mode: both;
+        }
+
+        .tickets-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        @media (min-width: 640px) {
+            .tickets-header {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+
+        .tickets-header h2 {
+            font: 600 1.1rem 'Open Sans', sans-serif;
+            color: #fff;
+            margin: 0;
+        }
+
+        .tickets-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+            margin: 0.25rem 0 0;
+        }
+
+        .ticket-row {
+            display: block;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background-color 0.15s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .ticket-row:hover {
+            background-color: rgba(255, 215, 0, 0.05);
+        }
+
+        .ticket-row:last-child {
+            border-bottom: none;
+        }
+
+        .ticket-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        @media (min-width: 1024px) {
+            .ticket-content {
+                flex-direction: row;
+                align-items: center;
+                gap: 1.5rem;
+            }
+        }
+
+        .ticket-ref {
+            flex-shrink: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .ticket-ref {
+                width: 8rem;
+            }
+        }
+
+        .ticket-ref-code {
+            font: 700 0.75rem 'Open Sans', monospace;
+            color: #ffd700;
+        }
+
+        .ticket-ref-date {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 0.25rem;
+        }
+
+        .ticket-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .ticket-title {
+            font: 600 0.95rem 'Open Sans', sans-serif;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticket-description {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticket-badges {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .ticket-badges {
+                width: 14rem;
+            }
+        }
+
+        .ticket-department {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (min-width: 1024px) {
+            .ticket-department {
+                width: 10rem;
+            }
+        }
+
+        .ticket-arrow {
+            flex-shrink: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .empty-state {
+            padding: 4rem 1.5rem;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            margin: 0 auto;
+            border-radius: 1rem;
+            background: rgba(255, 215, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 215, 0, 0.6);
+        }
+
+        .empty-icon svg {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+
+        .empty-state h3 {
+            font: 700 1.05rem 'Open Sans', sans-serif;
+            color: #fff;
+            margin: 1rem 0 0;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.25rem;
+        }
+
+        .link-advanced {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffd700;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .link-advanced:hover {
+            opacity: 0.8;
+        }
+
+        .link-reset {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffd700;
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .link-reset:hover {
+            opacity: 0.8;
+        }
+
+        .opacity-60 {
+            opacity: 0.6;
+        }
+    </style>
+@endsection
+
 @section('contenu')
-<div class="p-6 lg:p-8 space-y-6">
-    <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div style="padding: 1.5rem;">
+    <section class="page-header">
         <div>
-            <p class="text-xs font-bold uppercase tracking-[.16em] text-primary-700 mb-2">Centre de service</p>
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900">{{ auth()->user()->hasRole('demandeur') ? 'Mes demandes' : 'File de tickets' }}</h1>
-            <p class="text-gray-500 mt-2">Recherchez, priorisez et suivez les demandes de vos équipes.</p>
+            <p class="sur-titre">Centre de service</p>
+            <h1>{{ auth()->user()->hasRole('demandeur') ? 'Mes demandes' : 'File de tickets' }}</h1>
+            <p>Recherchez, priorisez et suivez les demandes de vos équipes.</p>
         </div>
-        <a href="{{ route('tickets.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition">
+        <a href="{{ route('tickets.create') }}" class="btn-mining-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Nouveau ticket
         </a>
     </section>
 
-    <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        @php($ticketKpis = [['label' => 'Total', 'value' => $ticketStats['total'], 'tone' => 'text-gray-900'], ['label' => 'Ouverts', 'value' => $ticketStats['ouverts'], 'tone' => 'text-blue-700'], ['label' => 'En cours', 'value' => $ticketStats['en_cours'], 'tone' => 'text-amber-700'], ['label' => 'Urgents', 'value' => $ticketStats['urgents'], 'tone' => 'text-red-700']])
+    <section class="kpis-row">
+        @php($ticketKpis = [['label' => 'Total', 'value' => $ticketStats['total'], 'class' => 'stat-gold'], ['label' => 'Ouverts', 'value' => $ticketStats['ouverts'], 'class' => 'stat-bleu'], ['label' => 'En cours', 'value' => $ticketStats['en_cours'], 'class' => 'stat-gold'], ['label' => 'Urgents', 'value' => $ticketStats['urgents'], 'class' => 'stat-crimson']])
         @foreach($ticketKpis as $kpi)
-            <div class="bg-white border border-gray-200 rounded-xl px-4 py-4 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $kpi['label'] }}</p><p class="text-2xl font-bold {{ $kpi['tone'] }} mt-2">{{ number_format($kpi['value']) }}</p></div>
+            <div class="stat-card {{ $kpi['class'] }}">
+                <div class="stat-label">{{ $kpi['label'] }}</div>
+                <div class="stat-value">{{ number_format($kpi['value']) }}</div>
+            </div>
         @endforeach
     </section>
 
-    <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-5">
-        <form method="GET" action="{{ route('tickets.index') }}" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-3 items-end">
-            <div><label for="q" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Recherche</label><div class="relative"><svg class="absolute left-3 top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0a7 7 0 0114 0z"></path></svg><input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="Référence, titre ou description" class="w-full pl-9 pr-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-primary-600/20"></div></div>
-            <div><label for="statut" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Statut</label><select id="statut" name="statut" class="w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-primary-600/20"><option value="">Tous</option>@foreach($statuts as $statut)<option value="{{ $statut->id }}" @selected(request('statut') == $statut->id)>{{ $statut->nom }}</option>@endforeach</select></div>
-            <div><label for="priorite" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Priorité</label><select id="priorite" name="priorite" class="w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-primary-600/20"><option value="">Toutes</option>@foreach($priorites as $priorite)<option value="{{ $priorite->id }}" @selected(request('priorite') == $priorite->id)>{{ $priorite->nom }}</option>@endforeach</select></div>
-            <div><label for="site" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Site</label><select id="site" name="site" class="w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-primary-600/20"><option value="">Tous les sites</option>@foreach($sites as $site)<option value="{{ $site->id }}" @selected(request('site') == $site->id)>{{ $site->nom }}</option>@endforeach</select></div>
-            <button type="submit" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition">Filtrer</button>
+    <section class="filters-card">
+        <form method="GET" action="{{ route('tickets.index') }}" class="filters-grid">
+            <div class="form-group">
+                <label for="q">Recherche</label>
+                <div class="search-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0a7 7 0 0114 0z"></path></svg>
+                    <input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="Référence, titre ou description" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="statut">Statut</label>
+                <select id="statut" name="statut" class="form-control">
+                    <option value="">Tous</option>
+                    @foreach($statuts as $statut)
+                        <option value="{{ $statut->id }}" @selected(request('statut') == $statut->id)>{{ $statut->nom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="priorite">Priorité</label>
+                <select id="priorite" name="priorite" class="form-control">
+                    <option value="">Toutes</option>
+                    @foreach($priorites as $priorite)
+                        <option value="{{ $priorite->id }}" @selected(request('priorite') == $priorite->id)>{{ $priorite->nom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="site">Site</label>
+                <select id="site" name="site" class="form-control">
+                    <option value="">Tous les sites</option>
+                    @foreach($sites as $site)
+                        <option value="{{ $site->id }}" @selected(request('site') == $site->id)>{{ $site->nom }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <button type="submit" class="btn-mining-primary" style="margin-top: 1.75rem;">Filtrer</button>
         </form>
-        @if(request()->hasAny(['q', 'statut', 'priorite', 'categorie', 'site', 'departement']))<a href="{{ route('tickets.index') }}" class="inline-block mt-3 text-sm font-semibold text-primary-700 hover:text-primary-900">Réinitialiser les filtres</a>@endif
+        @if(request()->hasAny(['q', 'statut', 'priorite', 'categorie', 'site', 'departement']))
+            <a href="{{ route('tickets.index') }}" class="link-reset">Réinitialiser les filtres</a>
+        @endif
     </section>
 
-    <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 sm:px-6 py-5 border-b border-gray-200"><div><h2 class="font-bold text-gray-900">Demandes enregistrées</h2><p class="text-sm text-gray-500 mt-1">{{ $tickets->total() }} résultat{{ $tickets->total() > 1 ? 's' : '' }} · triés du plus récent au plus ancien</p></div><a href="{{ route('search.index') }}" class="text-sm font-semibold text-primary-700">Recherche avancée</a></div>
+    <section class="tickets-card">
+        <div class="tickets-header">
+            <div>
+                <h2>Demandes enregistrées</h2>
+                <p>{{ $tickets->total() }} résultat{{ $tickets->total() > 1 ? 's' : '' }} · triés du plus récent au plus ancien</p>
+            </div>
+            <a href="{{ route('search.index') }}" class="link-advanced">Recherche avancée</a>
+        </div>
         @if($tickets->isEmpty())
-            <div class="px-6 py-16 text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.6a1 1 0 01.7.3l5.4 5.4a1 1 0 01.3.7V19a2 2 0 01-2 2z"></path></svg></div><h3 class="mt-4 font-bold text-gray-900">Aucun ticket trouvé</h3><p class="text-sm text-gray-500 mt-1">Modifiez vos filtres ou créez une nouvelle demande.</p></div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.6a1 1 0 01.7.3l5.4 5.4a1 1 0 01.3.7V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h3>Aucun ticket trouvé</h3>
+                <p>Modifiez vos filtres ou créez une nouvelle demande.</p>
+            </div>
         @else
-            <div class="divide-y divide-gray-100">
+            <div>
                 @foreach($tickets as $ticket)
-                    <a href="{{ route('tickets.show', $ticket) }}" class="block px-5 sm:px-6 py-4 hover:bg-gray-50 transition {{ $ticket->trashed() ? 'opacity-60' : '' }}">
-                        <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
-                            <div class="lg:w-32 shrink-0"><span class="font-mono text-xs font-bold text-primary-700">{{ $ticket->reference }}</span><p class="text-xs text-gray-400 mt-1">{{ $ticket->created_at->format('d/m/Y H:i') }}</p></div>
-                            <div class="min-w-0 flex-1"><p class="font-semibold text-gray-900 truncate">{{ $ticket->titre }}</p><p class="text-sm text-gray-500 mt-1 truncate">{{ Str::limit($ticket->description, 100) }}</p></div>
-                            <div class="flex flex-wrap items-center gap-2 lg:w-56">@if($ticket->statut)<span class="px-2.5 py-1 rounded-full text-xs font-semibold" style="background:{{ $ticket->statut->couleur }}18;color:{{ $ticket->statut->couleur }}">{{ $ticket->statut->nom }}</span>@endif @if($ticket->priorite)<span class="px-2.5 py-1 rounded-full text-xs font-semibold" style="background:{{ $ticket->priorite->couleur }}18;color:{{ $ticket->priorite->couleur }}">{{ $ticket->priorite->nom }}</span>@endif</div>
-                            <div class="lg:w-40 text-sm text-gray-500">{{ $ticket->departement?->nom ?? 'Périmètre général' }}</div>
-                            <svg class="w-5 h-5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    <a href="{{ route('tickets.show', $ticket) }}" class="ticket-row {{ $ticket->trashed() ? 'opacity-60' : '' }}">
+                        <div class="ticket-content">
+                            <div class="ticket-ref">
+                                <span class="ticket-ref-code">{{ $ticket->reference }}</span>
+                                <p class="ticket-ref-date">{{ $ticket->created_at->format('d/m/Y H:i') }}</p>
+                            </div>
+                            <div class="ticket-main">
+                                <p class="ticket-title">{{ $ticket->titre }}</p>
+                                <p class="ticket-description">{{ Str::limit($ticket->description, 100) }}</p>
+                            </div>
+                            <div class="ticket-badges">
+                                @if($ticket->statut)
+                                    <span class="badge" style="background:{{ $ticket->statut->couleur }}22;color:{{ $ticket->statut->couleur }}">{{ $ticket->statut->nom }}</span>
+                                @endif
+                                @if($ticket->priorite)
+                                    <span class="badge" style="background:{{ $ticket->priorite->couleur }}22;color:{{ $ticket->priorite->couleur }}">{{ $ticket->priorite->nom }}</span>
+                                @endif
+                            </div>
+                            <div class="ticket-department">{{ $ticket->departement?->nom ?? 'Périmètre général' }}</div>
+                            <svg class="ticket-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </div>
                     </a>
                 @endforeach
             </div>
-            @if($tickets->hasPages())<div class="px-5 sm:px-6 py-4 border-t border-gray-200">{{ $tickets->links() }}</div>@endif
+            @if($tickets->hasPages())
+                <div style="padding: 1.25rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                    {{ $tickets->links() }}
+                </div>
+            @endif
         @endif
     </section>
 </div>

@@ -1,204 +1,204 @@
 @extends('layouts.portal')
 
-@section('titre', $incident->title)
-@section('sous-titre', 'Détail de l\'incident #' . $incident->incident_number)
+@section('titre', $incident->titre)
+@section('sous-titre', 'Incident de sécurité #' . $incident->id)
 
 @section('contenu')
-<div class="px-6 py-4 space-y-6">
-    <!-- Back Button -->
-    <div>
-        <a href="{{ route('safety.index') }}" class="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-            <span>Retour aux incidents</span>
-        </a>
-    </div>
+<div class="p-4 sm:p-6 lg:p-8 space-y-6">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Incident Header -->
-            <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
-                <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">{{ $incident->title }}</h1>
-                        <p class="text-primary-400 font-mono text-sm mt-1">{{ $incident->incident_number }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        @php
-                            $statusColors = [
-                                'open' => 'blue',
-                                'under_investigation' => 'yellow',
-                                'resolved' => 'green',
-                                'closed' => 'gray',
-                            ];
-                            $color = $statusColors[$incident->status] ?? 'gray';
-                        @endphp
-                        <span class="inline-flex px-4 py-2 rounded-lg text-sm font-semibold bg-{{ $color }}-600/20 text-{{ $color }}-300">
-                            {{ ucfirst(str_replace('_', ' ', $incident->status)) }}
-                        </span>
-                    </div>
-                </div>
+    <a href="{{ route('safety.index') }}" class="nm-btn nm-btn-ghost -ml-3">
+        <x-icon name="arrow-left" class="h-4 w-4" />
+        Retour au registre
+    </a>
 
-                <div class="grid grid-cols-3 gap-4 pt-4 border-t border-dark-700">
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Sévérité</p>
-                        @php
-                            $severityColors = ['low' => 'blue', 'medium' => 'yellow', 'high' => 'orange', 'critical' => 'red'];
-                            $color = $severityColors[$incident->severity] ?? 'gray';
-                        @endphp
-                        <p class="text-white mt-1">
-                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-{{ $color }}-600/20 text-{{ $color }}-300">
-                                {{ ucfirst($incident->severity) }}
-                            </span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Type</p>
-                        <p class="text-white mt-1">{{ ucfirst(str_replace('_', ' ', $incident->incident_type)) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Zone</p>
-                        <p class="text-white mt-1">{{ $incident->operationalZone?->nom ?? 'Non assignée' }}</p>
-                    </div>
-                </div>
+    <section class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div class="min-w-0">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+                <span class="nm-badge {{ $incident->couleurSeverite() }}">{{ $incident->libelleSeverite() }}</span>
+                <span class="nm-badge {{ $incident->couleurStatut() }}">{{ $incident->libelleStatut() }}</span>
+                <span class="nm-badge nm-badge-neutral">
+                    <x-icon name="map-pin" class="h-3 w-3" />
+                    {{ $incident->operationalZone?->nom ?? 'Zone non précisée' }}
+                </span>
             </div>
-
-            <!-- Description -->
-            <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
-                <h3 class="text-lg font-semibold text-white mb-4">Description</h3>
-                <p class="text-gray-300 leading-relaxed whitespace-pre-wrap">{{ $incident->description }}</p>
-                
-                <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-dark-700">
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Lieu</p>
-                        <p class="text-white mt-1">{{ $incident->location }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Date & Heure</p>
-                        <p class="text-white mt-1">{{ $incident->reported_at->format('d M Y à H:i') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporting & Investigation -->
-            <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
-                <h3 class="text-lg font-semibold text-white mb-4">Signalement & Investigation</h3>
-                
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Signalé par</p>
-                        <p class="text-white mt-1">{{ $incident->reporter?->name ?? 'Utilisateur supprimé' }}</p>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Investigateur</p>
-                        <p class="text-white mt-1">{{ $incident->investigator?->name ?? 'Non assigné' }}</p>
-                    </div>
-
-                    @if($incident->resolved_at)
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Résolu le</p>
-                        <p class="text-white mt-1">{{ $incident->resolved_at->format('d M Y à H:i') }}</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Investigation Details -->
-            @if($incident->status === 'under_investigation' || $incident->status === 'resolved' || $incident->status === 'closed')
-            <div class="bg-dark-800 rounded-xl border border-dark-700 p-6">
-                <h3 class="text-lg font-semibold text-white mb-4">Détails d'Investigation</h3>
-                
-                <div class="space-y-4">
-                    @if($incident->root_cause)
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Cause racine</p>
-                        <p class="text-white mt-1">{{ $incident->root_cause }}</p>
-                    </div>
-                    @endif
-
-                    @if($incident->corrective_actions)
-                    <div>
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Actions correctives</p>
-                        <p class="text-white mt-1 whitespace-pre-wrap">{{ $incident->corrective_actions }}</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            <!-- Actions -->
-            <div class="flex gap-3">
-                <a href="{{ route('safety.edit', $incident) }}" 
-                   class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Éditer
-                </a>
-                <form method="POST" action="{{ route('safety.destroy', $incident) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition inline-flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Supprimer
-                    </button>
-                </form>
-            </div>
+            <h1 class="nm-page-title">{{ $incident->titre }}</h1>
+            <p class="nm-page-subtitle">
+                Signalé par {{ $incident->reporter?->name ?? '—' }}
+                le {{ $incident->reported_at?->format('d/m/Y à H:i') ?? '—' }}
+                @if ($incident->incident_at)
+                    · Survenu le {{ $incident->incident_at->format('d/m/Y à H:i') }}
+                @endif
+            </p>
         </div>
 
-        <!-- Sidebar -->
-        <aside class="lg:col-span-1">
-            <div class="bg-dark-800 rounded-xl border border-dark-700 p-6 sticky top-6">
-                <h3 class="text-lg font-semibold text-white mb-4">Actions</h3>
-                
-                <div class="space-y-3">
-                    @if($incident->status === 'open')
-                    <form method="POST" action="{{ route('safety.assignInvestigation', $incident) }}" class="space-y-2">
-                        @csrf
-                        <label class="block text-sm font-medium text-gray-300">Assigner investigation</label>
-                        <select name="investigated_by" required class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white text-sm">
-                            <option value="">-- Sélectionner --</option>
-                            @foreach(\App\Models\User::orderBy('name')->get() as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
-                            Assigner & Commencer
-                        </button>
-                    </form>
-                    @elseif($incident->status === 'under_investigation')
-                    <form method="POST" action="{{ route('safety.resolve', $incident) }}" class="space-y-2">
-                        @csrf
-                        <h4 class="text-sm font-semibold text-white">Résoudre l'incident</h4>
-                        <textarea name="root_cause" placeholder="Cause racine..." required class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white text-sm"></textarea>
-                        <textarea name="corrective_actions" placeholder="Actions correctives..." required class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white text-sm"></textarea>
-                        <button type="submit" class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
-                            Marquer Résolu
-                        </button>
-                    </form>
-                    @endif
+        @can('safety.manage')
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('safety.edit', $incident) }}" class="nm-btn nm-btn-secondary">
+                    <x-icon name="pencil" class="h-4 w-4" />
+                    Modifier
+                </a>
+                @if (in_array($incident->statut, ['reported', 'investigating'], true))
+                    <button type="button" class="nm-btn nm-btn-primary" data-open-resolve>
+                        <x-icon name="check-circle" class="h-4 w-4" />
+                        Clôturer l'investigation
+                    </button>
+                @endif
+            </div>
+        @endcan
+    </section>
 
-                    <div class="pt-4 border-t border-dark-700">
-                        <h4 class="text-sm font-semibold text-white mb-3">Informations</h4>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Créé</span>
-                                <span class="text-white">{{ $incident->created_at->format('d M Y') }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Modifié</span>
-                                <span class="text-white">{{ $incident->updated_at->format('d M Y H:i') }}</span>
-                            </div>
-                        </div>
-                    </div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        @php
+            $tuiles = [
+                ['label' => 'Sévérité', 'valeur' => $incident->libelleSeverite()],
+                ['label' => 'Statut', 'valeur' => $incident->libelleStatut()],
+                ['label' => 'Investigateur', 'valeur' => $incident->investigator?->name ?? 'Non attribué'],
+                ['label' => 'Résolu le', 'valeur' => $incident->resolved_at?->format('d/m/Y') ?? '—'],
+            ];
+        @endphp
+        @foreach ($tuiles as $tuile)
+            <div class="nm-card px-4 py-4">
+                <p class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">{{ $tuile['label'] }}</p>
+                <p class="mt-1.5 truncate text-sm font-bold text-strong">{{ $tuile['valeur'] }}</p>
+            </div>
+        @endforeach
+    </div>
+
+    <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="nm-card space-y-5 p-5 sm:p-6 lg:col-span-2">
+            <h2 class="nm-section-title">Description</h2>
+            <p class="whitespace-pre-line text-sm leading-relaxed text-body">{{ $incident->description }}</p>
+
+            @if ($incident->investigation_notes)
+                <div class="nm-divider"></div>
+                <div>
+                    <h3 class="mb-2 text-sm font-bold text-strong">Notes d'investigation</h3>
+                    <p class="whitespace-pre-line text-sm leading-relaxed text-body">{{ $incident->investigation_notes }}</p>
                 </div>
+            @endif
+
+            @if (! empty($incident->corrective_actions))
+                <div class="nm-divider"></div>
+                <div>
+                    <h3 class="mb-2 text-sm font-bold text-strong">Actions correctives</h3>
+                    <ul class="space-y-1.5">
+                        @foreach ((array) $incident->corrective_actions as $action)
+                            <li class="flex items-start gap-2 text-sm text-body">
+                                <x-icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-success-600" />
+                                <span>{{ is_array($action) ? ($action['libelle'] ?? json_encode($action)) : $action }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </div>
+
+        <aside class="space-y-6">
+            @can('safety.manage')
+                @if ($incident->statut === 'reported')
+                    <div class="nm-card p-5">
+                        <h2 class="mb-3 nm-section-title">Assigner l'investigation</h2>
+                        <form method="POST" action="{{ route('safety.assignInvestigation', $incident) }}" class="space-y-3">
+                            @csrf
+                            <label for="investigated_by" class="nm-label">Investigateur</label>
+                            <select id="investigated_by" name="investigated_by" required class="nm-select">
+                                <option value="">-- Sélectionner --</option>
+                                @foreach ($investigateurs as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="nm-btn nm-btn-secondary w-full">Assigner</button>
+                        </form>
+                    </div>
+                @endif
+            @endcan
+
+            <div class="nm-card p-5">
+                <h2 class="mb-3 nm-section-title">Fiche</h2>
+                <dl class="space-y-2.5 text-sm">
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-muted">Identifiant</dt>
+                        <dd class="font-mono font-semibold text-strong">#{{ $incident->id }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-muted">Zone</dt>
+                        <dd class="text-right font-medium text-strong">{{ $incident->operationalZone?->nom ?? '—' }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-muted">Signalé par</dt>
+                        <dd class="text-right font-medium text-strong">{{ $incident->reporter?->name ?? '—' }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-muted">Créé le</dt>
+                        <dd class="text-right font-medium text-strong">{{ $incident->created_at?->format('d/m/Y') ?? '—' }}</dd>
+                    </div>
+                </dl>
             </div>
         </aside>
-    </div>
+    </section>
+
+    @can('safety.manage')
+        @if (in_array($incident->statut, ['reported', 'investigating'], true))
+            <div id="resolve-panel" hidden class="nm-card p-5 sm:p-6">
+                <h2 class="mb-4 nm-section-title">Clôturer l'investigation</h2>
+                <form method="POST" action="{{ route('safety.resolve', $incident) }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label for="investigation_notes_resolve" class="nm-label">
+                            Conclusion de l'investigation <span class="text-danger-600">*</span>
+                        </label>
+                        <textarea id="investigation_notes_resolve" name="investigation_notes" rows="4" required
+                                  class="nm-textarea" @error('investigation_notes') aria-invalid="true" @enderror>{{ old('investigation_notes') }}</textarea>
+                        @error('investigation_notes')
+                            <p class="nm-field-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="corrective_actions" class="nm-label">Actions correctives</label>
+                        <textarea id="corrective_actions" name="corrective_actions" rows="3"
+                                  placeholder="Une action par ligne" class="nm-textarea"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" class="nm-btn nm-btn-ghost" data-close-resolve>Annuler</button>
+                        <button type="submit" class="nm-btn nm-btn-primary">Marquer comme résolu</button>
+                    </div>
+                </form>
+            </div>
+        @endif
+    @endcan
 </div>
+
+@push('scripts')
+<script>
+    // The corrective-actions textarea is a newline-separated list; the
+    // controller validates it as an array of strings.
+    document.addEventListener('DOMContentLoaded', function () {
+        const panel = document.getElementById('resolve-panel');
+        const form = panel && panel.querySelector('form');
+        const textarea = document.getElementById('corrective_actions');
+
+        document.querySelector('[data-open-resolve]')?.addEventListener('click', function () {
+            panel.hidden = false;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        document.querySelector('[data-close-resolve]')?.addEventListener('click', function () {
+            panel.hidden = true;
+        });
+
+        form?.addEventListener('submit', function (event) {
+            if (!textarea) return;
+            const actions = textarea.value.split('\n').map((l) => l.trim()).filter(Boolean);
+            textarea.removeAttribute('name');
+            for (const [i, action] of actions.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'corrective_actions[]';
+                input.value = action;
+                form.appendChild(input);
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

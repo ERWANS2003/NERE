@@ -2,212 +2,186 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SafetyIncident;
 use App\Models\OperationalZone;
+use App\Models\SafetyIncident;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SafetyIncidentController extends Controller
 {
     /**
      * Display a listing of safety incidents.
+     *
+     * The filters and the views used to be written against columns that do not
+     * exist in the schema (`status`, `incident_type`, `location`,
+     * `incident_number`, `title`); every one of those requests was a 500. They
+     * are now expressed against the real `statut` / `severity` / `titre` columns.
      */
     public function index(Request $request)
     {
         $query = SafetyIncident::with(['reporter', 'investigator', 'operationalZone'])
             ->latest('reported_at');
 
-        // Filter by severity
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->severity);
-        }
+        $query->when(
+            $request->filled('severity'),
+            fn ($q) => $q->where('severity', $request->string('severity')->toString())
+        );
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        $query->when(
+            $request->filled('statut'),
+            fn ($q) => $q->where('statut', $request->string('statut')->toString())
+        );
 
-        // Filter by type
-        if ($request->filled('type')) {
-            $query->where('incident_type', $request->type);
-        }
+        $query->when(
+            $request->filled('zone_id'),
+            fn ($q) => $q->where('operational_zone_id', $request->integer('zone_id'))
+        );
 
-        // Filter by zone
-        if ($request->filled('zone_id')) {
-            $query->where('operational_zone_id', $request->zone_id);
-        }
-
-        // Search
         if ($request->filled('q')) {
-            $search = '%' . $request->q . '%';
-            $query->where(function ($q) use ($search) {
-                $q->where('incident_number', 'like', $search)
-                    ->orWhere('title', 'like', $search)
-                    ->orWhere('description', 'like', $search);
-            });
+            $search = '%'.$request->string('q')->toString().'%';
+            $query->where(fn ($q) => $q
+                ->where('titre', 'ILIKE', $search)
+                ->orWhere('description', 'ILIKE', $search));
         }
 
-        // Scope: unresolved only
-        if ($request->boolean('unresolved')) {
-            $query->unresolved();
-        }
-
-        // Scope: critical only
-        if ($request->boolean('critical')) {
-            $query->critical();
-        }
+        $query->when($request->boolean('unresolved'), fn ($q) => $q->unresolved());
+        $query->when($request->boolean('critical'), fn ($q) => $q->critical());
 
         $incidents = $query->paginate(15)->withQueryString();
-        $zones = OperationalZone::orderBy('nom')->get();
-        $statuses = ['open', 'under_investigation', 'resolved', 'closed'];
-        $severities = ['low', 'medium', 'high', 'critical'];
-        $types = ['near_miss', 'injury', 'equipment_damage', 'environmental', 'security', 'other'];
 
-        return view('safety.index', compact('incidents', 'zones', 'statuses', 'severities', 'types'));
+        return view('safety.index', [
+            'incidents' => $incidents,
+            'zones' => $this->zones(),
+            'statuses' => SafetyIncident::statuts(),
+            'severities' => SafetyIncident::severites(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new safety incident.
-     */
     public function create()
     {
-        $zones = OperationalZone::orderBy('nom')->get();
-        $severities = ['low', 'medium', 'high', 'critical'];
-        $types = ['near_miss', 'injury', 'equipment_damage', 'environmental', 'security', 'other'];
-
-        return view('safety.create', compact('zones', 'severities', 'types'));
+        return view('safety.create', [
+            'zones' => $this->zones(),
+            'severities' => SafetyIncident::severites(),
+        ]);
     }
 
-    /**
-     * Store a newly created safety incident.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'incident_number' => 'required|unique:safety_incidents|string|max:50',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'severity' => 'required|in:low,medium,high,critical',
-            'incident_type' => 'required|in:near_miss,injury,equipment_damage,environmental,security,other',
-            'location' => 'required|string|max:255',
-            'operational_zone_id' => 'nullable|exists:operational_zones,id',
-            'reported_at' => 'required|date_format:Y-m-d H:i',
+            'titre' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'severity' => ['required', 'in:'.implode(',', array_keys(SafetyIncident::severites()))],
+            'operational_zone_id' => ['required', 'integer', 'exists:operational_zones,id'],
+            'incident_at' => ['required', 'date'],
         ]);
 
-        $validated['reported_by'] = Auth::id();
-        $validated['status'] = 'open';
-
-        $incident = SafetyIncident::create($validated);
+        $incident = SafetyIncident::create([
+            'titre' => $validated['titre'],
+            'description' => $validated['description'],
+            'severity' => $validated['severity'],
+            'operational_zone_id' => $validated['operational_zone_id'],
+            'incident_at' => $validated['incident_at'],
+            'reported_by' => $request->user()->id,
+            'reported_at' => now(),
+            'statut' => 'reported',
+        ]);
 
         return redirect()->route('safety.show', $incident)
-            ->with('success', 'Incident de sécurité enregistré avec succès.');
+            ->with('success', 'Incident de sÃ©curitÃ© enregistrÃ©.');
     }
 
-    /**
-     * Display the specified safety incident.
-     */
     public function show(SafetyIncident $incident)
     {
         $incident->load(['reporter', 'investigator', 'operationalZone']);
-        $zones = OperationalZone::orderBy('nom')->get();
-        $statuses = ['open', 'under_investigation', 'resolved', 'closed'];
 
-        return view('safety.show', compact('incident', 'zones', 'statuses'));
+        return view('safety.show', [
+            'incident' => $incident,
+            'zones' => $this->zones(),
+            'statuses' => SafetyIncident::statuts(),
+            'severities' => SafetyIncident::severites(),
+            'investigateurs' => $this->investigateurs(),
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified safety incident.
-     */
     public function edit(SafetyIncident $incident)
     {
         $incident->load(['reporter', 'investigator', 'operationalZone']);
-        $zones = OperationalZone::orderBy('nom')->get();
-        $statuses = ['open', 'under_investigation', 'resolved', 'closed'];
 
-        return view('safety.edit', compact('incident', 'zones', 'statuses'));
+        return view('safety.edit', [
+            'incident' => $incident,
+            'zones' => $this->zones(),
+            'statuses' => SafetyIncident::statuts(),
+            'severities' => SafetyIncident::severites(),
+            'investigateurs' => $this->investigateurs(),
+        ]);
     }
 
-    /**
-     * Update the specified safety incident.
-     */
     public function update(Request $request, SafetyIncident $incident)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'severity' => 'required|in:low,medium,high,critical',
-            'location' => 'required|string|max:255',
-            'operational_zone_id' => 'nullable|exists:operational_zones,id',
-            'status' => 'required|in:open,under_investigation,resolved,closed',
-            'investigated_by' => 'nullable|exists:users,id',
-            'root_cause' => 'nullable|string',
-            'corrective_actions' => 'nullable|string',
+            'titre' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'severity' => ['required', 'in:'.implode(',', array_keys(SafetyIncident::severites()))],
+            'statut' => ['required', 'in:'.implode(',', array_keys(SafetyIncident::statuts()))],
+            'operational_zone_id' => ['required', 'integer', 'exists:operational_zones,id'],
+            'investigated_by' => ['nullable', 'integer', 'exists:users,id'],
+            'investigation_notes' => ['nullable', 'string'],
         ]);
 
-        // If marking as resolved, set resolved_at
-        if ($validated['status'] === 'resolved' && !$incident->resolved_at) {
-            $validated['resolved_at'] = now();
-        }
+        // Keep resolved_at consistent with the statut instead of letting the two
+        // drift apart.
+        $validated['resolved_at'] = in_array($validated['statut'], ['resolved', 'closed'], true)
+            ? ($incident->resolved_at ?? now())
+            : null;
 
         $incident->update($validated);
 
         return redirect()->route('safety.show', $incident)
-            ->with('success', 'Incident de sécurité mis à jour avec succès.');
+            ->with('success', 'Incident de sÃ©curitÃ© mis Ã  jour.');
     }
 
-    /**
-     * Remove the specified safety incident.
-     */
     public function destroy(SafetyIncident $incident)
     {
         $incident->delete();
 
         return redirect()->route('safety.index')
-            ->with('success', 'Incident de sécurité supprimé.');
+            ->with('success', 'Incident de sÃ©curitÃ© supprimÃ©.');
     }
 
-    /**
-     * Assign investigation to user.
-     */
     public function assignInvestigation(Request $request, SafetyIncident $incident)
     {
         $validated = $request->validate([
-            'investigated_by' => 'required|exists:users,id',
+            'investigated_by' => ['required', 'integer', 'exists:users,id'],
         ]);
 
         $incident->update([
             'investigated_by' => $validated['investigated_by'],
-            'status' => 'under_investigation',
+            'statut' => 'investigating',
         ]);
 
-        return redirect()->back()
-            ->with('success', 'Investigation assignée avec succès.');
+        return back()->with('success', 'Investigation assignÃ©e.');
     }
 
-    /**
-     * Resolve the incident.
-     */
     public function resolve(Request $request, SafetyIncident $incident)
     {
         $validated = $request->validate([
-            'root_cause' => 'required|string',
-            'corrective_actions' => 'required|string',
+            'investigation_notes' => ['required', 'string'],
+            'corrective_actions' => ['nullable', 'array'],
+            'corrective_actions.*' => ['string', 'max:500'],
         ]);
 
         $incident->update([
-            'status' => 'resolved',
+            'statut' => 'resolved',
             'resolved_at' => now(),
-            'root_cause' => $validated['root_cause'],
-            'corrective_actions' => $validated['corrective_actions'],
+            'investigated_by' => $incident->investigated_by ?? $request->user()->id,
+            'investigation_notes' => $validated['investigation_notes'],
+            'corrective_actions' => $validated['corrective_actions'] ?? [],
         ]);
 
         return redirect()->route('safety.show', $incident)
-            ->with('success', 'Incident marqué comme résolu.');
+            ->with('success', 'Incident marquÃ© comme rÃ©solu.');
     }
 
-    /**
-     * Generate incident statistics.
-     */
     public function statistics()
     {
         $total = SafetyIncident::count();
@@ -215,32 +189,48 @@ class SafetyIncidentController extends Controller
         $critical = SafetyIncident::critical()->count();
         $recent30 = SafetyIncident::recent(30)->count();
 
-        $bySeverity = SafetyIncident::groupBy('severity')
-            ->selectRaw('severity, count(*) as count')
-            ->get()
-            ->pluck('count', 'severity');
+        // `byType` grouped on a column that does not exist; the closest real
+        // dimension is the operational zone, so that is what the page shows.
+        $bySeverity = SafetyIncident::selectRaw('severity, count(*) as total')
+            ->groupBy('severity')
+            ->pluck('total', 'severity');
 
-        $byType = SafetyIncident::groupBy('incident_type')
-            ->selectRaw('incident_type, count(*) as count')
-            ->get()
-            ->pluck('count', 'incident_type');
+        $byStatut = SafetyIncident::selectRaw('statut, count(*) as total')
+            ->groupBy('statut')
+            ->pluck('total', 'statut');
 
-        $byZone = SafetyIncident::with('operationalZone')
+        $byZone = SafetyIncident::selectRaw('operational_zone_id, count(*) as total')
             ->groupBy('operational_zone_id')
-            ->selectRaw('operational_zone_id, count(*) as count')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->operationalZone?->nom ?? 'Unknown' => $item->count];
-            });
+            ->pluck('total', 'operational_zone_id')
+            ->mapWithKeys(fn ($total, $zoneId) => [
+                OperationalZone::whereKey($zoneId)->value('nom') ?? 'Zone supprimÃ©e' => $total,
+            ]);
 
         return view('safety.statistics', compact(
-            'total',
-            'unresolved',
-            'critical',
-            'recent30',
-            'bySeverity',
-            'byType',
-            'byZone'
-        ));
+            'total', 'unresolved', 'critical', 'recent30', 'bySeverity', 'byStatut', 'byZone'
+        ) + [
+            'severites' => SafetyIncident::severites(),
+            'statuses' => SafetyIncident::statuts(),
+        ]);
+    }
+
+    /** @return \Illuminate\Support\Collection */
+    protected function zones()
+    {
+        return OperationalZone::where('actif', true)->orderBy('nom')->get();
+    }
+
+    /** @return \Illuminate\Support\Collection */
+    protected function investigateurs()
+    {
+        // There is no dedicated HSE role in this schema, so investigators are
+        // the technicians plus the roles that can manage safety.
+        return User::where('actif', true)
+            ->where(function ($q) {
+                $q->where('est_technicien', true)
+                    ->orWhereHas('role', fn ($r) => $r->whereIn('slug', ['admin', 'dsi']));
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }

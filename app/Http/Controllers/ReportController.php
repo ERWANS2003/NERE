@@ -94,32 +94,38 @@ class ReportController extends Controller
 
     public function exportExcel()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\TicketsExport(),
-            'rapport-tickets-' . now()->format('Y-m-d') . '.xlsx'
+        return Excel::download(
+            new TicketsExport(Ticket::visibleA(auth()->user())),
+            'rapport-tickets-'.now()->format('Y-m-d').'.xlsx'
         );
     }
 
     public function exportCsv()
     {
-        $tickets = Ticket::with(['categorie', 'priorite', 'statut', 'site'])->get();
+        $tickets = Ticket::visibleA(auth()->user())
+            ->with(['categorie', 'priorite', 'statut', 'site', 'technicien'])
+            ->latest()
+            ->get();
 
         return response()->streamDownload(function () use ($tickets) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Référence', 'Titre', 'Catégorie', 'Priorité', 'Statut', 'Site', 'Créé le']);
+            fputcsv($out, ['Référence', 'Titre', 'Catégorie', 'Priorité', 'Statut', 'Site', 'Assigné à', 'Créé le'], ';');
             foreach ($tickets as $t) {
                 fputcsv($out, [
                     $t->reference,
                     $t->titre,
-                    $t->categorie?->nom,
-                    $t->priorite?->nom,
-                    $t->statut?->nom,
-                    $t->site?->nom,
-                    $t->created_at,
-                ]);
+                    $t->categorie?->nom ?? '—',
+                    $t->priorite?->nom ?? '—',
+                    $t->statut?->nom ?? '—',
+                    $t->site?->nom ?? '—',
+                    $t->technicien?->name ?? '—',
+                    $t->created_at?->format('d/m/Y H:i') ?? '—',
+                ], ';');
             }
             fclose($out);
-        }, 'rapport-tickets.csv');
+        }, 'rapport-tickets-'.now()->format('Y-m-d').'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     /**
@@ -138,7 +144,8 @@ class ReportController extends Controller
             default => "DATE(created_at)",
         };
 
-        $trendData = Ticket::selectRaw("{$dateFormatExpr} as date, count(*) as count")
+        $trendData = Ticket::visibleA(auth()->user())
+            ->selectRaw("{$dateFormatExpr} as date, count(*) as count")
             ->where('created_at', '>=', $startDate)
             ->groupByRaw($dateFormatExpr)
             ->orderBy('date')
@@ -150,22 +157,29 @@ class ReportController extends Controller
                 ];
             });
 
+        // After a join, an unqualified `created_at` is ambiguous in PostgreSQL
+        // because every joined table has one. `status_id` does not exist at all:
+        // the column is `ticket_status_id`.
+
         // Priority distribution
-        $priorityDistribution = Ticket::where('created_at', '>=', $startDate)
-            ->join('ticket_priorities', 'tickets.priorite_id', '=', 'ticket_priorities.id')
+        $priorityDistribution = Ticket::visibleA(auth()->user())
+            ->where('tickets.created_at', '>=', $startDate)
+            ->join('ticket_priorities', 'tickets.ticket_priority_id', '=', 'ticket_priorities.id')
             ->groupBy('ticket_priorities.nom')
             ->selectRaw('ticket_priorities.nom as label, count(*) as value')
             ->get();
 
         // Status distribution
-        $statusDistribution = Ticket::where('created_at', '>=', $startDate)
-            ->join('ticket_statuses', 'tickets.status_id', '=', 'ticket_statuses.id')
+        $statusDistribution = Ticket::visibleA(auth()->user())
+            ->where('tickets.created_at', '>=', $startDate)
+            ->join('ticket_statuses', 'tickets.ticket_status_id', '=', 'ticket_statuses.id')
             ->groupBy('ticket_statuses.nom')
             ->selectRaw('ticket_statuses.nom as label, count(*) as value')
             ->get();
 
         // Category distribution
-        $categoryDistribution = Ticket::where('created_at', '>=', $startDate)
+        $categoryDistribution = Ticket::visibleA(auth()->user())
+            ->where('tickets.created_at', '>=', $startDate)
             ->join('ticket_categories', 'tickets.ticket_category_id', '=', 'ticket_categories.id')
             ->groupBy('ticket_categories.nom')
             ->selectRaw('ticket_categories.nom as label, count(*) as value')
@@ -178,7 +192,8 @@ class ReportController extends Controller
             default => "TIMESTAMPDIFF(HOUR, created_at, date_resolution)",
         };
 
-        $resolutionTimeTrend = Ticket::selectRaw("{$dateFormatExpr} as date, AVG({$diffHourExpr}) as avg_hours, COUNT(*) as count")
+        $resolutionTimeTrend = Ticket::visibleA(auth()->user())
+            ->selectRaw("{$dateFormatExpr} as date, AVG({$diffHourExpr}) as avg_hours, COUNT(*) as count")
             ->whereNotNull('date_resolution')
             ->where('created_at', '>=', $startDate)
             ->groupByRaw($dateFormatExpr)
@@ -186,8 +201,11 @@ class ReportController extends Controller
             ->get();
 
         // SLA compliance rate
-        $totalTickets = Ticket::where('created_at', '>=', $startDate)->count();
-        $slaCompliant = Ticket::where('created_at', '>=', $startDate)->where('sla_depasse', false)->count();
+        $totalTickets = Ticket::visibleA(auth()->user())->where('created_at', '>=', $startDate)->count();
+        $slaCompliant = Ticket::visibleA(auth()->user())
+            ->where('created_at', '>=', $startDate)
+            ->where('sla_depasse', false)
+            ->count();
         $slaComplianceRate = $totalTickets > 0 ? round(($slaCompliant / $totalTickets) * 100, 1) : 0;
 
         return response()->json([

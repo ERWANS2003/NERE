@@ -2,56 +2,95 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TicketStatusSlug;
 use App\Models\Ticket;
 use App\Models\TicketStatus;
+use App\Services\TicketWorkflowService;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
+use ValueError;
 
 class KanbanController extends Controller
 {
     /**
-     * Display Kanban board view
+     * Display the Kanban board.
+     *
+     * Scoped through Ticket::visibleA() — the board used to query every ticket
+     * in the table with no ownership filter, so any authenticated user could
+     * read every department's board.
      */
     public function index(Request $request)
     {
         $statuses = TicketStatus::orderBy('ordre')->get();
 
-        $tickets = Ticket::with(['status', 'priorite', 'assignee', 'createur'])
-            ->when($request->filled('departement'), fn ($q) => $q->where('departement_id', $request->query('departement')))
-            ->when($request->filled('priorite'), fn ($q) => $q->where('priorite_id', $request->query('priorite')))
-            ->when($request->filled('assignee'), fn ($q) => $q->where('assignee_id', $request->query('assignee')))
+        $tickets = Ticket::visibleA(auth()->user())
+            ->with(['statut', 'priorite', 'technicien', 'demandeur', 'departement'])
+            ->when(
+                $request->filled('departement'),
+                fn ($q) => $q->where('departement_id', $request->integer('departement'))
+            )
+            ->when(
+                $request->filled('priorite'),
+                fn ($q) => $q->where('ticket_priority_id', $request->integer('priorite'))
+            )
+            ->when(
+                $request->filled('assignee'),
+                fn ($q) => $q->where('assigned_to', $request->integer('assignee'))
+            )
             ->latest()
             ->get()
-            ->groupBy('status_id');
+            ->groupBy(fn (Ticket $ticket) => $ticket->ticket_status_id);
 
         return view('kanban.index', compact('statuses', 'tickets'));
     }
 
     /**
-     * Move ticket to different status (AJAX)
+     * Move a ticket to a different status (AJAX).
      */
     public function moveTicket(Request $request, Ticket $ticket)
     {
-        $request->validate([
-            'status_id' => 'required|exists:ticket_statuses,id',
-            'position' => 'nullable|integer|min:0',
+        $validated = $request->validate([
+            'status_id' => ['required', 'integer', 'exists:ticket_statuses,id'],
         ]);
 
-        $oldStatus = $ticket->status_id;
-        $newStatus = $request->input('status_id');
+        $user = $request->user();
 
-        // Update ticket status
-        $ticket->update(['status_id' => $newStatus]);
+        // The board is scoped by Ticket::visibleA(); a drag-and-drop must respect
+        // the same boundary, otherwise any authenticated user could probe ticket
+        // ids and read the status of tickets outside their scope.
+        abort_unless(
+            Ticket::visibleA($user)->whereKey($ticket->getKey())->exists(),
+            403,
+            'Ticket hors de votre périmètre.'
+        );
 
-        // Log the change
-        \App\Models\TicketHistory::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => auth()->id(),
-            'action' => 'status_change',
-            'description' => "Statut changé de {$oldStatus} à {$newStatus}",
-            'old_value' => $oldStatus,
-            'new_value' => $newStatus,
+        if ($ticket->ticket_status_id === (int) $validated['status_id']) {
+            return response()->json(['success' => true, 'message' => 'Statut inchangé.']);
+        }
+
+        $cible = TicketStatus::findOrFail($validated['status_id']);
+
+        try {
+            $vers = TicketStatusSlug::from($cible->slug);
+        } catch (ValueError) {
+            return response()->json([
+                'success' => false,
+                'message' => "Statut « {$cible->nom} » non pris en charge par le workflow.",
+            ], 422);
+        }
+
+        // Delegate to the workflow: it owns the transition matrix, the per-role
+        // authorisation, the SLA side effects and the history trail. Writing
+        // ticket_status_id directly here bypassed all four.
+        try {
+            app(TicketWorkflowService::class)->transitionner($ticket, $vers, $user);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Ticket déplacé vers « {$cible->nom} ».",
         ]);
-
-        return response()->json(['success' => true, 'message' => 'Ticket moved successfully']);
     }
 }

@@ -29,7 +29,8 @@ class TicketSearchController extends Controller
             'sort' => $request->query('sort', 'latest'),
         ];
 
-        $query = Ticket::with(['status', 'priorite', 'categorie', 'assignee', 'createur']);
+        $query = Ticket::visibleA(auth()->user())
+            ->with(['statut', 'priorite', 'categorie', 'technicien', 'demandeur', 'departement', 'site']);
 
         // Full-text search
         if ($filters['q']) {
@@ -43,12 +44,12 @@ class TicketSearchController extends Controller
 
         // Status filter
         if ($filters['status_id']) {
-            $query->where('status_id', $filters['status_id']);
+            $query->where('ticket_status_id', $filters['status_id']);
         }
 
         // Priority filter
         if ($filters['priority_id']) {
-            $query->where('priorite_id', $filters['priority_id']);
+            $query->where('ticket_priority_id', $filters['priority_id']);
         }
 
         // Category filter
@@ -63,7 +64,7 @@ class TicketSearchController extends Controller
 
         // Created by filter
         if ($filters['created_by']) {
-            $query->where('created_by', $filters['created_by']);
+            $query->where('user_id', $filters['created_by']);
         }
 
         // Date range filter
@@ -80,8 +81,11 @@ class TicketSearchController extends Controller
                 $query->oldest();
                 break;
             case 'priority':
-                $query->join('ticket_priorities', 'tickets.priorite_id', '=', 'ticket_priorities.id')
-                    ->orderByDesc('ticket_priorities.niveau');
+                $query->orderBy(
+                    TicketPriority::select('niveau')
+                        ->whereColumn('ticket_priorities.id', 'tickets.ticket_priority_id'),
+                    'desc'
+                );
                 break;
             case 'unresolved':
                 $query->whereNull('date_resolution')->latest();
@@ -160,31 +164,27 @@ class TicketSearchController extends Controller
      */
     public function quickSearch(Request $request)
     {
-        $q = $request->query('q');
+        $q = trim((string) $request->query('q'));
 
-        if (strlen($q) < 2) {
+        if (mb_strlen($q) < 2) {
             return response()->json([]);
         }
 
-        $tickets = Ticket::where(function ($query) use ($q) {
-            $searchTerm = '%' . $q . '%';
-            $query->where('reference', 'like', $searchTerm)
-                ->orWhere('titre', 'like', $searchTerm);
-        })
-            ->with(['status', 'priorite', 'assignee'])
+        $tickets = Ticket::visibleA(auth()->user())
+            ->recherche($q)
+            ->with(['statut', 'priorite', 'technicien'])
+            ->latest()
             ->limit(10)
             ->get()
-            ->map(function ($ticket) {
-                return [
-                    'id' => $ticket->id,
-                    'reference' => $ticket->reference,
-                    'titre' => $ticket->titre,
-                    'status' => $ticket->status?->nom,
-                    'priority' => $ticket->priorite?->nom,
-                    'assignee' => $ticket->assignee?->name,
-                    'url' => route('tickets.show', $ticket),
-                ];
-            });
+            ->map(fn (Ticket $ticket) => [
+                'id' => $ticket->id,
+                'reference' => $ticket->reference,
+                'titre' => $ticket->titre,
+                'status' => $ticket->statut?->nom,
+                'priority' => $ticket->priorite?->nom,
+                'assignee' => $ticket->technicien?->name,
+                'url' => route('tickets.show', $ticket),
+            ]);
 
         return response()->json($tickets);
     }

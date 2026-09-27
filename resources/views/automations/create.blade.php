@@ -63,7 +63,10 @@
                                 :class="automation.trigger_event === key ? 'border-accent-500 bg-accent-50' : 'border-gray-200 hover:border-accent-300'"
                                 class="flex items-center gap-3 p-4 border-2 rounded-lg transition text-left">
                             <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                <x-icon :name="event.icon" size="md" class="text-blue-600" />
+                                {{-- `event` is an Alpine loop variable, not a PHP one: Blade would
+                                     compile `:name="event.icon"` to PHP and die on an undefined
+                                     constant. The trigger icon is decorative, so it is static. --}}
+                                <x-icon name="lightning" size="md" class="text-blue-600" />
                             </div>
                             <div>
                                 <div class="font-semibold text-gray-900" x-text="event.name"></div>

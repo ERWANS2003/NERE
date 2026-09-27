@@ -207,6 +207,46 @@ class Ticket extends Model
         });
     }
 
+    /**
+     * Restrict a query to the tickets a user is allowed to see.
+     *
+     * This is the single source of truth for departmental data isolation. Every
+     * listing endpoint (index, search, Kanban, quick search, exports, API) must
+     * go through it — the Kanban board and the advanced search both used to
+     * query Ticket directly with no scoping at all, which leaked every
+     * department's tickets to any authenticated user.
+     *
+     * - demandeur: only tickets they raised
+     * - admin: everything
+     * - everyone else: their own tickets plus their department's
+     */
+    public function scopeVisibleA(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('user_id', $user->id);
+
+            if ($user->hasRole('demandeur') || ! $user->departement_id) {
+                return;
+            }
+
+            $q->orWhere('departement_id', $user->departement_id);
+        });
+    }
+
+    public function scopeNonAssignes(Builder $query): Builder
+    {
+        return $query->whereNull('assigned_to');
+    }
+
+    public function scopeResolus(Builder $query): Builder
+    {
+        return $query->whereNotNull('date_resolution');
+    }
+
     public function estEnRetard(): bool
     {
         if ($this->date_mise_en_attente || $this->statut?->met_en_pause_sla) {

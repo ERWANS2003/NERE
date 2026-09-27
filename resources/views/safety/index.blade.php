@@ -1,25 +1,185 @@
 @extends('layouts.portal')
 
-@section('titre', 'HSE & conformité')
+@section('titre', 'HSE & conformitÃ©')
 @section('sous-titre', 'Registre des incidents, risques et actions correctives')
 
 @section('contenu')
-<div class="p-6 lg:p-8 space-y-6">
-    <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div><p class="text-xs font-bold uppercase tracking-[.16em] text-primary-700 mb-2">Prévention & conformité</p><h1 class="text-3xl font-bold tracking-tight text-gray-900">Registre HSE</h1><p class="text-gray-500 mt-2">Transformez chaque signalement en action suivie et documentée.</p></div>
-        <div class="flex gap-3"><a href="{{ route('safety.statistics') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold">Analyses</a><a href="{{ route('safety.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>Signaler un incident</a></div>
+<div class="p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+            <p class="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-primary-600">
+                PrÃ©vention &amp; conformitÃ©
+            </p>
+            <h1 class="nm-page-title">Registre HSE</h1>
+            <p class="nm-page-subtitle">Transformez chaque signalement en action suivie et documentÃ©e.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('safety.statistics') }}" class="nm-btn nm-btn-secondary">
+                <x-icon name="chart-bar" class="h-4 w-4" />
+                Analyses
+            </a>
+            @can('safety.manage')
+                <a href="{{ route('safety.create') }}" class="nm-btn nm-btn-primary">
+                    <x-icon name="plus" class="h-4 w-4" />
+                    Signaler un incident
+                </a>
+            @endcan
+        </div>
     </section>
 
-    <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        @php($hseKpis = [['label' => 'Incidents affichés', 'value' => $incidents->total(), 'tone' => 'text-gray-900'], ['label' => 'Non résolus', 'value' => \App\Models\SafetyIncident::unresolved()->count(), 'tone' => 'text-amber-700'], ['label' => 'Critiques', 'value' => \App\Models\SafetyIncident::critical()->count(), 'tone' => 'text-red-700'], ['label' => '30 derniers jours', 'value' => \App\Models\SafetyIncident::recent(30)->count(), 'tone' => 'text-blue-700']])
-        @foreach($hseKpis as $kpi)<div class="bg-white border border-gray-200 rounded-xl px-4 py-4 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $kpi['label'] }}</p><p class="text-2xl font-bold {{ $kpi['tone'] }} mt-2">{{ number_format($kpi['value']) }}</p></div>@endforeach
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        @php
+            $hseKpis = [
+                ['label' => 'Signalements', 'value' => $incidents->total(), 'tone' => 'text-strong'],
+                ['label' => 'Non rÃ©solus', 'value' => \App\Models\SafetyIncident::unresolved()->count(), 'tone' => 'text-warning-700'],
+                ['label' => 'Critiques', 'value' => \App\Models\SafetyIncident::critical()->count(), 'tone' => 'text-danger-700'],
+                ['label' => '30 derniers jours', 'value' => \App\Models\SafetyIncident::recent(30)->count(), 'tone' => 'text-info-700'],
+            ];
+        @endphp
+        @foreach ($hseKpis as $kpi)
+            <div class="nm-card px-4 py-4">
+                <p class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">{{ $kpi['label'] }}</p>
+                <p class="mt-2 text-2xl font-bold tabular-nums {{ $kpi['tone'] }}">{{ number_format($kpi['value']) }}</p>
+            </div>
+        @endforeach
     </section>
 
-    <section class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-5"><form method="GET" action="{{ route('safety.index') }}" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-3 items-end"><div><label for="q" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Recherche</label><input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="Numéro, titre ou description" class="w-full px-3 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-primary-600/20"></div><div><label for="severity" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Sévérité</label><select id="severity" name="severity" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="">Toutes</option>@foreach($severities as $sev)<option value="{{ $sev }}" @selected(request('severity') == $sev)>{{ ucfirst($sev) }}</option>@endforeach</select></div><div><label for="status" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Statut</label><select id="status" name="status" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="">Tous</option>@foreach($statuses as $st)<option value="{{ $st }}" @selected(request('status') == $st)>{{ ucfirst(str_replace('_', ' ', $st)) }}</option>@endforeach</select></div><div><label for="type" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Type</label><select id="type" name="type" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="">Tous</option>@foreach($types as $type)<option value="{{ $type }}" @selected(request('type') == $type)>{{ ucfirst(str_replace('_', ' ', $type)) }}</option>@endforeach</select></div><div><label for="zone_id" class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Zone</label><select id="zone_id" name="zone_id" class="w-full px-3 py-2.5 rounded-lg border text-sm"><option value="">Toutes</option>@foreach($zones as $zone)<option value="{{ $zone->id }}" @selected(request('zone_id') == $zone->id)>{{ $zone->nom }}</option>@endforeach</select></div><button type="submit" class="px-4 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-semibold">Filtrer</button></form></section>
+    <section class="nm-card p-4 sm:p-5">
+        <form method="GET" action="{{ route('safety.index') }}"
+              class="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+            <div>
+                <label for="q" class="nm-label">Recherche</label>
+                <input id="q" name="q" type="search" class="nm-search" value="{{ request('q') }}"
+                       placeholder="Titre ou description">
+            </div>
 
-    <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"><div class="flex items-center justify-between px-5 sm:px-6 py-5 border-b border-gray-200"><div><h2 class="font-bold text-gray-900">Signalements récents</h2><p class="text-sm text-gray-500 mt-1">Priorisez les risques et documentez les actions menées.</p></div><span class="text-sm text-gray-500">{{ $incidents->total() }} résultat{{ $incidents->total() > 1 ? 's' : '' }}</span></div>
-        @if($incidents->isEmpty())<div class="px-6 py-16 text-center"><h3 class="font-bold text-gray-900">Aucun incident trouvé</h3><p class="text-sm text-gray-500 mt-1">Les filtres actuels ne renvoient aucun résultat.</p></div>@else
-        <div class="divide-y divide-gray-100">@foreach($incidents as $incident)<a href="{{ route('safety.show', $incident) }}" class="block px-5 sm:px-6 py-4 hover:bg-gray-50 transition"><div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5"><div class="lg:w-36 shrink-0"><span class="font-mono text-xs font-bold text-primary-700">{{ $incident->incident_number }}</span><p class="text-xs text-gray-400 mt-1">{{ $incident->reported_at->format('d/m/Y H:i') }}</p></div><div class="flex-1 min-w-0"><p class="font-semibold text-gray-900 truncate">{{ $incident->title }}</p><p class="text-sm text-gray-500 mt-1 truncate">{{ Str::limit($incident->description, 110) }}</p></div><div class="flex flex-wrap gap-2"><span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $incident->severity === 'critical' ? 'bg-red-100 text-red-800' : ($incident->severity === 'high' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800') }}">{{ ucfirst($incident->severity) }}</span><span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ ucfirst(str_replace('_', ' ', $incident->status)) }}</span></div><div class="lg:w-36 text-sm text-gray-500">{{ $incident->operationalZone?->nom ?? 'Zone non précisée' }}</div><svg class="w-5 h-5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div></a>@endforeach</div>@if($incidents->hasPages())<div class="px-5 sm:px-6 py-4 border-t border-gray-200">{{ $incidents->links() }}</div>@endif@endif
+            <div>
+                <label for="severity" class="nm-label">SÃ©vÃ©ritÃ©</label>
+                <select id="severity" name="severity" class="nm-select">
+                    <option value="">Toutes</option>
+                    @foreach ($severities as $key => $libelle)
+                        <option value="{{ $key }}" @selected(request('severity') === $key)>{{ $libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="statut" class="nm-label">Statut</label>
+                <select id="statut" name="statut" class="nm-select">
+                    <option value="">Tous</option>
+                    @foreach ($statuses as $key => $libelle)
+                        <option value="{{ $key }}" @selected(request('statut') === $key)>{{ $libelle }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="zone_id" class="nm-label">Zone</label>
+                <select id="zone_id" name="zone_id" class="nm-select">
+                    <option value="">Toutes</option>
+                    @foreach ($zones as $zone)
+                        <option value="{{ $zone->id }}" @selected(request('zone_id') == $zone->id)>{{ $zone->nom }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="nm-btn nm-btn-primary">
+                    <x-icon name="filter" class="h-4 w-4" />
+                    Filtrer
+                </button>
+                @if (request()->hasAny(['q', 'severity', 'statut', 'zone_id', 'unresolved', 'critical']))
+                    <a href="{{ route('safety.index') }}" class="nm-btn nm-btn-ghost">RÃ©initialiser</a>
+                @endif
+            </div>
+        </form>
+
+        <div class="mt-4 flex flex-wrap gap-4 border-t border-line-subtle pt-4">
+            @php
+                $bascules = [
+                    ['name' => 'unresolved', 'label' => 'Non rÃ©solus seulement'],
+                    ['name' => 'critical', 'label' => 'Critiques seulement'],
+                ];
+            @endphp
+            @foreach ($bascules as $bascule)
+                <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-body">
+                    <input type="checkbox" name="{{ $bascule['name'] }}" value="1"
+                           class="h-4 w-4 rounded border-line text-primary-600 focus:ring-2 focus:ring-brand-ring"
+                           @checked(request()->boolean($bascule['name']))>
+                    {{ $bascule['label'] }}
+                </label>
+            @endforeach
+        </div>
+    </section>
+
+    <section class="nm-card overflow-hidden">
+        <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line-subtle px-5 py-4 sm:px-6">
+            <div>
+                <h2 class="nm-section-title">Signalements</h2>
+                <p class="mt-1 text-sm text-muted">Priorisez les risques et documentez les actions menÃ©es.</p>
+            </div>
+            <span class="nm-badge nm-badge-neutral">
+                {{ $incidents->total() }} rÃ©sultat{{ $incidents->total() > 1 ? 's' : '' }}
+            </span>
+        </header>
+
+        @if ($incidents->isEmpty())
+            <div class="nm-empty">
+                <x-icon name="shield-check" class="h-8 w-8 text-subtle" />
+                <p class="font-semibold text-strong">Aucun incident trouvÃ©</p>
+                <p class="text-sm">Les filtres actuels ne renvoient aucun rÃ©sultat.</p>
+            </div>
+        @else
+            <div class="nm-table-wrap !border-0 !rounded-none">
+                <table class="nm-table">
+                    <thead>
+                        <tr>
+                            <th>Signalement</th>
+                            <th>Titre</th>
+                            <th>SÃ©vÃ©ritÃ©</th>
+                            <th>Statut</th>
+                            <th>Zone</th>
+                            <th class="!text-right">SignalÃ© le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($incidents as $incident)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('safety.show', $incident) }}"
+                                       class="font-mono text-xs font-semibold text-primary-600 hover:underline">
+                                        #{{ $incident->id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{{ route('safety.show', $incident) }}" class="block max-w-md">
+                                        <span class="block truncate font-semibold text-strong">{{ $incident->titre }}</span>
+                                        <span class="block truncate text-xs text-muted">{{ Str::limit($incident->description, 90) }}</span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="nm-badge {{ $incident->couleurSeverite() }}">{{ $incident->libelleSeverite() }}</span>
+                                </td>
+                                <td>
+                                    <span class="nm-badge {{ $incident->couleurStatut() }}">{{ $incident->libelleStatut() }}</span>
+                                </td>
+                                <td class="text-sm text-muted">{{ $incident->operationalZone?->nom ?? 'â€”' }}</td>
+                                <td class="whitespace-nowrap text-right text-sm text-muted">
+                                    {{ $incident->reported_at?->format('d/m/Y') ?? 'â€”' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($incidents->hasPages())
+                <div class="border-t border-line-subtle px-5 py-4 sm:px-6">
+                    {{ $incidents->links() }}
+                </div>
+            @endif
+        @endif
     </section>
 </div>
 @endsection

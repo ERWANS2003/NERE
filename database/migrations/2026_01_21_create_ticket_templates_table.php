@@ -11,6 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // The table already exists in some databases (created out of band),
+        // and 2026_09_14_102721_recreate_ticket_templates_table.php owns the
+        // final shape. Creating here unconditionally aborted the whole pending
+        // migration queue with a duplicate-table error.
+        if (Schema::hasTable('ticket_templates')) {
+            return;
+        }
+
         Schema::create('ticket_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name');

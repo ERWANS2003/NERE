@@ -10,26 +10,28 @@ class SafetyIncident extends Model
     protected $table = 'safety_incidents';
 
     protected $fillable = [
-        'incident_number',
-        'title',
+        'titre',
         'description',
         'severity',
-        'incident_type',
-        'location',
+        'statut',
         'operational_zone_id',
         'reported_by',
         'reported_at',
+        'incident_at',
         'investigated_by',
-        'root_cause',
+        'investigation_notes',
         'corrective_actions',
         'resolved_at',
-        'status',
     ];
 
-    protected $casts = [
-        'reported_at' => 'datetime',
-        'resolved_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'reported_at' => 'datetime',
+            'incident_at' => 'datetime',
+            'resolved_at' => 'datetime',
+        ];
+    }
 
     public function reporter(): BelongsTo
     {
@@ -59,5 +61,63 @@ class SafetyIncident extends Model
     public function scopeRecent($query, int $days = 30)
     {
         return $query->where('reported_at', '>=', now()->subDays($days));
+    }
+
+    /**
+     * Valeurs réellement acceptées par l'enum PostgreSQL `statut`.
+     *
+     * @return array<string, string>
+     */
+    public static function statuts(): array
+    {
+        return [
+            'reported' => 'Signalé',
+            'investigating' => 'En investigation',
+            'resolved' => 'Résolu',
+            'closed' => 'Clôturé',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function severites(): array
+    {
+        return [
+            'minor' => 'Mineure',
+            'moderate' => 'Modérée',
+            'serious' => 'Sérieuse',
+            'critical' => 'Critique',
+        ];
+    }
+
+    public function libelleStatut(): string
+    {
+        return self::statuts()[$this->statut] ?? $this->statut;
+    }
+
+    public function libelleSeverite(): string
+    {
+        return self::severites()[$this->severity] ?? $this->severity;
+    }
+
+    /** Classes de badge alignées sur les tokens du design system. */
+    public function couleurStatut(): string
+    {
+        return match ($this->statut) {
+            'resolved', 'closed' => 'nm-badge-success',
+            'investigating' => 'nm-badge-warning',
+            default => 'nm-badge-info',
+        };
+    }
+
+    public function couleurSeverite(): string
+    {
+        return match ($this->severity) {
+            'critical' => 'nm-badge-danger',
+            'serious' => 'nm-badge-warning',
+            'moderate' => 'nm-badge-info',
+            default => 'nm-badge-neutral',
+        };
     }
 }

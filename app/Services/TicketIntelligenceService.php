@@ -2,60 +2,79 @@
 
 namespace App\Services;
 
-use App\Models\Ticket;
-use App\Models\User;
 use App\Models\KnowledgeArticle;
+use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketPriority;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Service d'Intelligence pour les Tickets
- * Fournit des suggestions automatiques et des actions intelligentes
+ * Suggestions automatiques à la création et au traitement d'un ticket.
+ *
+ * Toutes les requêtes passent par Ticket::visibleA() : ces suggestions sont
+ * exposées en JSON à tout utilisateur connecté, donc une requête non scopée
+ * y transformerait « qui traite quoi » en fuite inter-départements.
  */
 class TicketIntelligenceService
 {
     /**
-     * Suggère des articles de la base de connaissances
+     * Slugs de statuts considérés comme « encore ouverts ».
+     * Les anciens libellés english (`new`/`open`/`in_progress`) ne
+     * correspondaient à aucune colonne et renvoyaient 0 par défaut.
      */
-    public function suggestKnowledgeArticles(string $title, string $description): Collection
+    private const STATUTS_OUVERTS = ['nouveau', 'assigne', 'en_cours', 'en_attente'];
+
+    /**
+     * Suggère des articles de la base de connaissances.
+     */
+    public function suggestKnowledgeArticles(string $titre, string $description): Collection
     {
-        $keywords = $this->extractKeywords($title . ' ' . $description);
-        
-        return KnowledgeArticle::where('status', 'published')
+        $keywords = $this->extractKeywords($titre.' '.$description);
+
+        if ($keywords === []) {
+            return collect();
+        }
+
+        return KnowledgeArticle::where('publie', true)
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $keyword) {
-                    $query->orWhere('title', 'LIKE', "%{$keyword}%")
-                          ->orWhere('content', 'LIKE', "%{$keyword}%");
+                    $query->orWhere('titre', 'LIKE', "%{$keyword}%")
+                        ->orWhere('contenu', 'LIKE', "%{$keyword}%")
+                        ->orWhere('mots_cles', 'ILIKE', "%{$keyword}%");
                 }
             })
+            ->orderByDesc('utile_count')
             ->limit(5)
             ->get();
     }
 
     /**
-     * Suggère le meilleur assigné basé sur l'historique
+     * Suggère le meilleur assigné en s'appuyant sur l'historique du service.
      */
-    public function suggestAssignee(Ticket $ticket): ?User
+    public function suggestAssignee(Ticket $ticket, ?User $demandeur = null): ?User
     {
-        // 1. Chercher les tickets similaires résolus avec succès
-        $similarTickets = Ticket::where('category_id', $ticket->category_id)
-            ->whereNotNull('assigned_to')
-            ->whereHas('status', fn($q) => $q->where('slug', 'resolved'))
-            ->get();
+        $demandeur ??= auth()->user();
 
-        if ($similarTickets->isEmpty()) {
+        $candidats = Ticket::visibleA($demandeur)
+            ->where('ticket_category_id', $ticket->ticket_category_id)
+            ->whereNotNull('assigned_to')
+            ->whereHas('statut', fn ($q) => $q->where('slug', 'resolu'))
+            ->with('technicien')
+            ->latest('date_resolution')
+            ->limit(200)
+            ->get()
+            ->pluck('technicien')
+            ->filter();
+
+        if ($candidats->isEmpty()) {
             return $this->getDefaultAssignee($ticket);
         }
 
-        // 2. Compter les résolutions par technicien
-        $assigneeCounts = $similarTickets->groupBy('assigned_to')
-            ->map->count()
-            ->sortDesc();
-
-        // 3. Vérifier la disponibilité (charge actuelle)
-        foreach ($assigneeCounts->keys() as $userId) {
-            $user = User::find($userId);
-            if ($user && $this->isUserAvailable($user)) {
+        // Les techniciens les plus souvent formés sur cette catégorie d'abord.
+        foreach ($candidats->countBy('id')->sortDesc() as $userId => $count) {
+            $user = $candidats->firstWhere('id', $userId);
+            if ($user && $user->estDisponiblePourAffectation()) {
                 return $user;
             }
         }
@@ -64,245 +83,277 @@ class TicketIntelligenceService
     }
 
     /**
-     * Suggère la priorité optimale
+     * Suggère la priorité optimale à partir de mots-clés.
+     *
+     * @return array{slug: string, name: string, confidence: float, reason: string}
      */
-    public function suggestPriority(string $title, string $description): array
+    public function suggestPriority(string $titre, string $description): array
     {
-        $keywords = strtolower($title . ' ' . $description);
-        
-        // Mots-clés critiques
-        $criticalKeywords = ['urgent', 'critique', 'bloquant', 'production', 'arrêt', 'panne', 'sécurité'];
-        $highKeywords = ['important', 'rapidement', 'problème', 'erreur'];
-        
-        foreach ($criticalKeywords as $keyword) {
-            if (str_contains($keywords, $keyword)) {
-                return [
-                    'slug' => 'critical',
-                    'name' => 'Critique',
-                    'confidence' => 0.9,
-                    'reason' => "Détecté mot-clé critique: '{$keyword}'"
-                ];
-            }
-        }
-        
-        foreach ($highKeywords as $keyword) {
-            if (str_contains($keywords, $keyword)) {
-                return [
-                    'slug' => 'high',
-                    'name' => 'Haute',
-                    'confidence' => 0.7,
-                    'reason' => "Détecté mot-clé haute priorité: '{$keyword}'"
-                ];
-            }
-        }
-        
-        return [
-            'slug' => 'normal',
-            'name' => 'Normal',
-            'confidence' => 0.5,
-            'reason' => 'Priorité par défaut'
-        ];
-    }
+        $keywords = mb_strtolower($titre.' '.$description);
 
-    /**
-     * Suggère une catégorie basée sur le contenu
-     */
-    public function suggestCategory(string $title, string $description): ?TicketCategory
-    {
-        $content = strtolower($title . ' ' . $description);
-        
-        // Mapping mots-clés -> catégories
-        $categoryKeywords = [
-            'Matériel / Équipement' => ['ordinateur', 'écran', 'clavier', 'souris', 'imprimante', 'matériel', 'équipement'],
-            'Logiciel / Application' => ['application', 'logiciel', 'programme', 'excel', 'word', 'email'],
-            'Réseau / Connexion' => ['réseau', 'internet', 'wifi', 'connexion', 'vpn'],
-            'Sécurité' => ['sécurité', 'virus', 'malware', 'accès', 'mot de passe', 'authentification'],
-            'Compte / Accès' => ['compte', 'accès', 'permissions', 'droits', 'utilisateur'],
+        // Du plus urgent au moins urgent : le premier niveau qui matche gagne.
+        $niveaux = [
+            [
+                'triggers' => ['urgent', 'critique', 'bloquant', 'production', 'arrêt', 'panne', 'sécurité'],
+                'slug' => 'critique',
+                'name' => 'Critique',
+                'confidence' => 0.9,
+            ],
+            [
+                'triggers' => ['important', 'rapidement', 'problème', 'erreur'],
+                'slug' => 'haute',
+                'name' => 'Haute',
+                'confidence' => 0.7,
+            ],
         ];
-        
-        foreach ($categoryKeywords as $categoryName => $keywords) {
-            foreach ($keywords as $keyword) {
-                if (str_contains($content, $keyword)) {
-                    return TicketCategory::where('name', 'LIKE', "%{$categoryName}%")->first();
+
+        foreach ($niveaux as $niveau) {
+            foreach ($niveau['triggers'] as $trigger) {
+                if (str_contains($keywords, $trigger)) {
+                    return [
+                        'slug' => $niveau['slug'],
+                        'name' => $niveau['name'],
+                        'confidence' => $niveau['confidence'],
+                        'reason' => "Mot-clé détecté : « {$trigger} ».",
+                    ];
                 }
             }
         }
-        
-        return null;
+
+        return [
+            'slug' => 'normale', 'name' => 'Normale', 'confidence' => 0.5,
+            'reason' => 'Aucun mot-clé de priorité détecté.',
+        ];
     }
 
     /**
-     * Détecte les tickets similaires non résolus (possible duplicata)
+     * Suggère une catégorie à partir de mots-clés.
      */
-    public function detectSimilarTickets(string $title, string $description): Collection
+    public function suggestCategory(string $titre, string $description): ?array
     {
-        $keywords = $this->extractKeywords($title);
-        
-        return Ticket::whereDoesntHave('status', fn($q) => $q->whereIn('slug', ['resolved', 'closed']))
+        $keywords = $this->extractKeywords($titre.' '.$description);
+
+        if ($keywords === []) {
+            return null;
+        }
+
+        $categorie = TicketCategory::where('actif', true)
             ->where(function ($query) use ($keywords) {
                 foreach ($keywords as $keyword) {
-                    $query->orWhere('title', 'LIKE', "%{$keyword}%")
-                          ->orWhere('description', 'LIKE', "%{$keyword}%");
+                    $query->orWhere('nom', 'ILIKE', "%{$keyword}%")
+                        ->orWhere('description', 'ILIKE', "%{$keyword}%");
                 }
             })
+            ->first();
+
+        if (! $categorie) {
+            return null;
+        }
+
+        return [
+            'id' => $categorie->id,
+            'name' => $categorie->nom,
+            'confidence' => 0.6,
+            'reason' => 'Catégorie la plus proche des mots-clés saisis.',
+        ];
+    }
+
+    /**
+     * Détecte les tickets similaires non résolus (doublons possibles).
+     */
+    public function detectSimilarTickets(
+        string $titre,
+        string $description,
+        ?User $demandeur = null,
+    ): Collection {
+        $demandeur ??= auth()->user();
+        $keywords = $this->extractKeywords($titre);
+
+        if ($keywords === []) {
+            return collect();
+        }
+
+        return Ticket::visibleA($demandeur)
+            ->whereHas('statut', fn ($q) => $q->whereNotIn('slug', ['resolu', 'clos', 'annule']))
+            ->where(function ($query) use ($keywords) {
+                foreach ($keywords as $keyword) {
+                    $query->orWhere('titre', 'ILIKE', "%{$keyword}%")
+                        ->orWhere('description', 'ILIKE', "%{$keyword}%");
+                }
+            })
+            ->with('statut')
+            ->latest()
             ->limit(5)
             ->get();
     }
 
     /**
-     * Analyse le sentiment du ticket
+     * Analyse le sentiment du ticket.
      */
-    public function analyzeSentiment(string $content): array
+    public function analyzeSentiment(string $contenu): array
     {
-        $content = strtolower($content);
-        
+        $contenu = mb_strtolower($contenu);
+
         $urgentWords = ['urgent', 'immédiat', 'critique', 'rapidement', 'vite'];
         $frustratedWords = ['frustré', 'agacé', 'inacceptable', 'énervé'];
         $politeWords = ['merci', 's\'il vous plaît', 'cordialement'];
-        
+
         $urgentScore = 0;
         $frustrationScore = 0;
         $politenessScore = 0;
-        
+
         foreach ($urgentWords as $word) {
-            if (str_contains($content, $word)) $urgentScore++;
+            if (str_contains($contenu, $word)) {
+                $urgentScore++;
+            }
         }
-        
         foreach ($frustratedWords as $word) {
-            if (str_contains($content, $word)) $frustrationScore++;
+            if (str_contains($contenu, $word)) {
+                $frustrationScore++;
+            }
         }
-        
         foreach ($politeWords as $word) {
-            if (str_contains($content, $word)) $politenessScore++;
+            if (str_contains($contenu, $word)) {
+                $politenessScore++;
+            }
         }
-        
+
         return [
             'urgency' => $urgentScore > 0 ? 'high' : 'normal',
-            'frustration' => $frustrationScore > 1 ? 'high' : ($frustrationScore > 0 ? 'medium' : 'low'),
+            'frustration' => match (true) {
+                $frustrationScore > 1 => 'high',
+                $frustrationScore > 0 => 'medium',
+                default => 'low',
+            },
             'politeness' => $politenessScore > 0 ? 'polite' : 'neutral',
-            'recommendation' => $frustrationScore > 1 ? 'Traiter en priorité - utilisateur frustré' : null
+            'recommendation' => $frustrationScore > 1
+                ? 'Traiter en priorité — utilisateur frustré.'
+                : null,
         ];
     }
 
     /**
-     * Estime le temps de résolution
+     * Estime le temps de résolution à partir de l'historique du service.
      */
-    public function estimateResolutionTime(Ticket $ticket): array
+    public function estimateResolutionTime(Ticket $ticket, ?User $demandeur = null): array
     {
-        // Chercher tickets similaires résolus
-        $similarResolved = Ticket::where('category_id', $ticket->category_id)
-            ->whereNotNull('resolved_at')
+        $demandeur ??= auth()->user();
+
+        $similaires = Ticket::visibleA($demandeur)
+            ->where('ticket_category_id', $ticket->ticket_category_id)
+            ->whereNotNull('date_resolution')
+            ->whereNotNull('created_at')
+            ->limit(200)
             ->get();
-        
-        if ($similarResolved->isEmpty()) {
+
+        if ($similaires->isEmpty()) {
             return [
                 'estimated_hours' => 4,
                 'confidence' => 'low',
-                'reason' => 'Estimation par défaut (pas d\'historique)'
+                'reason' => 'Estimation par défaut, aucun historique comparable.',
             ];
         }
-        
-        // Calculer le temps moyen
-        $times = $similarResolved->map(function ($t) {
-            return $t->created_at->diffInHours($t->resolved_at);
-        });
-        
-        $avgHours = round($times->average(), 1);
-        
+
+        $heures = $similaires
+            ->map(fn (Ticket $t) => $t->created_at->diffInHours($t->date_resolution, absolute: true))
+            ->filter()
+            ->average();
+
         return [
-            'estimated_hours' => $avgHours,
-            'confidence' => 'high',
-            'reason' => "Basé sur {$similarResolved->count()} tickets similaires résolus"
+            'estimated_hours' => round($heures ?: 4, 1),
+            'confidence' => $similaires->count() >= 5 ? 'high' : 'medium',
+            'reason' => "Basé sur {$similaires->count()} ticket(s) similaire(s) résolu(s).",
         ];
     }
 
     /**
-     * Génère des actions recommandées
+     * Génère les actions recommandées pour un ticket.
      */
-    public function generateRecommendedActions(Ticket $ticket): array
+    public function generateRecommendedActions(Ticket $ticket, ?User $demandeur = null): array
     {
         $actions = [];
-        
-        // Action 1: Assignation
-        $suggestedAssignee = $this->suggestAssignee($ticket);
-        if ($suggestedAssignee) {
+
+        $assigne = $this->suggestAssignee($ticket, $demandeur);
+        if ($assigne) {
             $actions[] = [
                 'type' => 'assign',
-                'title' => 'Assigner automatiquement',
-                'description' => "Assigner à {$suggestedAssignee->name}",
-                'data' => ['user_id' => $suggestedAssignee->id],
-                'confidence' => 0.8
+                'title' => 'Affecter à '.$assigne->name,
+                'description' => 'Affectation proposée par l\'historique du service.',
+                'data' => ['user_id' => $assigne->id],
+                'confidence' => 0.8,
             ];
         }
-        
-        // Action 2: Articles de connaissance
-        $articles = $this->suggestKnowledgeArticles($ticket->title, $ticket->description);
+
+        $articles = $this->suggestKnowledgeArticles($ticket->titre, (string) $ticket->description);
         if ($articles->isNotEmpty()) {
             $actions[] = [
                 'type' => 'knowledge',
                 'title' => 'Articles suggérés',
-                'description' => "{$articles->count()} article(s) pertinent(s) trouvé(s)",
-                'data' => $articles->pluck('title', 'id')->toArray(),
-                'confidence' => 0.7
+                'description' => $articles->count().' article(s) pertinent(s) trouvé(s).',
+                'data' => $articles->map->only(['id', 'titre'])->all(),
+                'confidence' => 0.7,
             ];
         }
-        
-        // Action 3: Escalade si priorité critique
-        if ($ticket->priority && $ticket->priority->slug === 'critical') {
+
+        // Escalade si la priorité est au plus haut niveau de l'échelle.
+        $niveauMax = (int) TicketPriority::max('niveau');
+        if ($niveauMax > 0 && (int) $ticket->priorite?->niveau === $niveauMax) {
             $actions[] = [
                 'type' => 'escalate',
                 'title' => 'Escalader',
-                'description' => 'Ticket critique - notifier le manager',
-                'data' => ['level' => 2],
-                'confidence' => 0.9
+                'description' => 'Priorité maximale — notification du responsable.',
+                'data' => ['niveau' => 2],
+                'confidence' => 0.9,
             ];
         }
-        
+
         return $actions;
     }
 
     /**
-     * Extrait les mots-clés pertinents
+     * Charge courante d'un technicien, utilisée par le front.
      */
-    protected function extractKeywords(string $text): array
+    public function chargeCourante(User $user): int
     {
-        // Supprimer les mots vides (stop words)
-        $stopWords = ['le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'mais', 'donc', 'car', 'pour'];
-        
-        $words = str_word_count(strtolower($text), 1, 'àâäéèêëïîôùûüÿç');
-        $keywords = array_filter($words, function ($word) use ($stopWords) {
-            return strlen($word) > 3 && !in_array($word, $stopWords);
-        });
-        
-        return array_unique(array_slice($keywords, 0, 5));
-    }
-
-    /**
-     * Vérifie si un utilisateur est disponible
-     */
-    protected function isUserAvailable(User $user): bool
-    {
-        // Compter les tickets ouverts assignés
-        $openTickets = Ticket::where('assigned_to', $user->id)
-            ->whereHas('status', fn($q) => $q->whereIn('slug', ['new', 'open', 'in_progress']))
+        return Ticket::where('assigned_to', $user->id)
+            ->whereHas('statut', fn ($q) => $q->whereIn('slug', self::STATUTS_OUVERTS))
             ->count();
-        
-        // Maximum 10 tickets ouverts par technicien
-        return $openTickets < 10;
     }
 
     /**
-     * Récupère l'assigné par défaut pour une catégorie
+     * Extrait les mots-clés pertinents.
+     */
+    protected function extractKeywords(string $texte): array
+    {
+        $stopWords = [
+            'le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'et', 'ou', 'mais',
+            'donc', 'car', 'pour', 'avec', 'sur', 'pas', 'plus', 'mon', 'ma', 'mes',
+            'nous', 'vous', 'ils', 'elles', 'est', 'sont', 'dans', 'ce', 'cette',
+        ];
+
+        $mots = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($texte), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $keywords = array_filter($mots, fn (string $mot) => mb_strlen($mot) > 3
+            && ! in_array($mot, $stopWords, true));
+
+        return array_slice(array_values(array_unique($keywords)), 0, 5);
+    }
+
+    /**
+     * Récupère l'affecté par défaut : premier technicien disponible de
+     * l'équipe associée à la catégorie.
      */
     protected function getDefaultAssignee(Ticket $ticket): ?User
     {
-        // Chercher dans l'équipe par défaut de la catégorie
-        if ($ticket->category && $ticket->category->default_team_id) {
-            return User::whereHas('teams', function ($q) use ($ticket) {
-                $q->where('teams.id', $ticket->category->default_team_id);
-            })->first();
+        $teamId = $ticket->categorie?->team_id;
+
+        if (! $teamId) {
+            return null;
         }
-        
-        return null;
+
+        return User::where('actif', true)
+            ->whereHas('teams', fn ($q) => $q->where('teams.id', $teamId))
+            ->get()
+            ->first(fn (User $u) => $u->estDisponiblePourAffectation());
     }
 }

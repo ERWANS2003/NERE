@@ -24,12 +24,63 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('approve-service-requests', function ($user): bool {
-            return $user->hasRole('admin')
-                || $user->hasRole('dsi')
-                || $user->hasRole('directeur_departement')
-                || $user->hasPermission('services.approve');
-        });
+        // Every ability referenced by a `can:` middleware or an @can directive is
+        // defined here, so route guards and view guards can never disagree.
+        $roleGate = function ($user, array $roles, ?string $permission = null): bool {
+            foreach ($roles as $role) {
+                if ($user->hasRole($role)) {
+                    return true;
+                }
+            }
+
+            return $permission !== null && $user->hasPermission($permission);
+        };
+
+        Gate::define('approve-service-requests', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi', 'directeur_departement'],
+            'services.approve'
+        ));
+
+        Gate::define('manage-automations', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi'],
+            'automations.manage'
+        ));
+
+        Gate::define('view_all_tickets', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi', 'directeur_departement', 'technicien']
+        ));
+
+        Gate::define('manage-sla', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi'],
+            'sla.manage'
+        ));
+
+        Gate::define('view_reports', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi', 'directeur_departement'],
+            'reports.export'
+        ));
+
+        Gate::define('manage_assets', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi', 'technicien']
+        ));
+
+        Gate::define('manage_department', fn ($user): bool => $roleGate(
+            $user,
+            ['admin', 'dsi', 'directeur_departement'],
+            'department.manage_team'
+        ));
+
+        // The safety routes are guarded by the `permission:` middleware, which
+        // resolves through the permissions table. These gates mirror that so a
+        // view guard and a route guard resolve the same question.
+        Gate::define('safety.view', fn ($user): bool => $user->hasPermission('safety.view'));
+        Gate::define('safety.manage', fn ($user): bool => $user->hasPermission('safety.manage'));
 
         // Ensure storage directories have proper permissions
         if (file_exists(storage_path())) {
@@ -51,9 +102,11 @@ class AppServiceProvider extends ServiceProvider
             return auth()->check() && auth()->user()->hasRole($role);
         });
 
-        \Illuminate\Support\Facades\Blade::if('can', function (string $permission) {
-            return auth()->check() && auth()->user()->hasPermission($permission);
-        });
+        // NOTE: `@can` is intentionally NOT overridden here. A `Blade::if('can')`
+        // registration shadows Laravel's built-in @can directive and silently
+        // swapped Gate semantics for a permissions-table lookup, which is how
+        // the sidebar lost its Kanban / SLA entries: the view asked for
+        // `view_all_tickets` while the route group asked the Gate.
 
         // DISABLED: Charger le système de plugins - causes 500 errors
         // $pluginManager = app(\App\Core\PluginSystem\PluginManager::class);
