@@ -515,18 +515,34 @@
 
 @push('styles')
 <style>
+/* Plain CSS on purpose: Blade does not run Tailwind, so an `@apply` inside a
+   blade <style> block is shipped verbatim and the browser drops the rule. */
 .service-card-dark {
-    @apply bg-dark-800 hover:bg-dark-700 rounded-xl p-6 border border-dark-700 hover:border-primary-600 transition-all cursor-pointer block shadow-lg hover:shadow-primary-900/20;
+    display: block;
+    padding: 1.5rem;
+    background-color: var(--surface-card);
+    border: 1px solid var(--line-default);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-brand);
+    cursor: pointer;
+    transition: all 0.18s ease;
 }
 
 .service-card-dark:hover {
     transform: translateY(-2px);
+    background-color: var(--surface-raised);
+    border-color: var(--brand);
+    box-shadow: var(--shadow-brand-lg);
 }
 
 .stat-card {
-    @apply bg-dark-800 rounded-xl p-6 border border-dark-700;
+    padding: 1.5rem;
+    background-color: var(--surface-card);
+    border: 1px solid var(--line-default);
+    border-radius: 0.75rem;
 }
 </style>
+
 @endpush
 @endsection
 

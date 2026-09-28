@@ -1,68 +1,84 @@
 <?php
 
 /**
- * Quick database connection test for Neon PostgreSQL
- * Run this locally to verify your database credentials before deploying to Vercel
+ * Quick database connection test.
+ *
+ * Reads the real .env used by the application and verifies that the credentials
+ * and permissions are valid, so a failure can be ruled out before blaming the app.
+ *
+ * Usage: php test-db-connection.php
  */
 
-// Load environment variables (create a .env.local file with your Neon credentials)
-if (file_exists('.env.local')) {
-    $lines = file('.env.local', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        list($name, $value) = explode('=', $line, 2);
-        $_ENV[trim($name)] = trim($value);
-    }
+// Load the application's .env so this tests the same values Laravel will use.
+$envFile = __DIR__ . DIRECTORY_SEPARATOR . '.env';
+
+if (! file_exists($envFile)) {
+    exit(".env introuvable. Lancez `cp .env.example .env` d'abord.\n");
 }
 
-$host = $_ENV['DB_HOST'] ?? 'localhost';
-$port = $_ENV['DB_PORT'] ?? '5432';
-$database = $_ENV['DB_DATABASE'] ?? 'neondb';
-$username = $_ENV['DB_USERNAME'] ?? '';
-$password = $_ENV['DB_PASSWORD'] ?? '';
+foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $line = trim($line);
 
-echo "Testing PostgreSQL connection to Neon...\n";
-echo "Host: $host\n";
+    if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, '=')) {
+        continue;
+    }
+
+    [$name, $value] = explode('=', $line, 2);
+    $_ENV[trim($name)] = trim(trim($value), "\"'");
+}
+
+$host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+$port = $_ENV['DB_PORT'] ?? '5432';
+$database = $_ENV['DB_DATABASE'] ?? 'nere_mining_itsm';
+$username = $_ENV['DB_USERNAME'] ?? 'postgres';
+$password = $_ENV['DB_PASSWORD'] ?? '';
+// Matches the `prefer` default in config/database.php: local Postgres has no TLS.
+$sslmode = $_ENV['DB_SSLMODE'] ?? 'prefer';
+
+echo "Test de connexion PostgreSQL\n";
+echo "Host:     $host\n";
+echo "Port:     $port\n";
 echo "Database: $database\n";
-echo "Username: $username\n\n";
+echo "User:     $username\n";
+echo "SSL mode: $sslmode\n\n";
 
 try {
-    $dsn = "pgsql:host=$host;port=$port;dbname=$database;sslmode=require";
+    $dsn = "pgsql:host=$host;port=$port;dbname=$database;sslmode=$sslmode";
     $pdo = new PDO($dsn, $username, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT => 30,
+        PDO::ATTR_TIMEOUT => 10,
     ]);
-    
-    echo "✅ Connection successful!\n";
-    
-    // Test basic query
-    $stmt = $pdo->query("SELECT version()");
-    $version = $stmt->fetchColumn();
-    echo "✅ PostgreSQL version: $version\n";
-    
-    // Test table creation permissions
-    $pdo->exec("CREATE TABLE IF NOT EXISTS connection_test (id SERIAL PRIMARY KEY, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-    echo "✅ Table creation permissions: OK\n";
-    
-    // Clean up test table
-    $pdo->exec("DROP TABLE IF EXISTS connection_test");
-    echo "✅ Database connection fully validated!\n\n";
-    
-    echo "🚀 Your database is ready for Vercel deployment.\n";
-    echo "Copy these credentials to Vercel environment variables:\n\n";
-    echo "DB_CONNECTION=pgsql\n";
-    echo "DB_HOST=$host\n";
-    echo "DB_PORT=$port\n";
-    echo "DB_DATABASE=$database\n";
-    echo "DB_USERNAME=$username\n";
-    echo "DB_PASSWORD=$password\n";
-    echo "DB_SSLMODE=require\n";
-    
+
+    echo "Connexion etablie.\n";
+    echo 'Version: ' . $pdo->query('SELECT version()')->fetchColumn() . "\n\n";
+
+    $tables = $pdo->query(
+        "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
+    )->fetchColumn();
+    echo "Tables dans le schema public: $tables\n";
+
+    $migrations = $pdo->query(
+        "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'migrations'"
+    )->fetchColumn();
+
+    if ($migrations) {
+        $applied = $pdo->query('SELECT count(*) FROM migrations')->fetchColumn();
+        $pending = $tables - $applied;
+        echo "Migrations appliquees: $applied\n";
+        echo $pending > 0
+            ? "Migrations en attente: $pending (lancez `php artisan migrate`)\n"
+            : "Schema a jour.\n";
+    } else {
+        echo "Table `migrations` absente : lancez `php artisan migrate`.\n";
+    }
+
+    echo "\nConnexion validee.\n";
 } catch (PDOException $e) {
-    echo "❌ Connection failed: " . $e->getMessage() . "\n";
-    echo "\nTroubleshooting:\n";
-    echo "1. Verify your Neon database is active\n";
-    echo "2. Check that credentials are correct\n";
-    echo "3. Ensure your IP is not blocked (Neon allows all by default)\n";
-    echo "4. Try using the pooled connection string from Neon dashboard\n";
+    echo 'Echec de la connexion: ' . $e->getMessage() . "\n\n";
+    echo "Depannage:\n";
+    echo "1. verifier que le service PostgreSQL demarre (port $port)\n";
+    echo "2. verifier DB_HOST / DB_PORT / DB_DATABASE dans .env\n";
+    echo "3. verifier que la base '$database' existe\n";
+    echo "4. verifier les identifiants de $username\n";
+    exit(1);
 }

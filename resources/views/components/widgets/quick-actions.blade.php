@@ -59,8 +59,21 @@
 </div>
 
 <style>
+/* Plain CSS on purpose: Blade does not run Tailwind, so an `@apply` inside a
+   blade <style> block is shipped verbatim and the browser drops the rule. */
 .quick-action-card {
-    @apply flex flex-col items-center justify-center p-4 rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     min-height: 100px;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 0.06));
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.quick-action-card:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1));
 }
 </style>

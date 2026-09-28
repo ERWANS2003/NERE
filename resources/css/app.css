@@ -23,6 +23,9 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji';
+    /* Headings. The views' inline styles ask for 'Space Grotesk' by name, so the
+       family is self-hosted rather than pulled from a CDN at runtime. */
+    --font-display: 'Space Grotesk', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, monospace;
 
     /* ---- Primary: Néré red. 600 is the exact logo pixel. ---- */
@@ -132,6 +135,7 @@
 
     --color-danger-50: #fef2f2;
     --color-danger-100: #fee2e2;
+    --color-danger-200: #fecaca;
     --color-danger-500: #ef4444;
     --color-danger-600: #dc2626;
     --color-danger-700: #b91c1c;
@@ -317,6 +321,38 @@
 }
 
 /* ============================================================================
+   LEGACY TOKEN ALIASES
+   ----------------------------------------------------------------------------
+   An earlier iteration of the portal styled itself in French-named variables
+   (--graphite-*, --ambre-*, --texte-*) that lived inside layouts/app.blade.php.
+   That layout is no longer rendered, so every view still referencing those names
+   resolved them to nothing and fell back to inherited values: cards lost their
+   surfaces, headings lost their colour, and borders disappeared.
+
+   The names are kept as aliases so those views need no rewrite, but they now
+   resolve through the semantic tokens above, which means they re-theme with
+   data-theme instead of staying frozen at the old hardcoded dark palette.
+   ============================================================================ */
+
+:root {
+    --graphite: var(--surface-page);
+    --graphite-soft: var(--surface-inset);
+    --graphite-card: var(--surface-card);
+    --graphite-line: var(--line-default);
+
+    --ambre: var(--spark);
+    --ambre-clair: var(--color-accent-300);
+    --ivoire: var(--text-on-brand);
+
+    --texte-clair: var(--text-strong);
+    --texte-att: var(--text-muted);
+
+    --text-900: var(--text-strong);
+    --text-600: var(--text-body);
+    --text-500: var(--text-muted);
+}
+
+/* ============================================================================
    BASE
    ============================================================================ */
 
@@ -344,6 +380,7 @@
     h5,
     h6 {
         color: var(--text-strong);
+        font-family: var(--font-display);
         font-weight: 600;
         letter-spacing: -0.011em;
     }
@@ -748,6 +785,27 @@
             These class names are referenced by the 87 existing views. They now
             resolve against the semantic layer so nothing renders unstyled while
             the markup is migrated. ---- */
+
+    /* Base for the `class="btn"` markup in admin/roles/{create,edit}, which
+       paints itself through inline styles. Without this the class resolved to
+       nothing, so those buttons lost their pointer cursor and vertical
+       alignment. The variants stay in tickets/partials/styles.blade.php. */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+            background-color 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease;
+    }
+
     .dashboard-card,
     .nm-dashboard-card {
         background-color: var(--surface-card);
@@ -1153,6 +1211,935 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-nav-muted);
+}
+
+/* ============================================================================
+   LEGACY COMPONENT VOCABULARY
+   ----------------------------------------------------------------------------
+   Fourteen routed pages - tickets (index/create/show/edit), departments and
+   the whole admin settings + roles area - are written against a French-named
+   class vocabulary (btn-primaire, carte, champ, badge-sla, dept-hero, ...).
+   That vocabulary was never defined in any stylesheet that actually loads, so
+   every one of those pages rendered with no component styling at all: bare
+   unstyled buttons, no card surfaces, no field borders, no badge colours.
+
+   The names are implemented here rather than rewritten across 14 files. They
+   read the same semantic tokens as the nm-* layer, so they follow data-theme
+   instead of freezing to one palette, and they degrade to the unstyled look
+   no worse than before if a class is ever removed.
+   ============================================================================ */
+@layer components {
+    /* ---- Buttons ----
+       Used both as a bare class and layered on .btn, so each variant carries
+       the full button treatment rather than assuming the base is present. */
+    .btn-primaire,
+    .btn-primary,
+    .btn-mining-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1px solid transparent;
+        border-radius: 0.625rem;
+        padding: 0.5rem 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.25rem;
+        white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+        background-color: var(--brand);
+        color: var(--text-on-brand);
+        box-shadow: var(--shadow-brand);
+        transition:
+            background-color 0.16s ease,
+            border-color 0.16s ease,
+            color 0.16s ease;
+    }
+
+    .btn-primaire:hover,
+    .btn-primary:hover,
+    .btn-mining-primary:hover {
+        background-color: var(--brand-hover);
+    }
+
+    .btn-primaire:disabled,
+    .btn-primary:disabled,
+    .btn-mining-primary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .btn-secondaire,
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1px solid var(--line-default);
+        border-radius: 0.625rem;
+        padding: 0.5rem 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.25rem;
+        white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+        background-color: var(--surface-card);
+        color: var(--text-strong);
+        transition:
+            background-color 0.16s ease,
+            border-color 0.16s ease,
+            color 0.16s ease;
+    }
+
+    .btn-secondaire:hover,
+    .btn-secondary:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+    }
+
+    .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: 1px solid transparent;
+        border-radius: 0.625rem;
+        padding: 0.5rem 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.25rem;
+        white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+        background-color: var(--color-danger-600);
+        color: #fff;
+        transition: background-color 0.16s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: var(--color-danger-700);
+    }
+
+    .btn-sm {
+        padding: 0.3125rem 0.625rem;
+        font-size: 0.8125rem;
+        border-radius: 0.5rem;
+    }
+
+    /* ---- Cards & panels ---- */
+    .carte,
+    .card,
+    .carte-form,
+    .module-card,
+    .filters-card,
+    .tickets-card,
+    .stat-card,
+    .service-card,
+    .form-container,
+    .form-widget,
+    .quick-action-card,
+    .perm-item {
+        background-color: var(--surface-card);
+        border: 1px solid var(--line-subtle);
+        border-radius: var(--radius-card);
+        box-shadow: 0 1px 2px rgb(11 14 19 / 0.04);
+        padding: 1.25rem;
+    }
+
+    [data-theme='dark'] .carte,
+    [data-theme='dark'] .card,
+    [data-theme='dark'] .carte-form,
+    [data-theme='dark'] .module-card,
+    [data-theme='dark'] .filters-card,
+    [data-theme='dark'] .tickets-card,
+    [data-theme='dark'] .stat-card,
+    [data-theme='dark'] .service-card,
+    [data-theme='dark'] .form-container,
+    [data-theme='dark'] .form-widget,
+    [data-theme='dark'] .quick-action-card,
+    [data-theme='dark'] .perm-item {
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+    }
+
+    .module-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1.25rem;
+        border: 1px solid var(--line-subtle);
+        border-radius: var(--radius-card);
+        background-color: var(--surface-inset);
+    }
+
+    .service-card-dark {
+        background-color: var(--surface-sunken);
+        color: var(--text-strong);
+    }
+
+    .kanban-column {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.875rem;
+        border-radius: var(--radius-card);
+        background-color: var(--surface-sunken);
+        border: 1px solid var(--line-subtle);
+    }
+
+    .kanban-card {
+        padding: 0.875rem;
+        border-radius: 0.75rem;
+        background-color: var(--surface-card);
+        border: 1px solid var(--line-subtle);
+        box-shadow: 0 1px 2px rgb(11 14 19 / 0.05);
+    }
+
+    /* ---- Section headings & page chrome ---- */
+    .section-titre,
+    .section-title,
+    .module-title,
+    .card-titre {
+        font-family: var(--font-display);
+        font-size: 1.125rem;
+        font-weight: 700;
+        line-height: 1.4;
+        color: var(--text-strong);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        flex: none;
+        border-radius: 9999px;
+        background-color: var(--brand);
+        color: var(--text-on-brand);
+        font-size: 0.8125rem;
+        font-weight: 700;
+    }
+
+    .page-header,
+    .tickets-header,
+    .form-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .page-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sur-titre {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    /* ---- Tabs ---- */
+    .tabs-bar {
+        display: flex;
+        gap: 0.25rem;
+        border-bottom: 1px solid var(--line-subtle);
+        margin-bottom: 1.25rem;
+    }
+
+    .tab-btn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: none;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .tab-btn:hover {
+        color: var(--text-strong);
+    }
+
+    .tab-btn[aria-selected='true'],
+    .tab-btn.is-active {
+        color: var(--brand);
+        border-bottom-color: var(--brand);
+    }
+
+    .tab-panel[hidden] {
+        display: none;
+    }
+
+    /* ---- Forms ----
+       .champ is the generic field control; .form-input / .form-control are the
+       explicit aliases used by the role and department forms. */
+    .champ,
+    .form-input,
+    .form-control {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        line-height: 1.4;
+        color: var(--text-strong);
+        background-color: var(--surface-card);
+        border: 1px solid var(--line-default);
+        border-radius: 0.5rem;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .champ:focus,
+    .form-input:focus,
+    .form-control:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px var(--brand-ring);
+    }
+
+    .form-group,
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+
+    .form-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-body);
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.75rem;
+    }
+
+    .form-grid,
+    .form-grille,
+    .grille-2,
+    .cols-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+        .form-grid,
+        .form-grille,
+        .grille-2,
+        .cols-2 {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.625rem;
+        padding-top: 0.5rem;
+    }
+
+    .field-help {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .erreur-liste {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0.625rem 0.75rem;
+        list-style: none;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-danger-200);
+        background-color: var(--color-danger-50);
+        color: var(--color-danger-700);
+        font-size: 0.8125rem;
+    }
+
+    .perm-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .perm-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    /* ---- Badges ---- */
+    .badge-sla {
+        background-color: var(--color-warning-50);
+        color: var(--color-warning-700);
+        border: 1px solid var(--color-warning-500);
+    }
+
+    .badge-actif {
+        background-color: var(--color-success-50);
+        color: var(--color-success-700);
+        border: 1px solid var(--color-success-500);
+    }
+
+    .badge-inactif {
+        background-color: var(--color-dark-100);
+        color: var(--color-dark-600);
+        border: 1px solid var(--color-dark-300);
+    }
+
+    .badge-role {
+        background-color: var(--color-primary-50);
+        color: var(--color-primary-700);
+        border: 1px solid var(--color-primary-300);
+    }
+
+    .badge-technicien {
+        background-color: var(--color-info-50);
+        color: var(--color-info-700);
+        border: 1px solid var(--color-info-500);
+    }
+
+    .auto-routing-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 9999px;
+        background-color: var(--spark-soft);
+        color: var(--spark);
+        font-size: 0.6875rem;
+        font-weight: 600;
+    }
+
+    .alert-mining {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem 0.875rem;
+        border-radius: 0.625rem;
+        border: 1px solid var(--color-warning-500);
+        background-color: var(--spark-soft);
+        color: var(--color-warning-900);
+        font-size: 0.8125rem;
+    }
+
+    .info-box {
+        padding: 0.75rem 0.875rem;
+        border-radius: 0.625rem;
+        border: 1px solid var(--color-info-500);
+        background-color: var(--color-info-50);
+        color: var(--color-info-900);
+        font-size: 0.8125rem;
+    }
+
+    .alerte-form {
+        margin-bottom: 1rem;
+        padding: 0.75rem 0.875rem;
+        border-radius: 0.625rem;
+        border: 1px solid var(--color-danger-200);
+        background-color: var(--color-danger-50);
+        color: var(--color-danger-700);
+        font-size: 0.8125rem;
+    }
+
+    /* ---- Empty & feedback states ---- */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 2.5rem 1.25rem;
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .empty-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 9999px;
+        background-color: var(--surface-sunken);
+        color: var(--text-subtle);
+    }
+
+    /* ---- Tables ---- */
+    .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line-subtle);
+        border-radius: var(--radius-card);
+    }
+
+    .table-wrap table,
+    table.tickets {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .table-wrap th,
+    table.tickets th {
+        padding: 0.625rem 0.875rem;
+        text-align: left;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background-color: var(--surface-inset);
+        border-bottom: 1px solid var(--line-subtle);
+        white-space: nowrap;
+    }
+
+    .table-wrap td,
+    table.tickets td {
+        padding: 0.625rem 0.875rem;
+        color: var(--text-body);
+        border-bottom: 1px solid var(--line-subtle);
+    }
+
+    .table-wrap tbody tr:last-child td,
+    table.tickets tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    /* ---- Departments ---- */
+    .dept-hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: var(--radius-card);
+        background-color: var(--surface-card);
+        border: 1px solid var(--line-subtle);
+    }
+
+    .dept-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        flex: none;
+        border-radius: var(--radius-card);
+        background-color: var(--brand-soft);
+        color: var(--brand);
+    }
+
+    .dept-hero-infos {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        min-width: 0;
+    }
+
+    .dept-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .dept-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        padding: 0.875rem;
+        border-radius: 0.75rem;
+        background-color: var(--surface-inset);
+        border: 1px solid var(--line-subtle);
+    }
+
+    .equipe-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        background-color: var(--surface-card);
+        border: 1px solid var(--line-subtle);
+    }
+
+    .equipe-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .equipe-card-nom {
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+
+    .equipe-membres-liste {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .equipe-membre-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.1875rem 0.5rem;
+        border-radius: 9999px;
+        background-color: var(--surface-sunken);
+        color: var(--text-body);
+        font-size: 0.75rem;
+    }
+
+    .avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex: none;
+        border-radius: 9999px;
+        background-color: var(--brand-soft);
+        color: var(--brand);
+        font-size: 0.8125rem;
+        font-weight: 700;
+    }
+
+    .avatar-mini {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: none;
+        border-radius: 9999px;
+        background-color: var(--surface-sunken);
+        color: var(--text-muted);
+        font-size: 0.6875rem;
+        font-weight: 700;
+    }
+
+    /* ---- Departments stat pair (.libelle / .valeur) ---- */
+    .libelle {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .valeur {
+        font-family: var(--font-display);
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+
+    /* ---- Tickets ---- */
+    .kpis-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .kpis-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .stat-value {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .stat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex: none;
+        border-radius: 0.625rem;
+        background-color: var(--brand-soft);
+        color: var(--brand);
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    @media (max-width: 768px) {
+        .filters-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        display: inline-flex;
+        color: var(--text-subtle);
+        pointer-events: none;
+    }
+
+    .search-wrapper .champ,
+    .search-wrapper .form-input {
+        padding-left: 2.25rem;
+    }
+
+    .link-advanced,
+    .link-reset,
+    .back-link,
+    .cancel-link {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--brand);
+        text-decoration: none;
+    }
+
+    .link-advanced:hover,
+    .link-reset:hover,
+    .back-link:hover,
+    .cancel-link:hover {
+        text-decoration: underline;
+    }
+
+    .link-reset,
+    .cancel-link {
+        color: var(--text-muted);
+    }
+
+    .tickets-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ticket-main {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .ticket-arrow {
+        flex: none;
+        color: var(--text-subtle);
+    }
+
+    .ticket-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .ticket-ref {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ticket-ref-code {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .ticket-ref-date,
+    .commentaire-date {
+        font-size: 0.75rem;
+        color: var(--text-subtle);
+    }
+
+    .ticket-title {
+        font-weight: 600;
+        color: var(--text-strong);
+    }
+
+    .ticket-description {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+    }
+
+    .ticket-department {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .ticket-badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .ref {
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .description {
+        font-size: 0.9rem;
+        line-height: 1.65;
+        color: var(--text-body);
+    }
+
+    .meta-liste,
+    .pj-liste {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .meta-liste > li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    /* Scoped: a bare .label rule would also hit form labels elsewhere. */
+    .meta-liste .label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .commentaire-entete {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.375rem;
+    }
+
+    .commentaire-auteur {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-strong);
+    }
+
+    /* ---- Prose ----
+       The @tailwindcss/typography plugin is not installed, so .prose carried no
+       rules. Minimal token-driven typography keeps the ticket body readable
+       instead of collapsing to browser defaults. */
+    .prose {
+        font-size: 0.9rem;
+        line-height: 1.7;
+        color: var(--text-body);
+    }
+
+    .prose > :first-child {
+        margin-top: 0;
+    }
+
+    .prose > :last-child {
+        margin-bottom: 0;
+    }
+
+    .prose p {
+        margin: 0 0 0.875rem;
+    }
+
+    .prose a {
+        color: var(--brand);
+        text-decoration: underline;
+    }
+
+    .prose ul,
+    .prose ol {
+        margin: 0 0 0.875rem;
+        padding-left: 1.25rem;
+    }
+
+    .prose ul {
+        list-style: disc;
+    }
+
+    .prose ol {
+        list-style: decimal;
+    }
+
+    .prose strong {
+        color: var(--text-strong);
+    }
+
+    /* Named for the typography plugin's dark variant; kept token-driven so it
+       is correct in whichever theme is active rather than hard-coding one. */
+    .prose-invert {
+        color: var(--text-body);
+    }
+
+    .widget-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 }
 
 @media print {

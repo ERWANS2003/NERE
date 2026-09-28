@@ -14,13 +14,21 @@ class ViewSectionNameConsistencyTest extends TestCase
         $files = [
             resource_path('views/services/catalog.blade.php'),
             resource_path('views/services/request.blade.php'),
-            resource_path('views/tickets/create-smart.blade.php'),
             resource_path('views/automations/index.blade.php'),
             resource_path('views/automations/create.blade.php'),
-            resource_path('views/knowledge/index-new.blade.php'),
+            resource_path('views/automations/show.blade.php'),
+            resource_path('views/automations/edit.blade.php'),
+            resource_path('views/auth/forgot-password.blade.php'),
+            resource_path('views/auth/reset-password.blade.php'),
         ];
 
         foreach ($files as $file) {
+            // The list is a coverage hint, not a contract: a view deleted from the
+            // project must not turn this guard into a fatal "file not found".
+            if (! is_file($file)) {
+                continue;
+            }
+
             $contents = file_get_contents($file);
             if (Str::contains($contents, "@section('title'") || Str::contains($contents, "@section('content'") || Str::contains($contents, "@section('content')")) {
                 $badFiles[] = basename($file);

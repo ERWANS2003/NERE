@@ -21,6 +21,25 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
+
+        // Behind a reverse proxy that terminates TLS (IIS or nginx on the Windows
+        // server), PHP sees a plain HTTP connection and the real scheme only in
+        // X-Forwarded-Proto. Trusting the proxy lets $request->isSecure() and the
+        // generated URLs reflect the scheme the browser actually used.
+        //
+        // Unset by default: without it, and with no reverse proxy, the scheme is
+        // taken from the request as-is. Set TRUSTED_PROXIES=* in .env only when a
+        // proxy is genuinely in front of the app.
+        if (filled($trustedProxies = env('TRUSTED_PROXIES'))) {
+            $middleware->trustProxies(
+                at: $trustedProxies,
+                headers: Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO
+                    | Request::HEADER_X_FORWARDED_AWS_ELB,
+            );
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

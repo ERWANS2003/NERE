@@ -99,16 +99,34 @@ $data = $data ?? [
 </div>
 
 <style>
+/* Plain CSS on purpose: Blade does not run Tailwind, so an `@apply` inside a
+   blade <style> block is shipped verbatim and the browser drops the rule. */
 .stat-card {
-    @apply bg-white rounded-lg p-4 border border-gray-200 flex items-center gap-3;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: var(--surface-card);
+    border: 1px solid var(--line-subtle);
+    border-radius: 0.5rem;
 }
 .stat-icon {
-    @apply w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
 }
 .stat-value {
-    @apply text-2xl font-bold text-gray-900;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-strong);
 }
 .stat-label {
-    @apply text-xs text-gray-600 mt-1;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 </style>

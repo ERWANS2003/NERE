@@ -92,8 +92,12 @@ class AppServiceProvider extends ServiceProvider
             @chmod(base_path('bootstrap/cache'), 0775);
         }
 
-        // Force HTTPS on production (Railway)
-        if (env('APP_ENV') === 'production') {
+        // Force the https scheme on generated URLs, but only when the deployment
+        // actually terminates TLS. Deciding this from APP_ENV alone is wrong: the
+        // PHP built-in server has no TLS listener, so forcing https locally makes
+        // the browser handshake a plain HTTP port and get
+        // "Invalid request (Unsupported SSL request)" back.
+        if (config('app.force_https')) {
             URL::forceScheme('https');
         }
 

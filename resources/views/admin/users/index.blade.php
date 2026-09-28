@@ -227,8 +227,13 @@
 
 @push('styles')
 <style>
+/* Plain CSS on purpose: Blade does not run Tailwind, so an `@apply` inside a
+   blade <style> block is shipped verbatim and the browser drops the rule. */
 .stat-card {
-    @apply bg-dark-800 rounded-xl p-4 border border-dark-700;
+    padding: 1rem;
+    background-color: var(--surface-card);
+    border: 1px solid var(--line-default);
+    border-radius: 0.75rem;
 }
 </style>
 @endpush

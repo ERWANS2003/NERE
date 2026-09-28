@@ -154,22 +154,14 @@ npm run build
 php artisan serve
 ```
 
-### Déploiement Railway (Production)
+### Exécution locale (Laragon / PHP intégré)
 
-Le projet est configuré pour déploiement automatique sur Railway.
+Le projet se lance localement via le serveur intégré de PHP, qui utilise le routeur
+`server.php` automatiquement. **URL locale :** http://127.0.0.1:8000
 
-**URL Production:** https://adorable-patience-production-1697.up.railway.app
-
-**Déploiement:**
-```bash
-# Push vers main déclenche auto-déploiement
-git push origin main
-
-# Railway exécute automatiquement:
-# - composer install
-# - php artisan migrate --force
-# - php artisan db:seed --force
-```
+> Le serveur intégré de PHP ne parle pas TLS. N'utilisez jamais `https://` en local :
+> cela produit `Invalid request (Unsupported SSL request)` dans la console. Le schéma
+> HTTP/HTTPS est piloté par `FORCE_HTTPS` dans `.env` (voir section Configuration).
 
 ---
 
@@ -234,7 +226,7 @@ config/
 - **Database:** PostgreSQL 15
 - **Frontend:** Blade Templates, Alpine.js, Tailwind CSS
 - **Icons:** SVG custom (30+ icons professionnels)
-- **Deployment:** Docker, Railway
+- **Deployment:** PHP intégré en local, reverse proxy (IIS / nginx) sur serveur Windows
 
 ---
 
@@ -444,13 +436,19 @@ Chaque plugin peut ajouter ses propres widgets:
 
 ```env
 APP_NAME="ITSM Nere Mining"
-APP_ENV=production
-APP_URL=https://adorable-patience-production-1697.up.railway.app
+APP_ENV=local
+APP_URL=http://127.0.0.1:8000
+
+# Schéma des URLs générées. false en local (le serveur intégré de PHP ne
+# gère pas TLS) ; true uniquement derrière un reverse proxy qui termine le SSL.
+FORCE_HTTPS=false
+# Renseignez le(s) proxy de confiance si l'app est derrière IIS/nginx.
+#TRUSTED_PROXIES=*
 
 DB_CONNECTION=pgsql
-DB_HOST=your-db-host
-DB_PORT=5432
-DB_DATABASE=railway
+DB_HOST=127.0.0.1
+DB_PORT=5433
+DB_DATABASE=nere_mining_itsm
 DB_USERNAME=postgres
 DB_PASSWORD=your-password
 
@@ -563,4 +561,4 @@ Développé avec ❤️ par l'équipe IT Nere Mining
 - PostgreSQL
 - Tailwind CSS
 - Alpine.js
-- Railway (Hosting)
+- Serveur Windows (IIS / nginx)

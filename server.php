@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Router for PHP's built-in server, used as the Railway start command.
+ * Router for PHP's built-in server, used by `php artisan serve`.
  *
  * The built-in server has no rewrite rules, so every request would otherwise be
  * handed to index.php -- including compiled Vite assets under /build, which the

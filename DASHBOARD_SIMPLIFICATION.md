@@ -159,22 +159,22 @@ Trois cartes de statistiques:
 
 ---
 
-## 🚀 Déploiement
+## 🚀 Exécution
 
-**URL Production:** https://adorable-patience-production-1697.up.railway.app
+**URL locale:** http://127.0.0.1:8000
 
 **Credentials:**
 - Email: `admin@nere-mining.bf`
 - Password: `admin123`
 
-**Statut:** ✅ Déployé automatiquement via Railway
+> N'utilisez pas `https://` en local : le serveur intégré de PHP ne gère pas TLS.
 
 ---
 
 ## 📝 Instructions pour Tester
 
 ### 1. Accès au Portail
-1. Aller sur https://adorable-patience-production-1697.up.railway.app
+1. Aller sur http://127.0.0.1:8000
 2. Se connecter avec admin@nere-mining.bf / admin123
 3. Vous arrivez directement sur le **Portail de Services**
 

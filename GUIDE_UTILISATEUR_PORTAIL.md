@@ -188,10 +188,12 @@ Rapidité moyenne de prise en charge (actuellement < 2h)
 
 ## 📱 Accès Rapide
 
-### 🌐 URL Production
+### 🌐 URL d'accès
 ```
-https://adorable-patience-production-1697.up.railway.app
+http://127.0.0.1:8000
 ```
+
+> Utiliser `http://` et non `https://` : le serveur intégré de PHP ne gère pas TLS.
 
 ### 🔑 Identifiants Admin (pour tests)
 ```

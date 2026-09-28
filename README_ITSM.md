@@ -116,18 +116,10 @@ ITSM Néré Mining est une application web complète pour gérer:
 
 Accédez à http://localhost:8000
 
-### Sur Railway (Production)
-
-Voir `RAILWAY_DEPLOYMENT.md` pour la procédure complète (5 minutes)
-
-```bash
-# TL;DR
-npm i -g @railway/cli
-railway init
-railway add # PostgreSQL
-railway variables # Ajouter les secrets
-railway up
-```
+> Le serveur intégré de PHP ne gère pas TLS : utilisez `http://`, jamais `https://`,
+> sinon la console affiche `Invalid request (Unsupported SSL request)`. Pour un accès
+> en HTTPS sur le serveur Windows,Mettre `FORCE_HTTPS=true` et `TRUSTED_PROXIES=*`
+> dans `.env` (voir la section Configuration de `README.md`).
 
 ## 📁 Structure du Projet
 
@@ -157,9 +149,8 @@ railway up
 │   └── channels.php       # Broadcasting
 ├── tests/
 │   └── Feature/           # Integration tests
-├── Procfile               # Railway deployment
-├── DEPLOYMENT.md          # Deployment guide
-└── RAILWAY_DEPLOYMENT.md  # 5-minute setup
+├── server.php             # Routeur pour le serveur intégré de PHP
+└── vite.config.js         # Build des assets front
 ```
 
 ## 🔐 Authentification & Autorisation
@@ -269,9 +260,6 @@ php artisan route:cache       # Routes
 ```bash
 # Voir les logs
 tail -f storage/logs/laravel.log
-
-# Railway
-railway logs --tail 50
 ```
 
 ### Health Check
@@ -298,9 +286,7 @@ php artisan tinker
 
 ## 📚 Documentation
 
-- **Déploiement complet**: `DEPLOYMENT.md`
-- **Quick Railway**: `RAILWAY_DEPLOYMENT.md`
-- **Résumé implémentation**: `IMPLEMENTATION_SUMMARY.md`
+- **Installation & configuration**: `README.md` (section Configuration)
 - **Code API**: Voir routes dans `routes/api.php`
 
 ## 🤝 Contribution
@@ -324,7 +310,6 @@ GitHub: [@ERWANS2003](https://github.com/ERWANS2003)
 
 - **Issues**: GitHub Issues
 - **Documentation**: Voir fichiers `.md` du projet
-- **Railway Support**: https://discord.gg/railway
 
 ---
 

@@ -22,7 +22,7 @@
         }
 
         .page-header h1 {
-            font: 700 clamp(1.75rem, 3vw, 2rem) 'Open Sans', sans-serif;
+            font: 700 clamp(1.75rem, 3vw, 2rem) var(--font-sans);
             color: #fff;
             margin: 0.5rem 0 0;
             letter-spacing: -0.02em;
@@ -80,7 +80,7 @@
 
         .form-group label {
             display: block;
-            font: 700 0.7rem 'Open Sans', sans-serif;
+            font: 700 0.7rem var(--font-sans);
             text-transform: uppercase;
             letter-spacing: 0.1em;
             color: #ffd700;
@@ -153,7 +153,7 @@
         }
 
         .tickets-header h2 {
-            font: 600 1.1rem 'Open Sans', sans-serif;
+            font: 600 1.1rem var(--font-sans);
             color: #fff;
             margin: 0;
         }
@@ -206,7 +206,7 @@
         }
 
         .ticket-ref-code {
-            font: 700 0.75rem 'Open Sans', monospace;
+            font: 700 0.75rem var(--font-sans), monospace;
             color: #ffd700;
         }
 
@@ -222,7 +222,7 @@
         }
 
         .ticket-title {
-            font: 600 0.95rem 'Open Sans', sans-serif;
+            font: 600 0.95rem var(--font-sans);
             color: #fff;
             white-space: nowrap;
             overflow: hidden;
@@ -292,7 +292,7 @@
         }
 
         .empty-state h3 {
-            font: 700 1.05rem 'Open Sans', sans-serif;
+            font: 700 1.05rem var(--font-sans);
             color: #fff;
             margin: 1rem 0 0;
         }
@@ -341,7 +341,7 @@
         <div>
             <p class="sur-titre">Centre de service</p>
             <h1>{{ auth()->user()->hasRole('demandeur') ? 'Mes demandes' : 'File de tickets' }}</h1>
-            <p>Recherchez, priorisez et suivez les demandes de vos équipes.</p>
+            <p>Recherchez, priorisez et suivez les demandes de vos Ã©quipes.</p>
         </div>
         <a href="{{ route('tickets.create') }}" class="btn-mining-primary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -365,7 +365,7 @@
                 <label for="q">Recherche</label>
                 <div class="search-wrapper">
                     <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0a7 7 0 0114 0z"></path></svg>
-                    <input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="Référence, titre ou description" class="form-control">
+                    <input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="RÃ©fÃ©rence, titre ou description" class="form-control">
                 </div>
             </div>
             <div class="form-group">
@@ -378,7 +378,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="priorite">Priorité</label>
+                <label for="priorite">PrioritÃ©</label>
                 <select id="priorite" name="priorite" class="form-control">
                     <option value="">Toutes</option>
                     @foreach($priorites as $priorite)
@@ -398,25 +398,25 @@
             <button type="submit" class="btn-mining-primary" style="margin-top: 1.75rem;">Filtrer</button>
         </form>
         @if(request()->hasAny(['q', 'statut', 'priorite', 'categorie', 'site', 'departement']))
-            <a href="{{ route('tickets.index') }}" class="link-reset">Réinitialiser les filtres</a>
+            <a href="{{ route('tickets.index') }}" class="link-reset">RÃ©initialiser les filtres</a>
         @endif
     </section>
 
     <section class="tickets-card">
         <div class="tickets-header">
             <div>
-                <h2>Demandes enregistrées</h2>
-                <p>{{ $tickets->total() }} résultat{{ $tickets->total() > 1 ? 's' : '' }} · triés du plus récent au plus ancien</p>
+                <h2>Demandes enregistrÃ©es</h2>
+                <p>{{ $tickets->total() }} rÃ©sultat{{ $tickets->total() > 1 ? 's' : '' }} Â· triÃ©s du plus rÃ©cent au plus ancien</p>
             </div>
-            <a href="{{ route('search.index') }}" class="link-advanced">Recherche avancée</a>
+            <a href="{{ route('search.index') }}" class="link-advanced">Recherche avancÃ©e</a>
         </div>
         @if($tickets->isEmpty())
             <div class="empty-state">
                 <div class="empty-icon">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.6a1 1 0 01.7.3l5.4 5.4a1 1 0 01.3.7V19a2 2 0 01-2 2z"></path></svg>
                 </div>
-                <h3>Aucun ticket trouvé</h3>
-                <p>Modifiez vos filtres ou créez une nouvelle demande.</p>
+                <h3>Aucun ticket trouvÃ©</h3>
+                <p>Modifiez vos filtres ou crÃ©ez une nouvelle demande.</p>
             </div>
         @else
             <div>
@@ -439,7 +439,7 @@
                                     <span class="badge" style="background:{{ $ticket->priorite->couleur }}22;color:{{ $ticket->priorite->couleur }}">{{ $ticket->priorite->nom }}</span>
                                 @endif
                             </div>
-                            <div class="ticket-department">{{ $ticket->departement?->nom ?? 'Périmètre général' }}</div>
+                            <div class="ticket-department">{{ $ticket->departement?->nom ?? 'PÃ©rimÃ¨tre gÃ©nÃ©ral' }}</div>
                             <svg class="ticket-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </div>
                     </a>

@@ -56,6 +56,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS Scheme
+    |--------------------------------------------------------------------------
+    |
+    | When true, every generated URL (routes, signed links, assets) is emitted
+    | with the https:// scheme regardless of the incoming request. Leave this
+    | false locally: the PHP built-in server has no TLS listener, so forcing
+    | https makes the browser attempt a handshake against a plain HTTP port,
+    | which it answers with "Invalid request (Unsupported SSL request)".
+    |
+    | Enable it only when a reverse proxy (IIS or nginx on the Windows server)
+    | terminates TLS in front of the app. Set TRUSTED_PROXIES alongside it so
+    | the app can trust the proxy's X-Forwarded-Proto header.
+    |
+    */
+
+    'force_https' => (bool) env('FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

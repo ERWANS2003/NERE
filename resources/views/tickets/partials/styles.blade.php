@@ -17,7 +17,7 @@
         gap: 0.45rem;
         padding: 0.6rem 1rem;
         border-radius: 8px;
-        font-family: 'Open Sans', sans-serif;
+        font-family: var(--font-sans);
         font-size: 0.85rem;
         font-weight: 500;
         cursor: pointer;
@@ -116,7 +116,7 @@
         border-radius: 8px;
         background: rgba(0, 0, 0, 0.3);
         color: #fff;
-        font-family: 'Open Sans', sans-serif;
+        font-family: var(--font-sans);
         font-size: 0.875rem;
         outline: none;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -154,7 +154,7 @@
     table.tickets th {
         text-align: left;
         padding: 0.75rem 1rem;
-        font-family: 'Open Sans', sans-serif;
+        font-family: var(--font-sans);
         font-size: 0.7rem;
         font-weight: 700;
         letter-spacing: 0.1em;
@@ -180,7 +180,7 @@
 
     /* Reference & Badges */
     .ref {
-        font-family: 'Open Sans', monospace;
+        font-family: var(--font-sans), monospace;
         font-size: 0.8rem;
         font-weight: 700;
         color: #ffd700;
@@ -290,7 +290,7 @@
 
     /* Section Title */
     .section-titre {
-        font-family: 'Open Sans', sans-serif;
+        font-family: var(--font-sans);
         font-size: 1rem;
         font-weight: 600;
         margin: 0 0 1rem;

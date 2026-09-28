@@ -12,6 +12,14 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                // Referenced by name in the views' inline styles for headings.
+                bunny('Space Grotesk', {
+                    weights: [500, 600, 700],
+                }),
+                // Referenced by name in the views' inline styles for body copy.
+                bunny('Inter', {
+                    weights: [400, 500, 600],
+                }),
             ],
         }),
         tailwindcss(),
