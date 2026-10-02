@@ -19,6 +19,7 @@ use App\Notifications\TicketCreatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
@@ -52,8 +53,10 @@ class TicketController extends Controller
             ->when($request->filled('categorie'), fn($q) => $q->where('ticket_category_id', $request->query('categorie')))
             ->when($request->filled('site'), fn($q) => $q->where('site_id', $request->query('site')))
             ->when($request->filled('assigne_a'), fn($q) => $q->where('assigned_to', $request->query('assigne_a')))
-            ->when($request->filled('departement'), fn($q) => $q->where('departement_id', $request->query('departement')))
-            ->latest()
+      ->when($request->filled('departement'), fn($q) => $q->where('departement_id', $request->query('departement')))
+      // Carte "SLA dépassés" du dashboard : ne garder que les tickets hors délai
+      ->when($request->boolean('sla_depasse'), fn($q) => $q->where('sla_depasse', true))
+      ->latest()
             ->paginate($perPage)
             ->withQueryString();
 
@@ -80,10 +83,20 @@ class TicketController extends Controller
         $departements = Departement::where('actif', true)->orderBy('nom')->get();
         $sites = Site::orderBy('nom')->get();
 
-        // Pre-select department if passed from URL (from dashboard cards)
-        $selectedDepartment = $request->query('department');
+        // Pre-select service if passed from URL (dashboard cards).
+        // The cards pass slugs (rh, hse, it...) while departments are keyed by `code`
+        // or `nom`, so resolve against all three, accent- and case-insensitively.
+        $selectedDepartment = $this->resolveDepartement($request->query('department'), $departements);
 
-        return view('tickets.create', compact('categories', 'departements', 'sites', 'selectedDepartment'));
+        // Pré-remplissage depuis un modèle de ticket
+        $prefill = array_filter([
+            'template_id' => $request->query('template_id'),
+            'titre' => $request->query('titre'),
+            'description' => $request->query('description'),
+            'ticket_category_id' => $request->query('ticket_category_id'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        return view('tickets.create', compact('categories', 'departements', 'sites', 'selectedDepartment', 'prefill'));
     }
 
     // Phase 4 : Créer un ticket (avec calcul de priorité, affectation et SLA automatiques)
@@ -203,6 +216,43 @@ class TicketController extends Controller
                 $query->orWhereNotNull('tickets.id');
             }
         });
+    }
+
+    /**
+     * Résout un service depuis un slug, un code, un nom ou un id.
+     * Retourne l'id du département, ou null si rien ne correspond.
+     */
+    protected function resolveDepartement(?string $reference, $departements)
+    {
+        if (blank($reference)) {
+            return null;
+        }
+
+        $normaliser = fn ($valeur) => Str::slug((string) $valeur, '_');
+        $recherche = $normaliser($reference);
+
+        // Id numérique direct
+        if (ctype_digit($reference) && $departements->contains('id', (int) $reference)) {
+            return (int) $reference;
+        }
+
+        return $departements->first(function ($departement) use ($recherche, $normaliser) {
+            foreach ([$departement->code, $departement->nom] as $champ) {
+                if (blank($champ)) {
+                    continue;
+                }
+                $candidat = $normaliser($champ);
+                if ($candidat === $recherche) {
+                    return true;
+                }
+                // Correspondance partielle : "fin" retrouve "Finance & Administration"
+                if (str_contains($candidat, $recherche) || str_contains($recherche, $candidat)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })?->id;
     }
 
     protected function validationRequise(int $departementId): bool

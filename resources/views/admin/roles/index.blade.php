@@ -36,7 +36,9 @@
                                 </svg>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-white group-hover:text-primary-400 transition">{{ $role->nom }}</h3>
+                                <a href="{{ route('admin.roles.show', $role) }}" class="block">
+                                    <h3 class="text-lg font-semibold text-white group-hover:text-primary-400 transition">{{ $role->nom }}</h3>
+                                </a>
                                 <span class="inline-block px-2 py-0.5 bg-dark-700 text-gray-400 text-xs rounded mt-1 font-mono">{{ $role->slug }}</span>
                             </div>
                         </div>
@@ -102,6 +104,14 @@
 
                 <!-- Actions -->
                 <div class="px-6 py-4 bg-dark-900 border-t border-dark-700 flex items-center justify-end gap-2">
+                    <a href="{{ route('admin.roles.show', $role) }}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Détails
+                    </a>
+
                     <a href="{{ route('admin.roles.edit', $role) }}" 
                        class="inline-flex items-center gap-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition text-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +120,7 @@
                         Modifier
                     </a>
 
-                    @if(!in_array($role->slug, ['admin', 'dsi']))
+                    @unless($role->estSysteme())
                         <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" 
                               onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?')"
                               class="inline">

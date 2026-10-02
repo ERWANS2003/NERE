@@ -8,7 +8,6 @@ use App\Models\Role;
 use App\Models\Departement;
 use App\Models\Site;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -44,56 +43,171 @@ class UserController extends Controller
             'departements' => Departement::where('actif', true)->orderBy('nom')->get(),
             'sites' => Site::where('actif', true)->orderBy('nom')->get(),
             'perPage' => $perPage,
+            // Payload des modales d'édition : évite un aller-retour par utilisateur.
+            'usersJson' => $users->getCollection()->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'role_id' => $u->role_id,
+                'departement_id' => $u->departement_id,
+                'site_id' => $u->site_id,
+                'matricule' => $u->matricule,
+                'telephone' => $u->telephone,
+                'poste' => $u->poste,
+                'est_technicien' => (bool) $u->est_technicien,
+                'disponible' => (bool) $u->disponible,
+                'actif' => (bool) $u->actif,
+            ]),
         ]);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
-            'role_id' => 'required|exists:roles,id',
-            'departement_id' => 'nullable|exists:departements,id',
-            'site_id' => 'nullable|exists:sites,id',
-            'est_technicien' => 'boolean',
-        ]);
+        $data = $this->validateUserData($request, null);
 
-        $data['password'] = Hash::make($data['password']);
+        // Le cast `hashed` du modèle hashere le mot de passe : le hacher ici
+        // aussi rendait le hash final non idempotent dès que la même valeur
+        // passait deux fois dans la chaîne.
+        $data['est_technicien'] = $request->boolean('est_technicien');
+        // Sémantique HTML : une case décochée n'est pas soumise, donc
+        // `boolean()` la vaut false. La case est cochée par défaut dans le
+        // formulaire, un client qui omet le champ obtient un compte inactif.
+        $data['actif'] = $request->boolean('actif');
+        $data['disponible'] = $request->boolean('disponible');
+
         $user = User::create($data);
 
-        // Si le rôle attribué est Directeur de Département, lier comme directeur du département
-        if ($user->hasRole('directeur_departement') && $user->departement_id) {
-            Departement::where('id', $user->departement_id)->update(['directeur_id' => $user->id]);
-        }
+        $this->syncDirecteur($user);
 
         return redirect()->route('admin.users.index')->with('success', "Utilisateur {$user->name} créé.");
     }
 
     public function update(Request $request, User $user)
     {
-        $data = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'role_id' => 'sometimes|exists:roles,id',
-            'departement_id' => 'sometimes|nullable|exists:departements,id',
-            'site_id' => 'sometimes|nullable|exists:sites,id',
+        $data = $this->validateUserData($request, $user, partial: true);
+
+        $estSoiMeme = $user->is($request->user());
+        $avertissements = [];
+
+        if ($estSoiMeme && array_key_exists('role_id', $data)) {
+            // Un administrateur ne doit pas se verrouiller hors du système.
+            unset($data['role_id']);
+            $avertissements[] = 'votre rôle reste inchangé';
+        }
+
+        if ($estSoiMeme && array_key_exists('actif', $data) && ! $data['actif']) {
+            unset($data['actif']);
+            $avertissements[] = 'vous ne pouvez pas désactiver votre propre compte';
+        }
+
+        if ($this->derniereProtectionAdmin($user, $data)) {
+            unset($data['role_id'], $data['actif']);
+            $avertissements[] = 'il doit rester au moins un administrateur actif';
+        }
+
+        // Un champ soumis vide est converti en null puis renvoyé par
+        // validate() : sans ce unset, `password` null écrasait le mot de
+        // passe par un hash de chaîne vide.
+        if (blank($data['password'] ?? null)) {
+            unset($data['password']);
+        }
+
+        $user->update($data);
+
+        $this->syncDirecteur($user);
+
+        $message = 'Utilisateur mis à jour.';
+        if ($avertissements !== []) {
+            $message .= ' Attention : ' . implode(', ', $avertissements) . '.';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Un administrateur ne doit pas pouvoir se retirer le dernier rôle admin
+     * actif, sinon plus personne ne peut administrer l'application.
+     */
+    private function derniereProtectionAdmin(User $user, array $data): bool
+    {
+        if (! $user->hasRole(Role::SLUG_ADMIN) || ! $user->actif) {
+            return false;
+        }
+
+        $changeRole = array_key_exists('role_id', $data)
+            && (int) $data['role_id'] !== (int) $user->role_id;
+        $desactive = array_key_exists('actif', $data) && ! $data['actif'];
+
+        if (! $changeRole && ! $desactive) {
+            return false;
+        }
+
+        $resteAdminActif = User::where('role_id', $user->role_id)
+            ->where('actif', true)
+            ->whereKeyNot($user->getKey())
+            ->exists();
+
+        return ! $resteAdminActif;
+    }
+
+    /**
+     * Fields shared by the create form and the edit form. On creation the
+     * identity fields are required; on edit they stay optional so a partial
+     * update (toggle, role change) never wipes data.
+     */
+    private function validateUserData(Request $request, ?User $user, bool $partial = false): array
+    {
+        $required = $partial ? 'sometimes' : 'required';
+
+        return $request->validate([
+            'name' => $required . '|string|max:255',
+            'email' => $required . '|email|max:255|unique:users,email,' . ($user?->id ?? 'NULL'),
+            'password' => ($partial ? 'nullable' : 'required') . '|min:8|confirmed',
+            'role_id' => $required . '|exists:roles,id',
+            'departement_id' => 'nullable|exists:departements,id',
+            'site_id' => 'nullable|exists:sites,id',
+            'matricule' => 'nullable|string|max:50|unique:users,matricule,' . ($user?->id ?? 'NULL'),
+            'telephone' => 'nullable|string|max:30',
+            'poste' => 'nullable|string|max:255',
             'est_technicien' => 'boolean',
             'disponible' => 'boolean',
             'actif' => 'boolean',
         ]);
+    }
 
-        $user->update($data);
+    /**
+     * Un Directeur de Département se devient automatiquement directeur de
+     * son département ; le lien précédent est retiré pour éviter deux
+     * directeurs sur un même service. Inversement, perdre le rôle ou le
+     * département détache le lien, sinon le département garderait un
+     * directeur fantôme.
+     */
+    private function syncDirecteur(User $user): void
+    {
+        // `update()` a déjà consulté la relation via hasRole() : sans cette
+        // invalidation, syncDirecteur voyait l'ancien rôle et laissait un
+        // directeur fantôme après un changement de rôle ou de département.
+        $user->unsetRelation('role');
 
-        // Si le rôle attribué est Directeur de Département, lier comme directeur du département
-        if ($user->hasRole('directeur_departement') && $user->departement_id) {
-            Departement::where('id', $user->departement_id)->update(['directeur_id' => $user->id]);
+        if (! $user->hasRole(Role::SLUG_DIRECTEUR) || ! $user->departement_id) {
+            Departement::where('directeur_id', $user->id)->update(['directeur_id' => null]);
+
+            return;
         }
 
-        return back()->with('success', 'Utilisateur mis à jour.');
+        Departement::where('directeur_id', $user->id)
+            ->where('id', '!=', $user->departement_id)
+            ->update(['directeur_id' => null]);
+
+        Departement::where('id', $user->departement_id)->update(['directeur_id' => $user->id]);
     }
 
     public function destroy(User $user)
     {
+        if ($user->is(request()->user())) {
+            return back()->with('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+        }
+
         $user->update(['actif' => false]);
 
         return back()->with('success', 'Utilisateur désactivé.');
@@ -101,6 +215,10 @@ class UserController extends Controller
 
     public function toggle(User $user)
     {
+        if ($user->is(request()->user()) && $user->actif) {
+            return back()->with('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+        }
+
         $user->update(['actif' => !$user->actif]);
 
         $status = $user->actif ? 'activé' : 'désactivé';

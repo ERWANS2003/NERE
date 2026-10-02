@@ -80,8 +80,20 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="slug">Identifiant système (Slug) *</label>
-            <input type="text" id="slug" name="slug" class="form-input" value="{{ old('slug', $role->slug) }}" required>
+            <label class="form-label" for="slug">Identifiant système (Slug)</label>
+            @if($role->estSysteme())
+                <input type="text" id="slug" value="{{ $role->slug }}" class="form-input" disabled
+                       title="Identifiant figé : il est utilisé par le code et le middleware d'accès.">
+                <p style="font-size:.78rem;color:var(--texte-att);margin:.35rem 0 0;">
+                    Identifiant système figé — le modifier casserait les règles d'accès.
+                </p>
+            @else
+                <input type="text" id="slug" name="slug" class="form-input" value="{{ old('slug', $role->slug) }}"
+                       placeholder="Généré automatiquement à partir du nom si vide">
+                <p style="font-size:.78rem;color:var(--texte-att);margin:.35rem 0 0;">
+                    Laissez vide pour générer l'identifiant depuis le nom du rôle.
+                </p>
+            @endif
         </div>
 
         <div class="form-group">

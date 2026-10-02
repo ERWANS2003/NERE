@@ -116,12 +116,22 @@ class TicketTemplateController extends Controller
      */
     public function use(TicketTemplate $template)
     {
-        return redirect()->route('tickets.create', [
+        $template->load(['category.team.departement']);
+
+        $prefill = [
             'template_id' => $template->id,
+            'ticket_category_id' => $template->ticket_category_id,
             'titre' => $template->titre_template,
             'description' => $template->description_template,
-            'category' => $template->ticket_category_id,
-            'priority' => $template->priorite_id,
-        ]);
+        ];
+
+        // Le service est déduit de la catégorie du modèle pour rester cohérent
+        // avec la contrainte de correspondance catégorie/service du formulaire.
+        $departementId = $template->category?->team?->departement_id;
+        if ($departementId) {
+            $prefill['department'] = $departementId;
+        }
+
+        return redirect()->route('tickets.create', array_filter($prefill, fn ($v) => $v !== null));
     }
 }

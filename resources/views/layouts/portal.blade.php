@@ -37,10 +37,13 @@
 
 @php
     $user = auth()->user();
-    $estDemandeur = $user?->hasRole('demandeur') ?? false;
-    $estSuperviseur = $user && ! $estDemandeur;                 // technicien, dsi, directeur, admin
-    $estRoleDirection = $user && ($user->hasRole('admin') || $user->hasRole('dsi') || $user->hasRole('directeur_departement'));
-    $estAdmin = $user?->hasRole('admin') ?? false;
+    // Test positif des rôles : une négation (`! $estDemandeur`) accordait le
+    // menu Pilotage à tout utilisateur sans rôle demandeur, y compris un
+    // rôle inconnu ou un compte sans rôle. Les slugs viennent de Role::*.
+    $estDemandeur = $user?->estDemandeur() ?? false;
+    $estSuperviseur = $user?->estPilotage() ?? false;
+    $estRoleDirection = $user?->estDirection() ?? false;
+    $estAdmin = $user?->hasRole(\App\Models\Role::SLUG_ADMIN) ?? false;
 @endphp
 
 <div x-data="{ sidebar: false }" class="flex min-h-screen">

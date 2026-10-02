@@ -1,20 +1,24 @@
 @props(['data' => null])
 
 @php
+// La relation s'appelle `statut` (Ticket::statut) et les slugs réels sont
+// nouveau / assigne / en_cours / en_attente / resolu / clos / annule.
+$slugsClotures = ['resolu', 'clos', 'annule'];
+
 // Calculer les métriques SLA
 $totalTickets = \App\Models\Ticket::count();
-$resolvedTickets = \App\Models\Ticket::whereHas('status', fn($q) => $q->where('slug', 'resolved'))->count();
+$resolvedTickets = \App\Models\Ticket::whereHas('statut', fn($q) => $q->whereIn('slug', $slugsClotures))->count();
 $complianceRate = $totalTickets > 0 ? round(($resolvedTickets / $totalTickets) * 100, 1) : 0;
 
 $data = $data ?? [
     'compliance_rate' => $complianceRate,
     'at_risk' => \App\Models\Ticket::whereNotNull('due_date')
         ->where('due_date', '<=', now()->addHours(2))
-        ->whereDoesntHave('status', fn($q) => $q->whereIn('slug', ['resolved', 'closed']))
+        ->whereDoesntHave('statut', fn($q) => $q->whereIn('slug', $slugsClotures))
         ->count(),
     'breached' => \App\Models\Ticket::whereNotNull('due_date')
         ->where('due_date', '<', now())
-        ->whereDoesntHave('status', fn($q) => $q->whereIn('slug', ['resolved', 'closed']))
+        ->whereDoesntHave('statut', fn($q) => $q->whereIn('slug', $slugsClotures))
         ->count()
 ];
 @endphp

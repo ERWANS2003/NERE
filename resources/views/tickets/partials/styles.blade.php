@@ -238,10 +238,11 @@
         background: rgba(255, 215, 0, 0.05);
     }
 
-    .pagination .active span {
+    .pagination .active {
         background: rgba(255, 215, 0, 0.15);
         border-color: rgba(255, 215, 0, 0.4);
         color: #ffd700;
+        font-weight: 600;
     }
 
     /* Layout Grid */

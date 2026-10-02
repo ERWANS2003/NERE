@@ -2,146 +2,107 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 
+/**
+ * Rôles applicatifs.
+ *
+ * Les slugs ci-dessous sont ceux que le code compare strictement :
+ * `User::hasRole()`, le middleware `role:`, la navigation du portail et les
+ * Gates d'`AppServiceProvider`. Les ajouter ici sans les déclarer dans
+ * `Role::SLUGS_SYSTEME` créerait des rôles invisibles pour l'application.
+ */
 class MiningRoleHierarchySeeder extends Seeder
 {
     public function run(): void
     {
-        // Define the complete role hierarchy for mining operations
         $roles = [
             [
-                'nom' => 'Directeur Général',
-                'slug' => 'directeur_general',
-                'description' => 'Accès complet à tous les systèmes - Contrôle stratégique de la mine',
-                'permissions' => ['*'] // Wildcard for all permissions
+                'nom' => 'Administrateur',
+                'slug' => Role::SLUG_ADMIN,
+                'description' => 'Accès complet : administration, rôles, utilisateurs et paramétrage.',
+                'permissions' => ['*'],
             ],
             [
-                'nom' => 'Directeur d\'Opérations',
-                'slug' => 'directeur_operations',
-                'description' => 'Gestion complète des opérations - Supervision des équipes et actifs',
+                'nom' => 'DSI',
+                'slug' => Role::SLUG_DSI,
+                'description' => 'Direction des Systèmes d\'Information : supervision du parc, des accès et du helpdesk.',
                 'permissions' => [
-                    'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.close',
-                    'assets.view', 'assets.manage',
-                    'teams.view', 'teams.manage',
-                    'reports.view', 'reports.export',
-                    'schedule.view', 'schedule.manage',
-                    'safety.view', 'safety.manage'
-                ]
-            ],
-            [
-                'nom' => 'Gestionnaire de Maintenance',
-                'slug' => 'maintenance_manager',
-                'description' => 'Gestion des tickets de maintenance et des équipes techniques',
-                'permissions' => [
-                    'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.update', 'tickets.close',
-                    'assets.view', 'assets.update',
-                    'teams.view', 'teams.coordinate',
-                    'reports.view', 'reports.maintenance',
-                    'schedule.view', 'schedule.update'
-                ]
-            ],
-            [
-                'nom' => 'Chef d\'Équipe Maintenance',
-                'slug' => 'chef_equipe_maintenance',
-                'description' => 'Supervision directe d\'une équipe - Assignation des tâches techniques',
-                'permissions' => [
-                    'tickets.view', 'tickets.create', 'tickets.update', 'tickets.comment',
-                    'assets.view',
-                    'teams.view', 'teams.update_members',
-                    'reports.view'
-                ]
-            ],
-            [
-                'nom' => 'Technicien Maintenance',
-                'slug' => 'technicien_maintenance',
-                'description' => 'Exécution des tâches de maintenance - Mise à jour d\'état des tickets',
-                'permissions' => [
-                    'tickets.view', 'tickets.update', 'tickets.comment',
-                    'assets.view',
-                    'reports.view'
-                ]
-            ],
-            [
-                'nom' => 'Responsable HSE',
-                'slug' => 'responsable_hse',
-                'description' => 'Gestion de la sécurité et de l\'environnement - Suivi des incidents',
-                'permissions' => [
-                    'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.update',
-                    'safety.view', 'safety.manage', 'safety.incidents',
-                    'reports.view', 'reports.safety', 'reports.export',
-                    'assets.view'
-                ]
-            ],
-            [
-                'nom' => 'Responsable RH',
-                'slug' => 'responsable_rh',
-                'description' => 'Gestion des ressources humaines - Paie et formations',
-                'permissions' => [
-                    'tickets.view',
+                    'tickets.view', 'tickets.view_own', 'tickets.create', 'tickets.update',
+                    'tickets.assign', 'tickets.comment', 'tickets.close',
+                    'assets.view', 'assets.manage', 'assets.update',
+                    'teams.view', 'teams.manage', 'teams.coordinate', 'teams.update_members',
                     'users.view', 'users.manage',
-                    'training.view', 'training.manage',
-                    'reports.view', 'reports.hr', 'reports.export'
-                ]
-            ],
-            [
-                'nom' => 'Responsable Finance',
-                'slug' => 'responsable_finance',
-                'description' => 'Gestion financière - Budgets et dépenses',
-                'permissions' => [
-                    'assets.view',
-                    'reports.view', 'reports.export', 'reports.financial',
-                    'budget.view', 'budget.manage'
-                ]
-            ],
-            [
-                'nom' => 'Responsable IT',
-                'slug' => 'responsable_it',
-                'description' => 'Gestion informatique et des systèmes',
-                'permissions' => [
-                    'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.update', 'tickets.close',
                     'systems.view', 'systems.manage',
-                    'users.view', 'users.manage',
-                    'reports.view'
-                ]
+                    'knowledge.view', 'knowledge.create', 'knowledge.manage',
+                    'reports.view', 'reports.export', 'reports.maintenance', 'reports.safety',
+                    'schedule.view', 'schedule.manage', 'schedule.update',
+                    'safety.view', 'safety.manage', 'safety.incidents',
+                    'admin.access',
+                ],
             ],
             [
-                'nom' => 'Demandeur - Service',
-                'slug' => 'demandeur_service',
-                'description' => 'Création de demandes pour des services internes',
+                'nom' => 'Directeur de département',
+                'slug' => Role::SLUG_DIRECTEUR,
+                'description' => 'Pilotage de son département : tickets, équipe, actifs et rapports.',
+                'permissions' => [
+                    'tickets.view', 'tickets.create', 'tickets.update', 'tickets.assign',
+                    'tickets.comment', 'tickets.close',
+                    'assets.view', 'assets.manage',
+                    'teams.view', 'teams.manage', 'teams.coordinate', 'teams.update_members',
+                    'users.view',
+                    'reports.view', 'reports.export', 'reports.maintenance',
+                    'schedule.view', 'schedule.manage',
+                    'safety.view', 'safety.manage', 'safety.incidents',
+                    'knowledge.view',
+                ],
+            ],
+            [
+                'nom' => 'Technicien',
+                'slug' => Role::SLUG_TECHNICIEN,
+                'description' => 'Traitement technique des tickets, accès aux actifs et aux connaissances.',
+                'permissions' => [
+                    'tickets.view', 'tickets.view_own', 'tickets.create', 'tickets.update',
+                    'tickets.comment',
+                    'assets.view', 'assets.update',
+                    'knowledge.view', 'knowledge.create',
+                    'safety.view', 'safety.incidents',
+                ],
+            ],
+            [
+                'nom' => 'Demandeur',
+                'slug' => Role::SLUG_DEMANDEUR,
+                'description' => 'Crée et suit ses propres demandes de support.',
                 'permissions' => [
                     'tickets.view_own', 'tickets.create', 'tickets.comment',
-                    'knowledge.view'
-                ]
+                    'knowledge.view',
+                ],
             ],
-            [
-                'nom' => 'Consultable - Système',
-                'slug' => 'consultant_systeme',
-                'description' => 'Accès en lecture seule - Consultation du système',
-                'permissions' => [
-                    'tickets.view', 'assets.view', 'reports.view', 'knowledge.view'
-                ]
-            ]
         ];
 
+        $allPermissions = Permission::pluck('id', 'slug');
+
         foreach ($roles as $roleData) {
-            $permissions = $roleData['permissions'];
+            $slugs = $roleData['permissions'];
             unset($roleData['permissions']);
 
-            $role = Role::updateOrCreate(
-                ['slug' => $roleData['slug']],
-                $roleData
-            );
+            $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
 
-            // Sync permissions
-            if ($permissions !== ['*']) {
-                $permissionIds = Permission::whereIn('slug', $permissions)->pluck('id')->toArray();
-                $role->permissions()->sync($permissionIds);
-            }
+            // `['*']` doit être matérialisé en base : Role::hasPermission()
+            // cherche une ligne '*' dans permission_role, et la page de
+            // détail n'afficherait sinon aucune permission pour l'admin.
+            $permissionIds = $slugs === ['*']
+                ? $allPermissions->values()->all()
+                : $allPermissions->only($slugs)->values()->all();
+
+            $role->permissions()->sync($permissionIds);
         }
 
-        $this->command->info('Mining role hierarchy created/updated successfully');
+        $this->command->info(sprintf(
+            'Rôles applicatifs créés/mis à jour : %s',
+            Role::whereIn('slug', Role::SLUGS_SYSTEME)->pluck('slug')->implode(', ')
+        ));
     }
 }

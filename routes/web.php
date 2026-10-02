@@ -57,20 +57,29 @@ Route::middleware('auth')->group(function () {
     Route::post('search/load/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'load'])->name('search.load');
     Route::delete('search/{savedSearch}', [\App\Http\Controllers\TicketSearchController::class, 'deleteSaved'])->name('search.delete');
 
-    // Ticket Templates
-    Route::resource('templates', \App\Http\Controllers\TicketTemplateController::class)->names('templates');
-    Route::get('templates/{template}/use', [\App\Http\Controllers\TicketTemplateController::class, 'use'])->name('templates.use');
+    // Phase 3 : Pilotage (modèles, Kanban, SLA, actifs).
+    // Ces modules n'ont aucun contrôle d'accès dans leurs contrôleurs : sans
+    // ce middleware, un demandeur qui saisit l'URL obtenait un 200.
+    Route::middleware('role:admin,dsi,directeur_departement,technicien')->group(function () {
+        // Ticket Templates
+        Route::resource('templates', \App\Http\Controllers\TicketTemplateController::class)->names('templates');
+        Route::get('templates/{template}/use', [\App\Http\Controllers\TicketTemplateController::class, 'use'])->name('templates.use');
 
-    // Phase 4B : Kanban Board
-    Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
-    Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');
+        // Phase 4B : Kanban Board
+        Route::get('kanban', [\App\Http\Controllers\KanbanController::class, 'index'])->name('kanban.index');
+        Route::post('kanban/tickets/{ticket}/move', [\App\Http\Controllers\KanbanController::class, 'moveTicket'])->name('kanban.move');
 
-    // Phase 9 : SLA Management
-    Route::resource('sla', \App\Http\Controllers\SlaController::class)->names('sla');
-    Route::post('sla/tickets/{ticket}/pause', [\App\Http\Controllers\SlaController::class, 'pauseTicket'])->name('sla.pause-ticket');
-    Route::post('sla/tickets/{ticket}/resume', [\App\Http\Controllers\SlaController::class, 'resumeTicket'])->name('sla.resume-ticket');
-    Route::post('sla/tickets/{ticket}/escalate', [\App\Http\Controllers\SlaController::class, 'escalateTicket'])->name('sla.escalate-ticket');
-    Route::get('sla/tickets/{ticket}/progress', [\App\Http\Controllers\SlaController::class, 'getTicketProgress'])->name('sla.ticket-progress');
+        // Phase 9 : SLA Management
+        Route::resource('sla', \App\Http\Controllers\SlaController::class)->names('sla');
+        Route::post('sla/tickets/{ticket}/pause', [\App\Http\Controllers\SlaController::class, 'pauseTicket'])->name('sla.pause-ticket');
+        Route::post('sla/tickets/{ticket}/resume', [\App\Http\Controllers\SlaController::class, 'resumeTicket'])->name('sla.resume-ticket');
+        Route::post('sla/tickets/{ticket}/escalate', [\App\Http\Controllers\SlaController::class, 'escalateTicket'])->name('sla.escalate-ticket');
+        Route::get('sla/tickets/{ticket}/progress', [\App\Http\Controllers\SlaController::class, 'getTicketProgress'])->name('sla.ticket-progress');
+
+        // Phase 8 : Gestion des actifs
+        Route::resource('actifs', AssetController::class)->names('assets');
+        Route::post('actifs/{asset}/lier-ticket', [AssetController::class, 'lierTicket'])->name('assets.link-ticket');
+    });
 
     // Intelligence des Tickets - Suggestions automatiques
     Route::post('/tickets/intelligence/analyze', [\App\Http\Controllers\TicketIntelligenceController::class, 'analyzeNewTicket'])->name('tickets.intelligence.analyze');
@@ -96,10 +105,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/automations/{automation}/toggle', [\App\Http\Controllers\WorkflowAutomationController::class, 'toggle'])->name('automations.toggle');
         Route::post('/automations/{automation}/test', [\App\Http\Controllers\WorkflowAutomationController::class, 'test'])->name('automations.test');
     });
-
-    // Phase 8 : Gestion des actifs
-    Route::resource('actifs', AssetController::class)->names('assets');
-    Route::post('actifs/{asset}/lier-ticket', [AssetController::class, 'lierTicket'])->name('assets.link-ticket');
 
     // Phase 9 : Base de connaissances
     Route::get('base-connaissances', [KnowledgeArticleController::class, 'index'])->name('knowledge.index');

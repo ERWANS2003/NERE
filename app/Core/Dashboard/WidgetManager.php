@@ -84,21 +84,12 @@ class WidgetManager
                 'safety_alerts' => [
                     'name' => 'Alertes Sécurité',
                     'component' => 'SafetyAlertsWidget',
-                    'description' => 'Incidents et alertes sécurité',
+                    'description' => 'Incidents sécurité et seuils d\'alerte',
                     'icon' => 'safety',
                     'category' => 'safety',
                     'refresh_interval' => 60,
                     'default_size' => 'medium',
                     'priority' => 'high',
-                ],
-                'weather' => [
-                    'name' => 'Météo Site',
-                    'component' => 'WeatherWidget',
-                    'description' => 'Conditions météo sur site',
-                    'icon' => 'cloud',
-                    'category' => 'operations',
-                    'refresh_interval' => 1800,
-                    'default_size' => 'small',
                 ],
             ];
 
@@ -113,9 +104,15 @@ class WidgetManager
      */
     public function getUserDashboard(int $userId): array
     {
-        return \DB::table('dashboard_layouts')
+        $raw = \DB::table('dashboard_layouts')
             ->where('user_id', $userId)
-            ->first()?->layout ?? $this->getDefaultLayout();
+            ->first()?->layout;
+
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+
+        return is_array($raw) ? $raw : $this->getDefaultLayout();
     }
 
     /**
@@ -123,7 +120,7 @@ class WidgetManager
      */
     public function saveDashboardLayout(int $userId, array $layout): bool
     {
-        return \DB::table('dashboard_layouts')->updateOrInsert(
+        return (bool) \DB::table('dashboard_layouts')->updateOrInsert(
             ['user_id' => $userId],
             [
                 'layout' => json_encode($layout),

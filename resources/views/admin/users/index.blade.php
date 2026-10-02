@@ -54,7 +54,7 @@
             </form>
         </div>
 
-        <button onclick="document.getElementById('createUserModal').classList.remove('hidden')" 
+        <button onclick="openCreateModal()" 
                 class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition shadow-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -213,17 +213,348 @@
 
 </div>
 
-<!-- Create User Modal (simplified, to be enhanced) -->
-<div id="createUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" onclick="if(event.target === this) this.classList.add('hidden')">
-    <div class="bg-dark-800 rounded-xl p-6 max-w-2xl w-full mx-4 border border-dark-700">
-        <h3 class="text-xl font-semibold text-white mb-4">Créer un utilisateur</h3>
-        <p class="text-gray-400 mb-4">Cette fonctionnalité sera implémentée prochainement.</p>
-        <button onclick="document.getElementById('createUserModal').classList.add('hidden')" 
-                class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition">
-            Fermer
-        </button>
+<!-- Create User Modal -->
+<div id="createUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 overflow-y-auto" onclick="if(event.target === this) closeCreateModal()">
+    <div class="bg-dark-800 rounded-xl p-6 max-w-3xl w-full mx-4 my-8 border border-dark-700">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-xl font-semibold text-white">Créer un utilisateur</h3>
+            <button type="button" onclick="closeCreateModal()" class="text-gray-400 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        @if($errors->any())
+            <div class="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                <ul class="text-sm text-red-300 space-y-1">
+                    @foreach($errors->all() as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-4">
+            @csrf
+            <input type="hidden" name="_form" value="create">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="create_name" class="block text-sm font-medium text-gray-300 mb-1">Nom complet <span class="text-red-400">*</span></label>
+                    <input type="text" id="create_name" name="name" value="{{ old('name') }}" required
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="create_email" class="block text-sm font-medium text-gray-300 mb-1">Email <span class="text-red-400">*</span></label>
+                    <input type="email" id="create_email" name="email" value="{{ old('email') }}" required
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="create_password" class="block text-sm font-medium text-gray-300 mb-1">Mot de passe <span class="text-red-400">*</span></label>
+                    <input type="password" id="create_password" name="password" required minlength="8"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                    <p class="text-xs text-gray-500 mt-1">8 caractères minimum.</p>
+                </div>
+                <div>
+                    <label for="create_password_confirmation" class="block text-sm font-medium text-gray-300 mb-1">Confirmation <span class="text-red-400">*</span></label>
+                    <input type="password" id="create_password_confirmation" name="password_confirmation" required minlength="8"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="create_role_id" class="block text-sm font-medium text-gray-300 mb-1">Rôle <span class="text-red-400">*</span></label>
+                    <select id="create_role_id" name="role_id" required
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        <option value="">— Sélectionner —</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}" {{ (int) old('role_id') === $role->id ? 'selected' : '' }}>
+                                {{ $role->nom }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="create_departement_id" class="block text-sm font-medium text-gray-300 mb-1">Département</label>
+                    <select id="create_departement_id" name="departement_id"
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        <option value="">— Aucun —</option>
+                        @foreach($departements as $departement)
+                            <option value="{{ $departement->id }}" {{ (int) old('departement_id') === $departement->id ? 'selected' : '' }}>
+                                {{ $departement->nom }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="create_site_id" class="block text-sm font-medium text-gray-300 mb-1">Site</label>
+                    <select id="create_site_id" name="site_id"
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        <option value="">— Aucun —</option>
+                        @foreach($sites as $site)
+                            <option value="{{ $site->id }}" {{ (int) old('site_id') === $site->id ? 'selected' : '' }}>
+                                {{ $site->nom }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="create_matricule" class="block text-sm font-medium text-gray-300 mb-1">Matricule</label>
+                    <input type="text" id="create_matricule" name="matricule" value="{{ old('matricule') }}"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="create_poste" class="block text-sm font-medium text-gray-300 mb-1">Poste</label>
+                    <input type="text" id="create_poste" name="poste" value="{{ old('poste') }}"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="create_telephone" class="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
+                    <input type="text" id="create_telephone" name="telephone" value="{{ old('telephone') }}"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-6 pt-2">
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" name="est_technicien" value="1" @checked(old('est_technicien'))
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Est technicien
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" name="disponible" value="1" @checked(old('disponible', true))
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Disponible pour affectation
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" name="actif" value="1" @checked(old('actif', true))
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Compte actif
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-dark-700">
+                <button type="button" onclick="closeCreateModal()"
+                        class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition">
+                    Annuler
+                </button>
+                <button type="submit" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition shadow-lg">
+                    Créer l'utilisateur
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 overflow-y-auto" onclick="if(event.target === this) closeEditModal()">
+    <div class="bg-dark-800 rounded-xl p-6 max-w-3xl w-full mx-4 my-8 border border-dark-700">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-xl font-semibold text-white">Modifier l'utilisateur</h3>
+            <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div id="editUserError" class="hidden mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+            <ul class="text-sm text-red-300 list-disc list-inside space-y-1"></ul>
+        </div>
+
+        <form id="editUserForm" method="POST" class="space-y-4">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="_form" value="edit">
+            {{-- Requis pour rouvrir la bonne modale après une erreur de
+                 validation : `old('id')` fait partie de l'input flashé. --}}
+            <input type="hidden" name="id" value="{{ old('id') }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="edit_name" class="block text-sm font-medium text-gray-300 mb-1">Nom complet</label>
+                    <input type="text" id="edit_name" name="name"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="edit_email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="edit_email" name="email"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="edit_role_id" class="block text-sm font-medium text-gray-300 mb-1">Rôle</label>
+                    <select id="edit_role_id" name="role_id"
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}">{{ $role->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="edit_departement_id" class="block text-sm font-medium text-gray-300 mb-1">Département</label>
+                    <select id="edit_departement_id" name="departement_id"
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        <option value="">— Aucun —</option>
+                        @foreach($departements as $departement)
+                            <option value="{{ $departement->id }}">{{ $departement->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="edit_site_id" class="block text-sm font-medium text-gray-300 mb-1">Site</label>
+                    <select id="edit_site_id" name="site_id"
+                            class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                        <option value="">— Aucun —</option>
+                        @foreach($sites as $site)
+                            <option value="{{ $site->id }}">{{ $site->nom }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="edit_matricule" class="block text-sm font-medium text-gray-300 mb-1">Matricule</label>
+                    <input type="text" id="edit_matricule" name="matricule"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="edit_poste" class="block text-sm font-medium text-gray-300 mb-1">Poste</label>
+                    <input type="text" id="edit_poste" name="poste"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+                <div>
+                    <label for="edit_telephone" class="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
+                    <input type="text" id="edit_telephone" name="telephone"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-6 pt-2">
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" id="edit_est_technicien" name="est_technicien" value="1"
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Est technicien
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" id="edit_disponible" name="disponible" value="1"
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Disponible
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-300">
+                    <input type="checkbox" id="edit_actif" name="actif" value="1"
+                           class="rounded border-dark-600 bg-dark-900 text-primary-600 focus:ring-primary-600/40">
+                    Compte actif
+                </label>
+            </div>
+
+            <div class="pt-4 border-t border-dark-700">
+                <p class="text-sm font-medium text-gray-300 mb-2">Réinitialiser le mot de passe <span class="text-gray-500">(optionnel)</span></p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="password" name="password" placeholder="Nouveau mot de passe (8 caractères min.)"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                    <input type="password" name="password_confirmation" placeholder="Confirmer le mot de passe"
+                           class="w-full px-3 py-2 bg-dark-900 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 outline-none transition">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-dark-700">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition">
+                    Annuler
+                </button>
+                <button type="submit" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition shadow-lg">
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    const USERS_JSON = {{ Js::from($usersJson) }};
+    // Le préfixe vient de la route nommée : un chemin en dur dans le JS
+    // cassait silencieusement l'édition si le préfixe d'URL changeait.
+    const USERS_UPDATE_BASE = @json(route('admin.users.update', ['user' => 'ID_PLACEHOLDER']));
+
+    function showModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function hideModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function openCreateModal() {
+        showModal('createUserModal');
+    }
+
+    function closeCreateModal() {
+        hideModal('createUserModal');
+    }
+
+    function editUser(id) {
+        const user = USERS_JSON.find(u => Number(u.id) === Number(id));
+        if (!user) return;
+
+        const form = document.getElementById('editUserForm');
+        form.action = USERS_UPDATE_BASE.replace('ID_PLACEHOLDER', user.id);
+
+        document.getElementById('edit_name').value = user.name ?? '';
+        document.getElementById('edit_email').value = user.email ?? '';
+        document.getElementById('edit_matricule').value = user.matricule ?? '';
+        document.getElementById('edit_poste').value = user.poste ?? '';
+        document.getElementById('edit_telephone').value = user.telephone ?? '';
+
+        document.getElementById('edit_role_id').value = user.role_id ?? '';
+        document.getElementById('edit_departement_id').value = user.departement_id ?? '';
+        document.getElementById('edit_site_id').value = user.site_id ?? '';
+
+        document.getElementById('edit_est_technicien').checked = !!user.est_technicien;
+        document.getElementById('edit_disponible').checked = !!user.disponible;
+        document.getElementById('edit_actif').checked = !!user.actif;
+
+        form.querySelector('input[name="password"]').value = '';
+        form.querySelector('input[name="password_confirmation"]').value = '';
+
+        const errorBox = document.getElementById('editUserError');
+        errorBox.classList.add('hidden');
+
+        showModal('editUserModal');
+    }
+
+    function closeEditModal() {
+        hideModal('editUserModal');
+    }
+
+    // Rouvre la modale concernée si la validation a échoué, en restaurant
+    // la saisie plutôt que les valeurs de la base.
+    @if($errors->any())
+        @if(old('_form') === 'create')
+            openCreateModal();
+        @elseif(old('_form') === 'edit' && old('id'))
+            editUser(@json((int) old('id')));
+            (function () {
+                const messages = @json($errors->all());
+                const box = document.getElementById('editUserError');
+                box.querySelector('ul').replaceChildren(...messages.map((m) => {
+                    const li = document.createElement('li');
+                    li.textContent = m;
+                    return li;
+                }));
+                box.classList.remove('hidden');
+
+                const set = (field, value) => {
+                    const el = document.getElementById('edit_' + field);
+                    if (!el) return;
+                    if (el.type === 'checkbox') {
+                        el.checked = value === '1' || value === 1;
+                    } else {
+                        el.value = value ?? '';
+                    }
+                };
+                @foreach(['name', 'email', 'role_id', 'departement_id', 'site_id', 'matricule', 'poste', 'telephone', 'est_technicien', 'disponible', 'actif'] as $champ)
+                    set(@json($champ), @json(old($champ)));
+                @endforeach
+            })();
+        @endif
+    @endif
+</script>
+@endpush
 
 @push('styles')
 <style>

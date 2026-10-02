@@ -24,7 +24,7 @@
         </a>
 
         <!-- Rapports -->
-        @can('reports.view')
+        @can('view_reports')
         <a href="{{ route('reports.index') }}" 
            class="quick-action-card bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700">
             <x-icon name="chart-bar" size="lg" class="text-white" />
@@ -44,7 +44,7 @@
         <div class="grid grid-cols-2 gap-3 text-center">
             <div>
                 <div class="text-2xl font-bold text-gray-900">
-                    {{ \App\Models\Ticket::where('assigned_to', auth()->id())->whereHas('status', fn($q) => $q->where('slug', 'open'))->count() }}
+                    {{ \App\Models\Ticket::where('assigned_to', auth()->id())->whereHas('statut', fn($q) => $q->whereIn('slug', ['nouveau', 'assigne', 'en_cours', 'en_attente']))->count() }}
                 </div>
                 <div class="text-xs text-gray-600">Tickets ouverts</div>
             </div>

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Role;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -27,52 +28,55 @@ class AppServiceProvider extends ServiceProvider
         // Every ability referenced by a `can:` middleware or an @can directive is
         // defined here, so route guards and view guards can never disagree.
         $roleGate = function ($user, array $roles, ?string $permission = null): bool {
-            foreach ($roles as $role) {
-                if ($user->hasRole($role)) {
-                    return true;
-                }
+            if ($user->hasAnyRole($roles)) {
+                return true;
             }
 
             return $permission !== null && $user->hasPermission($permission);
         };
 
+        $A = Role::SLUG_ADMIN;
+        $D = Role::SLUG_DSI;
+        $R = Role::SLUG_DIRECTEUR;
+        $T = Role::SLUG_TECHNICIEN;
+
         Gate::define('approve-service-requests', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi', 'directeur_departement'],
+            [$A, $D, $R],
             'services.approve'
         ));
 
         Gate::define('manage-automations', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi'],
+            [$A, $D],
             'automations.manage'
         ));
 
         Gate::define('view_all_tickets', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi', 'directeur_departement', 'technicien']
+            Role::SLUGS_PILOTAGE
         ));
 
         Gate::define('manage-sla', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi'],
+            [$A, $D],
             'sla.manage'
         ));
 
         Gate::define('view_reports', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi', 'directeur_departement'],
+            Role::SLUGS_DIRECTION,
             'reports.export'
         ));
 
         Gate::define('manage_assets', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi', 'technicien']
+            [$A, $D, $T]
         ));
 
         Gate::define('manage_department', fn ($user): bool => $roleGate(
             $user,
-            ['admin', 'dsi', 'directeur_departement'],
+            Role::SLUGS_DIRECTION,
             'department.manage_team'
         ));
 

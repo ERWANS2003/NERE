@@ -11,25 +11,32 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create admin role if not exists
         $adminRole = Role::firstOrCreate(
-            ['slug' => 'admin'],
-            ['nom' => 'Administrator']
+            ['slug' => Role::SLUG_ADMIN],
+            ['nom' => 'Administrateur']
         );
 
-        // Create admin user if not exists
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@nere-mining.bf'],
-            [
-                'name' => 'Administrator',
+        $admin = User::firstOrNew(['email' => 'admin@nere-mining.bf']);
+
+        if (! $admin->exists) {
+            $admin->fill([
+                'name' => 'Administrateur',
                 'password' => Hash::make('admin123'),
                 'email_verified_at' => now(),
                 'actif' => true,
-                'role_id' => $adminRole->id,  // Assign admin role directly
-            ]
-        );
+                'role_id' => $adminRole->id,
+            ])->save();
+        } elseif (! $admin->role_id) {
+            // Ne réécrit que le rôle manquant : un `updateOrCreate` ici
+            // remettait le mot de passe à `admin123` et cassait l'activation
+            // d'un compte déjà personnalisé à chaque `db:seed`.
+            $admin->forceFill(['role_id' => $adminRole->id])->save();
+        }
 
-        $this->command->info('✅ Admin user created/verified: admin@nere-mining.bf / admin123');
-        $this->command->info('   Role: ' . $admin->role?->nom ?? 'NONE');
+        $this->command->info(sprintf(
+            'Admin %s : %s',
+            $admin->exists ? 'vérifié' : 'créé',
+            $admin->email
+        ));
     }
 }

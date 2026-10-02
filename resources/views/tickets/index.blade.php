@@ -164,6 +164,79 @@
             margin: 0.25rem 0 0;
         }
 
+        .tickets-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .per-page {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .per-page label {
+            font-size: 0.8125rem;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        .per-page select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.85);
+            font: inherit;
+            font-size: 0.8125rem;
+            padding: 0.4rem 1.75rem 0.4rem 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .per-page select:hover,
+        .per-page select:focus {
+            border-color: rgba(255, 215, 0, 0.4);
+            color: #ffd700;
+            outline: none;
+        }
+
+        .per-page select option {
+            background: #1a1a1a;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.35rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 0.45rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.2s ease;
+        }
+
+        .pagination a:hover {
+            border-color: rgba(255, 215, 0, 0.4);
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .pagination .active {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: rgba(255, 215, 0, 0.4);
+            color: #ffd700;
+            font-weight: 600;
+        }
+
         .ticket-row {
             display: block;
             padding: 1.25rem 1.5rem;
@@ -408,7 +481,17 @@
                 <h2>Demandes enregistrÃ©es</h2>
                 <p>{{ $tickets->total() }} rÃ©sultat{{ $tickets->total() > 1 ? 's' : '' }} Â· triÃ©s du plus rÃ©cent au plus ancien</p>
             </div>
-            <a href="{{ route('search.index') }}" class="link-advanced">Recherche avancÃ©e</a>
+            <div class="tickets-header-actions">
+                <div class="per-page">
+                    <label for="per_page">Par page</label>
+                    <select id="per_page" onchange="window.location.href=this.value">
+                        @foreach([10, 20, 25, 50, 100] as $option)
+                            <option value="{{ request()->fullUrlWithQuery(['per_page' => $option, 'page' => null]) }}" @selected($perPage === $option)>{{ $option }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <a href="{{ route('search.index') }}" class="link-advanced">Recherche avancÃ©e</a>
+            </div>
         </div>
         @if($tickets->isEmpty())
             <div class="empty-state">
@@ -447,7 +530,7 @@
             </div>
             @if($tickets->hasPages())
                 <div style="padding: 1.25rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                    {{ $tickets->links() }}
+                    {{ $tickets->links('pagination::tickets') }}
                 </div>
             @endif
         @endif

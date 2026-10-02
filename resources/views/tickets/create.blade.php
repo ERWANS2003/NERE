@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('titre', 'Nouvelle Demande')
+@section('titre', ! empty($prefill['template_id']) ? 'Nouvelle Demande (depuis un modèle)' : 'Nouvelle Demande')
 
 @section('styles')
     <style>
@@ -278,7 +278,7 @@
                         <label for="type">Nature de la demande *</label>
                         <select id="type" name="type" required>
                             <option value="demande" @selected(old('type', 'demande') === 'demande')>Demande de service</option>
-                            <option value="incident" @selected(old('type') === 'incident')>Signaler un incident</option>
+                            <option value="incident" @selected(old('type', request('type')) === 'incident')>Signaler un incident</option>
                         </select>
                     </div>
 
@@ -287,7 +287,7 @@
                         <select id="departement_id" name="departement_id" required @change="updateDepartement($event.target.value)">
                             <option value="">â€” Choisir un service â€”</option>
                             @foreach ($departements as $departement)
-                                <option value="{{ $departement->id }}" @selected(old('departement_id', request('department')) == $departement->nom)>
+                                <option value="{{ $departement->id }}" @selected(old('departement_id', $selectedDepartment) == $departement->id)>
                                     {{ $departement->nom }}
                                 </option>
                             @endforeach
@@ -306,14 +306,14 @@
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="titre">Titre de la demande *</label>
-                        <input type="text" id="titre" name="titre" value="{{ old('titre') }}" required 
+                        <input type="text" id="titre" name="titre" value="{{ old('titre', $prefill['titre'] ?? '') }}" required
                                placeholder="Ex: Demande d'accÃ¨s au systÃ¨me SAP">
                     </div>
 
                     <div class="form-field">
                         <label for="description">Description dÃ©taillÃ©e *</label>
                         <textarea id="description" name="description" required 
-                                  placeholder="DÃ©crivez votre demande en dÃ©tail: contexte, besoin prÃ©cis, informations importantes...">{{ old('description') }}</textarea>
+                                  placeholder="DÃ©crivez votre demande en dÃ©tail: contexte, besoin prÃ©cis, informations importantes...">{{ old('description', $prefill['description'] ?? '') }}</textarea>
                         <span class="field-help">Plus vous donnez de dÃ©tails, plus rapide sera le traitement</span>
                     </div>
                 </div>
@@ -326,11 +326,14 @@
                             @foreach ($categories as $categorie)
                                 <option value="{{ $categorie->id }}" 
                                         data-departement="{{ $categorie->team?->departement_id }}" 
-                                        @selected(old('ticket_category_id') == $categorie->id)>
+                                        @selected(old('ticket_category_id', $prefill['ticket_category_id'] ?? null) == $categorie->id)>
                                     {{ $categorie->nom }}
                                 </option>
                             @endforeach
                         </select>
+                        <span id="category-empty-hint" class="field-help hidden text-amber-500">
+                            Aucune catégorie n'est rattachée à ce service. Contactez l'administrateur.
+                        </span>
                     </div>
 
                     <div class="form-field">
@@ -475,6 +478,14 @@ function ticketForm() {
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
             if (selectedOption && selectedOption.style.display === 'none') {
                 categorySelect.value = '';
+            }
+
+            // A service may have no category at all: surface that instead of
+            // leaving the user with a hidden/empty choice.
+            const visible = [...options].filter(o => o.value !== '' && o.style.display !== 'none');
+            const hint = document.getElementById('category-empty-hint');
+            if (hint) {
+                hint.classList.toggle('hidden', !deptId || visible.length > 0);
             }
         }
     };

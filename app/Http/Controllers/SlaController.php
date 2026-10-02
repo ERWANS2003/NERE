@@ -148,9 +148,8 @@ class SlaController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'action' => 'sla_paused',
-            'description' => "SLA pausé pour {$duration} secondes",
-            'old_value' => $ticket->sla_temps_pause_secondes,
-            'new_value' => ($ticket->sla_temps_pause_secondes ?? 0) + $duration,
+            'ancienne_valeur' => $ticket->sla_temps_pause_secondes ? $ticket->sla_temps_pause_secondes . 's' : '0s',
+            'nouvelle_valeur' => ($ticket->sla_temps_pause_secondes ?? 0) + $duration . 's',
         ]);
 
         return back()->with('success', "SLA en pause pour {$request->input('duration_minutes')} minutes.");
@@ -181,7 +180,8 @@ class SlaController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'action' => 'sla_resumed',
-            'description' => "SLA repris après {$pausedSeconds} secondes de pause",
+            'ancienne_valeur' => $pausedSeconds . 's de pause',
+            'nouvelle_valeur' => '0s de pause',
         ]);
 
         return back()->with('success', 'SLA repris.');
@@ -199,20 +199,20 @@ class SlaController extends Controller
         $oldPriority = $ticket->priorite?->nom;
         $newPriority = \App\Models\TicketPriority::find($request->input('new_priority_id'))->nom;
 
-        $ticket->update(['priorite_id' => $request->input('new_priority_id')]);
+        $ticket->update(['ticket_priority_id' => $request->input('new_priority_id')]);
 
         \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'action' => 'sla_escalated',
-            'description' => "SLA escaladé: priorité changée de {$oldPriority} à {$newPriority}",
-            'old_value' => $oldPriority,
-            'new_value' => $newPriority,
+            'ancienne_valeur' => $oldPriority ?? '—',
+            'nouvelle_valeur' => $newPriority ?? '—',
         ]);
 
         // Notify relevant parties
+        $assigneeId = $ticket->assigned_to ?? $ticket->technicien?->id ?? $ticket->demandeur?->id;
         DashboardNotification::create([
-            'user_id' => $ticket->assignee_id,
+            'user_id' => $assigneeId,
             'type' => 'sla_escalated',
             'title' => '⬆️ Ticket Escaladé',
             'message' => "{$ticket->reference}: Priorité escaladée à {$newPriority}",

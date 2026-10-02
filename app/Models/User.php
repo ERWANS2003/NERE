@@ -102,9 +102,29 @@ class User extends Authenticatable
         return $this->role?->slug === $slug;
     }
 
+    public function hasAnyRole(array $slugs): bool
+    {
+        return in_array($this->role?->slug, $slugs, true);
+    }
+
     public function hasPermission(string $slug): bool
     {
         return $this->role?->hasPermission($slug) ?? false;
+    }
+
+    public function estDemandeur(): bool
+    {
+        return $this->role?->estDemandeur() ?? false;
+    }
+
+    public function estPilotage(): bool
+    {
+        return $this->role?->estPilotage() ?? false;
+    }
+
+    public function estDirection(): bool
+    {
+        return $this->role?->estDirection() ?? false;
     }
 
     public function departementDirige(): HasOne
@@ -119,6 +139,6 @@ class User extends Authenticatable
 
     public function isDirecteur(): bool
     {
-        return $this->hasRole('directeur_departement') || $this->hasRole('dsi');
+        return $this->estDirection();
     }
 }

@@ -96,7 +96,8 @@ class DashboardCustomizationController extends Controller
      */
     public function getWidgetData(Request $request, string $widgetId)
     {
-        // Charger les données selon le widget
+        // Les IDs de widgets utilisent des underscores (my_tickets) alors que les
+        // partials sont nommés avec des tirets (my-tickets).
         $data = match ($widgetId) {
             'my_tickets' => $this->getMyTicketsData(),
             'ticket_overview' => $this->getTicketOverviewData(),
@@ -108,11 +109,20 @@ class DashboardCustomizationController extends Controller
             default => null
         };
 
+        if ($data === null && $widgetId !== 'quick_actions') {
+            return response()->json([
+                'html' => '<div class="text-center py-4 text-gray-500">Widget non disponible</div>',
+                'error' => "Widget inconnu : {$widgetId}",
+                'success' => false
+            ]);
+        }
+
         // Retourner le HTML du widget
         try {
-            $html = view("components.widgets.{$widgetId}", ['data' => $data])->render();
+            $viewName = 'components.widgets.' . str_replace('_', '-', $widgetId);
+            $html = view($viewName, ['data' => $data])->render();
             return response()->json(['html' => $html, 'success' => true]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'html' => '<div class="text-center py-4 text-gray-500">Widget non disponible</div>',
                 'error' => $e->getMessage(),
@@ -143,13 +153,31 @@ class DashboardCustomizationController extends Controller
             $tickets->where('user_id', auth()->id());
         }
 
-        $ticketList = $tickets->get();
+        $ticketList = (clone $tickets)->get();
+
+        // Tendance sur les 7 derniers jours (créations par jour)
+        $start = now()->subDays(6)->startOfDay();
+        $createdPerDay = (clone $tickets)
+            ->where('created_at', '>=', $start)
+            ->get(['created_at'])
+            ->groupBy(fn ($t) => $t->created_at->format('Y-m-d'))
+            ->map->count();
+
+        $trend = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $trend[] = [
+                'date' => $date,
+                'label' => now()->subDays($i)->translatedFormat('d M'),
+                'count' => (int) ($createdPerDay[$date] ?? 0),
+            ];
+        }
 
         return [
             'total' => $ticketList->count(),
             'by_status' => $ticketList->groupBy('statut.nom')->map->count(),
             'by_priority' => $ticketList->groupBy('priorite.nom')->map->count(),
-            'trend' => [], // Tendance 7 derniers jours
+            'trend' => $trend,
         ];
     }
 
@@ -206,10 +234,66 @@ class DashboardCustomizationController extends Controller
 
     protected function getTeamPerformanceData(): array
     {
+        $now = now();
+        $resolutionRoles = [
+            'technicien_maintenance',
+            'chef_equipe_maintenance',
+            'responsable_it',
+            'consultant_systeme',
+            'maintenance_manager',
+        ];
+
+        // Temps moyen de résolution (heures) sur les 30 derniers jours
+        $resolvedLast30 = \App\Models\Ticket::whereNotNull('date_resolution')
+            ->where('date_resolution', '>=', $now->copy()->subDays(30))
+            ->get(['created_at', 'date_resolution']);
+
+        $avgResolution = $resolvedLast30->isEmpty()
+            ? 0
+            : round($resolvedLast30->avg(
+                fn ($t) => $t->created_at->diffInMinutes($t->date_resolution) / 60
+            ), 1);
+
+        $resolvedToday = \App\Models\Ticket::whereDate('date_resolution', $now->toDateString())->count();
+
+        // Tendance : résolutions des 7 derniers jours vs les 7 précédents
+        $current = \App\Models\Ticket::whereBetween('date_resolution', [
+            $now->copy()->subDays(7)->startOfDay(),
+            $now->copy()->endOfDay(),
+        ])->count();
+
+        $previous = \App\Models\Ticket::whereBetween('date_resolution', [
+            $now->copy()->subDays(14)->startOfDay(),
+            $now->copy()->subDays(7)->startOfDay(),
+        ])->count();
+
+        $trendPct = $previous > 0
+            ? round((($current - $previous) / $previous) * 100, 1)
+            : ($current > 0 ? 100.0 : 0.0);
+
+        $teamMembers = \App\Models\User::whereHas('role', fn ($q) => $q->whereIn('slug', $resolutionRoles))
+            ->where('is_actif', true)
+            ->count();
+
+        $activeTickets = \App\Models\Ticket::whereHas('statut', fn ($q) => $q->where('est_final', false))->count();
+
+        // Satisfaction moyenne des tickets notés
+        $avgSatisfaction = round(
+            (float) \App\Models\Ticket::whereNotNull('satisfaction_note')
+                ->where('satisfaction_note', '>', 0)
+                ->avg('satisfaction_note'),
+            1
+        );
+
         return [
-            'avg_resolution_time' => '4.5 hours',
-            'tickets_resolved_today' => 23,
-            'customer_satisfaction' => 4.3,
+            'avg_resolution_time' => $avgResolution,
+            'tickets_resolved_today' => $resolvedToday,
+            'customer_satisfaction' => $avgSatisfaction,
+            'team_members' => $teamMembers,
+            'active_tickets' => $activeTickets,
+            'trend_pct' => $trendPct,
+            'trend_direction' => $trendPct >= 0 ? 'up' : 'down',
+            'resolved_last_7d' => $current,
         ];
     }
 }
