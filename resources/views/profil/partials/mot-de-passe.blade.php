@@ -34,6 +34,6 @@
             <x-erreur :messages="$errors->get('password_confirmation')" />
         </div>
 
-        <x-bouton-primaire>Mettre a jour</x-bouton-primaire>
+        <x-bouton-primaire>Mettre à jour</x-bouton-primaire>
     </form>
 </section>

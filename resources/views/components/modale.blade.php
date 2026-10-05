@@ -15,7 +15,7 @@
 
 <div x-data="{ ouvert: false }"
      x-on:keydown.escape.window="ouvert = false"
-     x-id="['modale-'.$name]"
+     x-id="{{ \Illuminate\Support\Js::from(['modale-'.$name]) }}"
      x-show="ouvert"
      x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center p-4">

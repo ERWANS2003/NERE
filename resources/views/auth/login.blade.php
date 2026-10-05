@@ -2,7 +2,7 @@
     <x-slot name="titre">Connexion</x-slot>
 
     <h1 class="text-lg font-semibold tracking-tight text-graphite-900">
-        Connexion a l'intranet
+        Connexion à l'intranet
     </h1>
 
     <p class="mt-1 text-sm text-graphite-500">
@@ -54,7 +54,7 @@
                    value="1"
                    @checked(old('remember'))
                    class="h-4 w-4 rounded border-graphite-300 text-amber-600 focus:ring-amber-600">
-            <span>Rester connecte sur ce poste</span>
+            <span>Rester connecté sur ce poste</span>
         </label>
 
         <x-bouton-primaire class="w-full">Se connecter</x-bouton-primaire>

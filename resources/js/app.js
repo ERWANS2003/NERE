@@ -1,11 +1,17 @@
-import Alpine from 'alpinejs';
 import focus from '@alpinejs/focus';
 
-// Livewire inclut Alpine, mais pas le plugin Focus. Sans lui, `x-trap` des
-// modales ne fonctionne pas : la tabulation sort de la modale vers la page
-// derriere, ce qui rend le formulaire invisible pour les lecteurs d'ecran.
-window.Alpine = Alpine;
+// Livewire embarque et demarre deja Alpine. Lancer Alpine.start() ici creerait
+// une seconde instance : Alpine la detecte, puis desaccorde ses intercepteurs,
+// ce qui rend `x-trap` inoperant dans les modales. On declare donc le plugin sur
+// l'instance existante, qu'elle soit deja demarree ou pas encore.
+function enregistrerPluginFocus() {
+    if (window.Alpine && typeof window.Alpine.plugin === 'function') {
+        window.Alpine.plugin(focus);
+    }
+}
 
-Alpine.plugin(focus);
-
-Alpine.start();
+if (window.Alpine) {
+    enregistrerPluginFocus();
+} else {
+    document.addEventListener('livewire:init', enregistrerPluginFocus, { once: true });
+}

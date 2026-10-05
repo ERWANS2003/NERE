@@ -8,7 +8,7 @@
     {{-- Retour a l'accueil : le service est une destination, pas un cul-de-sac. --}}
     <nav aria-label="Fil d'Ariane" class="mb-4">
         <a href="{{ route('accueil') }}"
-           class="inline-flex items-center gap-1.5 text-sm font-medium text-graphite-500 transition hover:text-graphite-800">
+           class="inline-flex items-center gap-1.5 py-1.5 text-sm font-medium text-graphite-500 transition hover:text-graphite-800">
             <x-app-icon nom="fleche-gauche" class="size-4" />
             Tous les services
         </a>

@@ -1,6 +1,6 @@
 <div x-data="{ ouvert: false }"
      x-on:keydown.escape.window="ouvert = false"
-     x-id="['menu-'.($attributes->get('id') ?? 'defaut')]"
+     x-id="{{ \Illuminate\Support\Js::from(['menu-'.($attributes->get('id') ?? 'defaut')]) }}"
      @class(['relative'])
      {{ $attributes }}>
     <div x-on:click="ouvert = ! ouvert">
