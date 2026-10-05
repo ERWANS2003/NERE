@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('titre', 'HSE & conformitÃ©')
+@section('titre', 'HSE & conformité')
 @section('sous-titre', 'Registre des incidents, risques et actions correctives')
 
 @section('contenu')
@@ -9,10 +9,10 @@
     <section class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
             <p class="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-primary-600">
-                PrÃ©vention &amp; conformitÃ©
+                Prévention &amp; conformité
             </p>
             <h1 class="nm-page-title">Registre HSE</h1>
-            <p class="nm-page-subtitle">Transformez chaque signalement en action suivie et documentÃ©e.</p>
+            <p class="nm-page-subtitle">Transformez chaque signalement en action suivie et documentée.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('safety.statistics') }}" class="nm-btn nm-btn-secondary">
@@ -32,7 +32,7 @@
         @php
             $hseKpis = [
                 ['label' => 'Signalements', 'value' => $incidents->total(), 'tone' => 'text-strong'],
-                ['label' => 'Non rÃ©solus', 'value' => \App\Models\SafetyIncident::unresolved()->count(), 'tone' => 'text-warning-700'],
+                ['label' => 'Non résolus', 'value' => \App\Models\SafetyIncident::unresolved()->count(), 'tone' => 'text-warning-700'],
                 ['label' => 'Critiques', 'value' => \App\Models\SafetyIncident::critical()->count(), 'tone' => 'text-danger-700'],
                 ['label' => '30 derniers jours', 'value' => \App\Models\SafetyIncident::recent(30)->count(), 'tone' => 'text-info-700'],
             ];
@@ -55,7 +55,7 @@
             </div>
 
             <div>
-                <label for="severity" class="nm-label">SÃ©vÃ©ritÃ©</label>
+                <label for="severity" class="nm-label">Sévérité</label>
                 <select id="severity" name="severity" class="nm-select">
                     <option value="">Toutes</option>
                     @foreach ($severities as $key => $libelle)
@@ -90,7 +90,7 @@
                     Filtrer
                 </button>
                 @if (request()->hasAny(['q', 'severity', 'statut', 'zone_id', 'unresolved', 'critical']))
-                    <a href="{{ route('safety.index') }}" class="nm-btn nm-btn-ghost">RÃ©initialiser</a>
+                    <a href="{{ route('safety.index') }}" class="nm-btn nm-btn-ghost">Réinitialiser</a>
                 @endif
             </div>
         </form>
@@ -98,7 +98,7 @@
         <div class="mt-4 flex flex-wrap gap-4 border-t border-line-subtle pt-4">
             @php
                 $bascules = [
-                    ['name' => 'unresolved', 'label' => 'Non rÃ©solus seulement'],
+                    ['name' => 'unresolved', 'label' => 'Non résolus seulement'],
                     ['name' => 'critical', 'label' => 'Critiques seulement'],
                 ];
             @endphp
@@ -117,18 +117,18 @@
         <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line-subtle px-5 py-4 sm:px-6">
             <div>
                 <h2 class="nm-section-title">Signalements</h2>
-                <p class="mt-1 text-sm text-muted">Priorisez les risques et documentez les actions menÃ©es.</p>
+                <p class="mt-1 text-sm text-muted">Priorisez les risques et documentez les actions menées.</p>
             </div>
             <span class="nm-badge nm-badge-neutral">
-                {{ $incidents->total() }} rÃ©sultat{{ $incidents->total() > 1 ? 's' : '' }}
+                {{ $incidents->total() }} résultat{{ $incidents->total() > 1 ? 's' : '' }}
             </span>
         </header>
 
         @if ($incidents->isEmpty())
             <div class="nm-empty">
                 <x-icon name="shield-check" class="h-8 w-8 text-subtle" />
-                <p class="font-semibold text-strong">Aucun incident trouvÃ©</p>
-                <p class="text-sm">Les filtres actuels ne renvoient aucun rÃ©sultat.</p>
+                <p class="font-semibold text-strong">Aucun incident trouvé</p>
+                <p class="text-sm">Les filtres actuels ne renvoient aucun résultat.</p>
             </div>
         @else
             <div class="nm-table-wrap !border-0 !rounded-none">
@@ -137,10 +137,10 @@
                         <tr>
                             <th>Signalement</th>
                             <th>Titre</th>
-                            <th>SÃ©vÃ©ritÃ©</th>
+                            <th>Sévérité</th>
                             <th>Statut</th>
                             <th>Zone</th>
-                            <th class="!text-right">SignalÃ© le</th>
+                            <th class="!text-right">Signalé le</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -164,9 +164,9 @@
                                 <td>
                                     <span class="nm-badge {{ $incident->couleurStatut() }}">{{ $incident->libelleStatut() }}</span>
                                 </td>
-                                <td class="text-sm text-muted">{{ $incident->operationalZone?->nom ?? 'â€”' }}</td>
+                                <td class="text-sm text-muted">{{ $incident->operationalZone?->nom ?? '—' }}</td>
                                 <td class="whitespace-nowrap text-right text-sm text-muted">
-                                    {{ $incident->reported_at?->format('d/m/Y') ?? 'â€”' }}
+                                    {{ $incident->reported_at?->format('d/m/Y') ?? '—' }}
                                 </td>
                             </tr>
                         @endforeach

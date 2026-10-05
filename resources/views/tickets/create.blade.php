@@ -235,8 +235,8 @@
         
         <div class="form-header-content">
             <div>
-                <h1>CrÃ©er une demande</h1>
-                <p>Remplissez le formulaire selon votre besoin. Le routage vers la bonne Ã©quipe est automatique.</p>
+                <h1>Créer une demande</h1>
+                <p>Remplissez le formulaire selon votre besoin. Le routage vers la bonne équipe est automatique.</p>
             </div>
             <span class="auto-routing-badge">
                 Routage automatique
@@ -283,9 +283,9 @@
                     </div>
 
                     <div class="form-field">
-                        <label for="departement_id">Service concernÃ© *</label>
+                        <label for="departement_id">Service concerné *</label>
                         <select id="departement_id" name="departement_id" required @change="updateDepartement($event.target.value)">
-                            <option value="">â€” Choisir un service â€”</option>
+                            <option value="">— Choisir un service —</option>
                             @foreach ($departements as $departement)
                                 <option value="{{ $departement->id }}" @selected(old('departement_id', $selectedDepartment) == $departement->id)>
                                     {{ $departement->nom }}
@@ -296,33 +296,33 @@
                 </div>
             </div>
 
-            <!-- Section 2: DÃ©tails -->
+            <!-- Section 2: Détails -->
             <div class="form-section">
                 <div class="section-header">
                     <span class="section-number">2</span>
-                    <h2 class="section-title">DÃ©crivez votre demande</h2>
+                    <h2 class="section-title">Décrivez votre demande</h2>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="titre">Titre de la demande *</label>
                         <input type="text" id="titre" name="titre" value="{{ old('titre', $prefill['titre'] ?? '') }}" required
-                               placeholder="Ex: Demande d'accÃ¨s au systÃ¨me SAP">
+                               placeholder="Ex: Demande d'accès au système SAP">
                     </div>
 
                     <div class="form-field">
-                        <label for="description">Description dÃ©taillÃ©e *</label>
+                        <label for="description">Description détaillée *</label>
                         <textarea id="description" name="description" required 
-                                  placeholder="DÃ©crivez votre demande en dÃ©tail: contexte, besoin prÃ©cis, informations importantes...">{{ old('description', $prefill['description'] ?? '') }}</textarea>
-                        <span class="field-help">Plus vous donnez de dÃ©tails, plus rapide sera le traitement</span>
+                                  placeholder="Décrivez votre demande en détail: contexte, besoin précis, informations importantes...">{{ old('description', $prefill['description'] ?? '') }}</textarea>
+                        <span class="field-help">Plus vous donnez de détails, plus rapide sera le traitement</span>
                     </div>
                 </div>
 
                 <div class="form-grid cols-2" style="margin-top: 1.5rem;">
                     <div class="form-field">
-                        <label for="ticket_category_id">CatÃ©gorie *</label>
+                        <label for="ticket_category_id">Catégorie *</label>
                         <select id="ticket_category_id" name="ticket_category_id" required>
-                            <option value="">â€” Choisir une catÃ©gorie â€”</option>
+                            <option value="">— Choisir une catégorie —</option>
                             @foreach ($categories as $categorie)
                                 <option value="{{ $categorie->id }}" 
                                         data-departement="{{ $categorie->team?->departement_id }}" 
@@ -339,7 +339,7 @@
                     <div class="form-field">
                         <label for="site_id">Site / Localisation</label>
                         <select id="site_id" name="site_id">
-                            <option value="">â€” Non spÃ©cifiÃ© â€”</option>
+                            <option value="">— Non spécifié —</option>
                             @foreach ($sites as $site)
                                 <option value="{{ $site->id }}" @selected(old('site_id', auth()->user()->site_id) == $site->id)>
                                     {{ $site->nom }}
@@ -350,44 +350,44 @@
                 </div>
             </div>
 
-            <!-- Section 3: PrioritÃ© -->
+            <!-- Section 3: Priorité -->
             <div class="form-section">
                 <div class="section-header">
                     <span class="section-number">3</span>
-                    <h2 class="section-title">Ã‰valuation de l'urgence</h2>
+                    <h2 class="section-title">Évaluation de l'urgence</h2>
                 </div>
 
                 <div class="info-box">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    La prioritÃ© sera calculÃ©e automatiquement selon l'impact et l'urgence
+                    La priorité sera calculée automatiquement selon l'impact et l'urgence
                 </div>
 
                 <div class="form-grid cols-2">
                     <div class="form-field">
-                        <label for="impact">Impact sur vos activitÃ©s *</label>
+                        <label for="impact">Impact sur vos activités *</label>
                         <select id="impact" name="impact" required>
-                            @foreach (['Faible', 'Moyen', 'Ã‰levÃ©', 'Critique'] as $niveau)
+                            @foreach (['Faible', 'Moyen', 'Élevé', 'Critique'] as $niveau)
                                 <option value="{{ $niveau }}" @selected(old('impact', 'Moyen') == $niveau)>{{ $niveau }}</option>
                             @endforeach
                         </select>
-                        <span class="field-help">Combien de personnes / processus sont affectÃ©s?</span>
+                        <span class="field-help">Combien de personnes / processus sont affectés?</span>
                     </div>
 
                     <div class="form-field">
                         <label for="urgence">Urgence du traitement *</label>
                         <select id="urgence" name="urgence" required>
-                            @foreach (['Faible', 'Moyen', 'Ã‰levÃ©', 'Critique'] as $niveau)
+                            @foreach (['Faible', 'Moyen', 'Élevé', 'Critique'] as $niveau)
                                 <option value="{{ $niveau }}" @selected(old('urgence', 'Moyen') == $niveau)>{{ $niveau }}</option>
                             @endforeach
                         </select>
-                        <span class="field-help">Dans quel dÃ©lai faut-il traiter?</span>
+                        <span class="field-help">Dans quel délai faut-il traiter?</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 4: PiÃ¨ces jointes -->
+            <!-- Section 4: Pièces jointes -->
             <div class="form-section">
                 <div class="section-header">
                     <span class="section-number">4</span>
@@ -399,7 +399,7 @@
                     <input type="file" id="pieces_jointes" name="pieces_jointes[]" multiple 
                            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
                            style="cursor: pointer;">
-                    <span class="field-help">Photos, captures d'Ã©cran, documents (max 10 Mo par fichier)</span>
+                    <span class="field-help">Photos, captures d'écran, documents (max 10 Mo par fichier)</span>
                 </div>
             </div>
 
