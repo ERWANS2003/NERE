@@ -3,6 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Role;
+use App\Models\Intranet\Department;
+use App\Models\Intranet\Form;
+use App\Models\Intranet\Submission;
+use App\Policies\Intranet\DepartmentPolicy;
+use App\Policies\Intranet\FormPolicy;
+use App\Policies\Intranet\SubmissionPolicy;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -40,6 +46,12 @@ class AppServiceProvider extends ServiceProvider
         $R = Role::SLUG_DIRECTEUR;
         $T = Role::SLUG_TECHNICIEN;
 
+        // ── Intranet Policies ─────────────────────────────────────────
+        Gate::policy(Department::class, DepartmentPolicy::class);
+        Gate::policy(Form::class,       FormPolicy::class);
+        Gate::policy(Submission::class, SubmissionPolicy::class);
+
+        // ── Gates ITSM existants ───────────────────────────────────────
         Gate::define('approve-service-requests', fn ($user): bool => $roleGate(
             $user,
             [$A, $D, $R],

@@ -9,18 +9,14 @@ use App\Models\Intranet\Form;
 use App\Models\Intranet\Submission;
 use App\Models\Intranet\SubmissionEvent;
 use App\Models\Intranet\SubmissionValue;
-use App\Models\Intranet\WorkflowStep;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class SubmissionController extends Controller
 {
-    /* ─────────────────────────────────────────────────────────
-     | Mes demandes (toutes les soumissions du user connecté)
-     ───────────────────────────────────────────────────────── */
+    /* ── Mes demandes ─────────────────────────────────────────── */
+
     public function mine()
     {
         $submissions = Submission::where('requester_id', Auth::id())
@@ -31,48 +27,36 @@ class SubmissionController extends Controller
         return view('intranet.submissions.mine', compact('submissions'));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Soumettre un formulaire
-     ───────────────────────────────────────────────────────── */
+    /* ── Soumettre ────────────────────────────────────────────── */
+
     public function store(Request $request, Form $form)
     {
         abort_unless($form->isPublished(), 404);
+        $this->authorize('submitTo', $form);
 
-        $user = Auth::user();
-        $dept = $form->service->department;
-
-        if (! $user->is_super_admin) {
-            abort_unless($dept->users()->where('users.id', $user->id)->exists(), 403);
-        }
-
-        // Construire dynamiquement les règles de validation
-        $fields       = $form->fields()->orderBy('position')->get();
-        $rules        = [];
-        $fieldMap     = [];
+        $fields   = $form->fields()->orderBy('position')->get();
+        $rules    = [];
+        $fieldMap = [];
 
         foreach ($fields as $field) {
-            $key            = 'field_' . $field->id;
-            $rules[$key]    = $field->laravelRules();
+            $key          = 'field_' . $field->id;
+            $rules[$key]  = $field->laravelRules();
             $fieldMap[$key] = $field;
         }
 
         $validated = $request->validate($rules);
+        $user      = Auth::user();
 
         DB::transaction(function () use ($validated, $fieldMap, $form, $user, $request) {
-
-            // Référence unique : CODE-ANNÉE-SÉQUENCE
             $prefix = strtoupper($form->service->department->code);
             $year   = now()->year;
-            $seq    = Submission::whereYear('created_at', $year)->count() + 1;
+            $seq    = Submission::withTrashed()->whereYear('created_at', $year)->count() + 1;
             $ref    = sprintf('%s-%d-%05d', $prefix, $year, $seq);
 
-            // Première étape du workflow
             $firstStep = $form->workflowSteps()->orderBy('order')->first();
-
-            $status = Submission::STATUS_SUBMITTED;
-            if ($firstStep?->needs_approval) {
-                $status = Submission::STATUS_VALIDATING;
-            }
+            $status    = $firstStep?->needs_approval
+                ? Submission::STATUS_VALIDATING
+                : Submission::STATUS_SUBMITTED;
 
             $submission = Submission::create([
                 'reference'       => $ref,
@@ -86,15 +70,10 @@ class SubmissionController extends Controller
                     : null,
             ]);
 
-            // Stocker les valeurs des champs
             foreach ($fieldMap as $key => $field) {
+                if ($field->type === 'file') continue;
                 $value = $validated[$key] ?? null;
-                if ($field->type === 'file') {
-                    continue; // traité séparément
-                }
-                if (is_array($value)) {
-                    $value = json_encode($value);
-                }
+                if (is_array($value)) $value = json_encode($value);
                 SubmissionValue::create([
                     'submission_id' => $submission->id,
                     'form_field_id' => $field->id,
@@ -102,17 +81,10 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            // Pièces jointes (fichiers)
             foreach ($fieldMap as $key => $field) {
-                if ($field->type !== 'file') continue;
-                if (! $request->hasFile($key)) continue;
-
-                $file  = $request->file($key);
-                $path  = $file->store(
-                    'intranet/submissions/' . $submission->id,
-                    'private'
-                );
-
+                if ($field->type !== 'file' || ! $request->hasFile($key)) continue;
+                $file = $request->file($key);
+                $path = $file->store('intranet/submissions/' . $submission->id, 'private');
                 Attachment::create([
                     'submission_id' => $submission->id,
                     'uploaded_by'   => $user->id,
@@ -123,7 +95,6 @@ class SubmissionController extends Controller
                 ]);
             }
 
-            // Événement de création
             SubmissionEvent::create([
                 'submission_id' => $submission->id,
                 'actor_id'      => $user->id,
@@ -131,41 +102,32 @@ class SubmissionController extends Controller
                 'payload'       => ['status' => $status, 'reference' => $submission->reference],
             ]);
 
-            session()->flash('submission_ref', $submission->reference);
-            session()->flash('submission_id',  $submission->id);
+            session()->flash('_intranet_sub_id', $submission->id);
         });
 
-        $subId = session('submission_id');
+        $subId = session('_intranet_sub_id');
 
         return redirect()->route('intranet.submissions.show', $subId)
-            ->with('success', 'Demande ' . session('submission_ref') . ' créée avec succès.');
+            ->with('success', 'Votre demande a été soumise avec succès.');
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Détail d'une demande
-     ───────────────────────────────────────────────────────── */
+    /* ── Détail ───────────────────────────────────────────────── */
+
     public function show(Submission $submission)
     {
-        $user = Auth::user();
-        $this->authorizeView($submission, $user);
+        $this->authorize('view', $submission);
 
         $submission->load([
             'form.service.department',
-            'requester',
-            'assignee',
-            'currentStep',
-            'values.field',
-            'events.actor',
-            'comments.author',
-            'attachments.uploader',
+            'requester', 'assignee', 'currentStep',
+            'values.field', 'events.actor',
+            'comments.author', 'attachments.uploader',
         ]);
 
-        $dept    = $submission->form->service->department;
-        $pivot   = $user->is_super_admin
-            ? (object) ['role' => 'director', 'tech_level' => null]
-            : $dept->users()->where('users.id', $user->id)->first()?->pivot;
+        $user  = Auth::user();
+        $dept  = $submission->form->service->department;
+        $pivot = $user->intranetPivot($dept);
 
-        // Techniciens disponibles pour assignation
         $technicians = $dept->users()
             ->wherePivot('role', 'technician')
             ->get();
@@ -175,116 +137,90 @@ class SubmissionController extends Controller
         ));
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Changer le statut
-     ───────────────────────────────────────────────────────── */
+    /* ── Changer statut ───────────────────────────────────────── */
+
     public function updateStatus(Request $request, Submission $submission)
     {
-        $user = Auth::user();
-        $this->authorizeAction($submission, $user);
+        $this->authorize('act', $submission);
+        abort_if($submission->isTerminal(), 422, 'Cette demande est déjà terminée.');
 
-        $request->validate([
-            'status' => 'required|string|in:en_cours,en_attente,resolue,cloturee,rejetee,annulee',
-        ]);
+        $newStatus = $request->validate([
+            'status' => 'required|in:en_cours,en_attente,resolue,cloturee,rejetee,annulee',
+        ])['status'];
 
-        $oldStatus = $submission->status;
-        $newStatus = $request->status;
-
-        // Seul le demandeur peut annuler une demande non prise en charge
+        // Annulation : vérification spécifique
         if ($newStatus === Submission::STATUS_CANCELLED) {
-            $canCancel = $user->is_super_admin
-                || ($submission->requester_id === $user->id
-                    && in_array($oldStatus, [Submission::STATUS_DRAFT, Submission::STATUS_SUBMITTED]));
-            abort_unless($canCancel, 403);
+            $this->authorize('cancel', $submission);
         }
 
+        // Validation/rejet : directeur seulement
+        if (in_array($newStatus, [Submission::STATUS_REJECTED, 'cloturee'])) {
+            $this->authorize('validate', $submission);
+        }
+
+        $old = $submission->status;
         $submission->update([
-            'status'     => $newStatus,
-            'closed_at'  => in_array($newStatus, Submission::TERMINAL_STATUSES) ? now() : null,
+            'status'    => $newStatus,
+            'closed_at' => in_array($newStatus, Submission::TERMINAL_STATUSES) ? now() : null,
         ]);
 
         SubmissionEvent::create([
             'submission_id' => $submission->id,
-            'actor_id'      => $user->id,
+            'actor_id'      => Auth::id(),
             'action'        => 'status_changed',
-            'payload'       => ['from' => $oldStatus, 'to' => $newStatus],
+            'payload'       => ['from' => $old, 'to' => $newStatus],
         ]);
 
         return back()->with('success', 'Statut mis à jour.');
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Assigner à un technicien
-     ───────────────────────────────────────────────────────── */
+    /* ── Assigner ─────────────────────────────────────────────── */
+
     public function assign(Request $request, Submission $submission)
     {
-        $user = Auth::user();
-        $dept = $submission->form->service->department;
+        $this->authorize('assign', $submission);
 
-        // Seuls directeur et super admin peuvent assigner
-        $pivot = $user->is_super_admin
-            ? (object) ['role' => 'director']
-            : $dept->users()->where('users.id', $user->id)->first()?->pivot;
-
-        abort_unless($pivot && $pivot->role === 'director', 403);
-
-        $request->validate(['assignee_id' => 'required|exists:users,id']);
+        $data = $request->validate(['assignee_id' => 'required|exists:users,id']);
 
         $old = $submission->assignee_id;
         $submission->update([
-            'assignee_id' => $request->assignee_id,
+            'assignee_id' => $data['assignee_id'],
             'status'      => Submission::STATUS_ASSIGNED,
         ]);
 
         SubmissionEvent::create([
             'submission_id' => $submission->id,
-            'actor_id'      => $user->id,
+            'actor_id'      => Auth::id(),
             'action'        => 'assigned',
-            'payload'       => ['from' => $old, 'to' => $request->assignee_id],
+            'payload'       => ['from' => $old, 'to' => $data['assignee_id']],
         ]);
 
         return back()->with('success', 'Demande assignée.');
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Commenter
-     ───────────────────────────────────────────────────────── */
+    /* ── Commenter ────────────────────────────────────────────── */
+
     public function comment(Request $request, Submission $submission)
     {
-        $user = Auth::user();
-        $this->authorizeView($submission, $user);
+        $this->authorize('comment', $submission);
 
-        $request->validate([
-            'body'        => 'required|string|max:2000',
-            'is_internal' => 'boolean',
-        ]);
+        $data       = $request->validate(['body' => 'required|string|max:2000', 'is_internal' => 'boolean']);
+        $isInternal = (bool) ($data['is_internal'] ?? false);
 
-        $dept  = $submission->form->service->department;
-        $pivot = $user->is_super_admin
-            ? (object) ['role' => 'director']
-            : $dept->users()->where('users.id', $user->id)->first()?->pivot;
-
-        $isInternal = $request->boolean('is_internal');
-
-        // Commentaire interne : seulement techniciens/directeurs
         if ($isInternal) {
-            abort_unless(
-                $user->is_super_admin
-                || in_array($pivot?->role, ['technician', 'director']),
-                403, 'Commentaire interne réservé aux techniciens.'
-            );
+            $this->authorize('commentInternal', $submission);
         }
 
         Comment::create([
             'submission_id' => $submission->id,
-            'author_id'     => $user->id,
-            'body'          => $request->body,
+            'author_id'     => Auth::id(),
+            'body'          => $data['body'],
             'is_internal'   => $isInternal,
         ]);
 
         SubmissionEvent::create([
             'submission_id' => $submission->id,
-            'actor_id'      => $user->id,
+            'actor_id'      => Auth::id(),
             'action'        => 'commented',
             'payload'       => ['is_internal' => $isInternal],
         ]);
@@ -292,35 +228,26 @@ class SubmissionController extends Controller
         return back()->with('success', 'Commentaire ajouté.');
     }
 
-    /* ─────────────────────────────────────────────────────────
-     | Escalader au niveau supérieur
-     ───────────────────────────────────────────────────────── */
+    /* ── Escalader ────────────────────────────────────────────── */
+
     public function escalate(Request $request, Submission $submission)
     {
-        $user = Auth::user();
-        $dept = $submission->form->service->department;
+        $this->authorize('escalate', $submission);
+        abort_if($submission->isTerminal(), 422, 'Demande déjà terminée.');
 
-        $pivot = $user->is_super_admin
-            ? (object) ['role' => 'technician', 'tech_level' => 3]
-            : $dept->users()->where('users.id', $user->id)->first()?->pivot;
+        $pivot        = Auth::user()->intranetPivot($submission->form->service->department);
+        $currentLevel = $submission->currentStep?->tech_level ?? ($pivot?->tech_level ?? 1);
 
-        abort_unless(
-            $pivot && in_array($pivot->role, ['technician', 'director']),
-            403
-        );
-
-        // Trouver la prochaine étape de niveau supérieur
-        $currentLevel = $submission->currentStep?->tech_level ?? ($pivot->tech_level ?? 1);
-        $nextStep     = $submission->form->workflowSteps()
+        $nextStep = $submission->form->workflowSteps()
             ->where('tech_level', '>', $currentLevel)
             ->orderBy('tech_level')
             ->first();
 
-        abort_unless($nextStep, 422, 'Aucun niveau supérieur disponible pour cette demande.');
+        abort_unless($nextStep, 422, 'Aucun niveau supérieur disponible.');
 
         $submission->update([
             'current_step_id' => $nextStep->id,
-            'assignee_id'     => null, // réassignation requise
+            'assignee_id'     => null,
             'status'          => Submission::STATUS_ESCALATED,
             'due_at'          => $nextStep->sla_hours
                 ? now()->addHours($nextStep->sla_hours)
@@ -329,7 +256,7 @@ class SubmissionController extends Controller
 
         SubmissionEvent::create([
             'submission_id' => $submission->id,
-            'actor_id'      => $user->id,
+            'actor_id'      => Auth::id(),
             'action'        => 'escalated',
             'payload'       => [
                 'from_level' => $currentLevel,
@@ -339,36 +266,5 @@ class SubmissionController extends Controller
         ]);
 
         return back()->with('success', 'Demande escaladée vers le niveau ' . $nextStep->tech_level . '.');
-    }
-
-    /* ─────────────────────────────────────────────────────────
-     | Helpers d'autorisation
-     ───────────────────────────────────────────────────────── */
-
-    /** Peut voir la demande : demandeur | assigné | technicien/directeur du dept | super admin */
-    private function authorizeView(Submission $sub, $user): void
-    {
-        if ($user->is_super_admin || $sub->requester_id === $user->id || $sub->assignee_id === $user->id) {
-            return;
-        }
-        $dept   = $sub->form->service->department;
-        $member = $dept->users()->where('users.id', $user->id)
-            ->wherePivotIn('role', ['technician', 'director'])
-            ->exists();
-        abort_unless($member, 403);
-    }
-
-    /** Peut agir sur la demande : technicien/directeur du dept | super admin */
-    private function authorizeAction(Submission $sub, $user): void
-    {
-        if ($user->is_super_admin) return;
-        $dept   = $sub->form->service->department;
-        $member = $dept->users()->where('users.id', $user->id)
-            ->wherePivotIn('role', ['technician', 'director'])
-            ->exists();
-        abort_unless(
-            $member || $sub->requester_id === $user->id,
-            403
-        );
     }
 }

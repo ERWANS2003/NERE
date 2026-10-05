@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('sla:verifier')->everyFiveMinutes();
+        $schedule->command('intranet:check-sla')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
