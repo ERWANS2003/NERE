@@ -2401,3 +2401,35 @@
         box-shadow: none;
     }
 }
+
+/* ============================================================================
+   INTRANET — composants additionnels
+   ============================================================================ */
+
+.nm-textarea {
+    display: block;
+    width: 100%;
+    border-radius: 0.625rem;
+    border: 1px solid var(--line-default);
+    background-color: var(--surface-card);
+    color: var(--text-strong);
+    padding: 0.5625rem 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 5rem;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    font-family: var(--font-sans);
+}
+
+[data-theme='dark'] .nm-textarea {
+    background-color: var(--surface-inset);
+}
+
+.nm-textarea::placeholder { color: var(--text-subtle); }
+
+.nm-textarea:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-ring);
+}

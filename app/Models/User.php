@@ -29,6 +29,7 @@ class User extends Authenticatable
         'est_technicien',
         'disponible',
         'actif',
+        'is_super_admin',  // intranet : super admin global
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -36,11 +37,12 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'est_technicien' => 'boolean',
-            'disponible' => 'boolean',
-            'actif' => 'boolean',
+            'email_verified_at'  => 'datetime',
+            'password'           => 'hashed',
+            'est_technicien'     => 'boolean',
+            'disponible'         => 'boolean',
+            'actif'              => 'boolean',
+            'is_super_admin'     => 'boolean',
             'derniere_connexion' => 'datetime',
         ];
     }
@@ -140,5 +142,26 @@ class User extends Authenticatable
     public function isDirecteur(): bool
     {
         return $this->estDirection();
+    }
+
+    /* ── Relations Intranet ───────────────────────────────────── */
+
+    /** Départements intranet où l'utilisateur a un rôle. */
+    public function intranetDepartments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            \App\Models\Intranet\Department::class,
+            'intranet_department_user'
+        )->withPivot(['role', 'tech_level'])->withTimestamps();
+    }
+
+    /** Rôle intranet de l'utilisateur dans un département donné (null si absent). */
+    public function intranetPivot(\App\Models\Intranet\Department $dept): ?object
+    {
+        if ($this->is_super_admin) {
+            return (object) ['role' => 'director', 'tech_level' => null];
+        }
+
+        return $dept->users()->where('users.id', $this->id)->first()?->pivot;
     }
 }
