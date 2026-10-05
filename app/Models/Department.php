@@ -13,6 +13,9 @@ class Department extends Model
     /** @use HasFactory<DepartmentFactory> */
     use HasFactory;
 
+    /** Ambre du design system, utilisé quand aucun accent n'est défini. */
+    public const ACCENT_DEFAUT = '#b45309';
+
     protected $fillable = [
         'code',
         'tag',
@@ -68,9 +71,18 @@ class Department extends Model
             ->withPivot(['role', 'tech_level']);
     }
 
-    /** Teinte d'accent : ambre par defaut si le departement n'en definit pas. */
+    /**
+     * Teinte d'accent, utilisable dans un attribut `style`.
+     *
+     * La valeur est modifiable par un administrateur et finit injectée dans le
+     * HTML : elle n'est donc reprise que si elle ressemble réellement à une
+     * couleur. Un champ Alt text fourré de guillemets ne peut pas s'enfuir de
+     * l'attribut, il est simplement ignoré au profit de l'ambre par défaut.
+     */
     public function accentColor(): string
     {
-        return $this->color ?: '#b45309';
+        return is_string($this->color) && preg_match('/^#[0-9a-fA-F]{6}$/', $this->color) === 1
+            ? $this->color
+            : self::ACCENT_DEFAUT;
     }
 }

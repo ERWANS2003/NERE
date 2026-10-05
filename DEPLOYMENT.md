@@ -27,13 +27,17 @@ git pull origin main
 
 ### ❌ Erreur: "Target class [Database\Seeders\IntranetSeeder] does not exist"
 
-**Cause:** Autoload Composer obsolète
+**Cause:** Autoload Composer obsolète, ou referred à un seeder renommé.
 
 **Solution:**
 ```powershell
 composer dump-autoload -o
-php artisan db:seed --class=IntranetSeeder
+# Le référentiel des services est porté par DatabaseSeeder, qui appelle DepartmentsSeeder.
+php artisan db:seed
 ```
+
+`DepartmentsSeeder` est idempotent : le relancer ne réactive pas un service coupé
+par l'administration et ne remplace pas un accent de couleur choisi à la main.
 
 ### ❌ Erreur: "rolldown failed to resolve import 'alpinejs'"
 
@@ -130,7 +134,13 @@ MAIL_FROM_ADDRESS=noreply@nere.local
 QUEUE_CONNECTION=database
 ```
 
-## Structure des fichiers principaux
+## Structure cible des fichiers principaux
+
+Ce qui suit décrit l'architecture **à venir** (formulaires, demandes,
+workflows), pas l'état actuel du dépôt. Le socle livré à ce jour est plus
+plat : `app/Models/Department.php`, `app/Models/User.php`,
+`app/Policies/DepartmentPolicy.php`, `HomeController`, `DepartmentController`,
+et les routes dans `routes/web.php` et `routes/auth.php`.
 
 ```
 app/
@@ -166,7 +176,8 @@ database/
   ├── migrations/
   │   └── 2026_0X_XX_*_create_intranet_*.php (11 migrations)
   └── seeders/
-      └── IntranetSeeder.php
+      ├── DatabaseSeeder.php
+      └── DepartmentsSeeder.php
 
 resources/
   └── views/intranet/

@@ -29,8 +29,10 @@ php artisan migrate --force
 if ($LASTEXITCODE -ne 0) { Write-Host "❌ Migrations échouées" -ForegroundColor Red; exit 1 }
 
 # 6. Database seeders
+# DatabaseSeeder appelle DepartmentsSeeder (referentiel des services).
+# Les comptes restent crees a la main : aucun seeder ne livre d'identifiants.
 Write-Host "`n6️⃣  Exécution des seeders..." -ForegroundColor Cyan
-php artisan db:seed --class=IntranetSeeder --force
+php artisan db:seed --class=DatabaseSeeder --force
 if ($LASTEXITCODE -ne 0) { Write-Host "❌ Seeders échoués" -ForegroundColor Red; exit 1 }
 
 # 7. Verification

@@ -21,7 +21,7 @@ class DepartmentFactory extends Factory
             'tag' => strtoupper($name),
             'name' => ucfirst($name),
             'description' => fake()->sentence(),
-            'icon' => 'building',
+            'icon' => 'batiment',
             'color' => null,
             'position' => 0,
             'is_active' => true,
