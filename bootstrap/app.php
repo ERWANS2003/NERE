@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('intranet:check-sla')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // Force UTF-8 encoding on all responses
+        $middleware->append(\App\Http\Middleware\EnsureUtf8Response::class);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
