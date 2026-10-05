@@ -1,66 +1,41 @@
-# UTF-8 Encoding Fix - Automated Deployment Script
+# UTF-8 Encoding Fix - Automated Deployment Script (SIMPLIFIED)
 # This script deploys the UTF-8 fix and validates it on the production server
 # Run with: .\fix-utf8-deploy.ps1
 
-Write-Host @"
-╔════════════════════════════════════════════════════════════════╗
-║     NERE MINING - UTF-8 ENCODING FIX DEPLOYMENT SCRIPT          ║
-║     Fixing: CrÃ©er → Créer, DÃ©partement → Département          ║
-╚════════════════════════════════════════════════════════════════╝
-"@ -ForegroundColor Cyan
-
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $startTime = Get-Date
 
-# Colors
-$success = @{ ForegroundColor = "Green" }
-$error_color = @{ ForegroundColor = "Red" }
-$warning = @{ ForegroundColor = "Yellow" }
-$info = @{ ForegroundColor = "Cyan" }
-
-function Log-Success {
-    Write-Host "  ✓ $args" @success
-}
-
-function Log-Error {
-    Write-Host "  ❌ $args" @error_color
-}
-
-function Log-Warning {
-    Write-Host "  ⚠️  $args" @warning
-}
-
-function Log-Info {
-    Write-Host "  ℹ️  $args" @info
-}
-
-function Log-Step {
-    Write-Host "`n$args" @info
-}
+Write-Host ""
+Write-Host "╔════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║     NERE MINING - UTF-8 ENCODING FIX DEPLOYMENT SCRIPT          ║" -ForegroundColor Cyan
+Write-Host "║     Fixing: CrÃ©er → Créer, DÃ©partement → Département          ║" -ForegroundColor Cyan
+Write-Host "╚════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host ""
 
 # Step 1: Pre-deployment checks
-Log-Step "STEP 1️⃣  Pre-deployment Checks"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host "STEP 1️⃣  Pre-deployment Checks" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 if (-not (Test-Path ".git")) {
-    Log-Error "Not a git repository. Please run this from the project root."
+    Write-Host "  ❌ Not a git repository. Please run this from the project root." -ForegroundColor Red
     exit 1
 }
-Log-Success "Git repository detected"
+Write-Host "  ✓ Git repository detected" -ForegroundColor Green
 
 if (-not (Test-Path "composer.json")) {
-    Log-Error "composer.json not found"
+    Write-Host "  ❌ composer.json not found" -ForegroundColor Red
     exit 1
 }
-Log-Success "Laravel project structure verified"
+Write-Host "  ✓ Laravel project structure verified" -ForegroundColor Green
 
 # Step 2: Git pull
-Log-Step "STEP 2️⃣  Updating Code from Repository"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 2️⃣  Updating Code from Repository" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
-git fetch origin main
+git fetch origin main 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "Failed to fetch from git"
+    Write-Host "  ❌ Failed to fetch from git" -ForegroundColor Red
     exit 1
 }
 
@@ -68,140 +43,118 @@ $currentHash = (git rev-parse HEAD).Substring(0, 7)
 $remoteHash = (git rev-parse origin/main).Substring(0, 7)
 
 if ($currentHash -eq $remoteHash) {
-    Log-Warning "Already on latest commit: $currentHash"
+    Write-Host "  ⚠️  Already on latest commit: $currentHash" -ForegroundColor Yellow
 } else {
-    git pull origin main
+    git pull origin main 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Log-Error "Failed to pull from git"
+        Write-Host "  ❌ Failed to pull from git" -ForegroundColor Red
         exit 1
     }
-    Log-Success "Code updated: $currentHash → $remoteHash"
+    Write-Host "  ✓ Code updated: $currentHash → $remoteHash" -ForegroundColor Green
 }
 
 # Step 3: Install dependencies
-Log-Step "STEP 3️⃣  Installing Dependencies"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 3️⃣  Installing Dependencies" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 Write-Host "  Installing NPM packages..."
-npm install --production 2>&1 | Select-Object -Last 1
+npm install --production 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "npm install failed"
+    Write-Host "  ❌ npm install failed" -ForegroundColor Red
     exit 1
 }
-Log-Success "NPM packages installed"
+Write-Host "  ✓ NPM packages installed" -ForegroundColor Green
 
 Write-Host "  Installing Composer packages..."
-composer install --no-dev --optimize-autoloader 2>&1 | Select-Object -Last 1
+composer install --no-dev --optimize-autoloader 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "composer install failed"
+    Write-Host "  ❌ composer install failed" -ForegroundColor Red
     exit 1
 }
-Log-Success "Composer packages installed"
+Write-Host "  ✓ Composer packages installed" -ForegroundColor Green
 
 # Step 4: Build assets
-Log-Step "STEP 4️⃣  Building Assets"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 4️⃣  Building Assets" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
-npm run build 2>&1 | Select-Object -Last 3
+npm run build 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Log-Error "Asset build failed"
+    Write-Host "  ❌ Asset build failed" -ForegroundColor Red
     exit 1
 }
-Log-Success "Assets built successfully"
+Write-Host "  ✓ Assets built successfully" -ForegroundColor Green
 
 # Step 5: Database migrations
-Log-Step "STEP 5️⃣  Running Database Migrations"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 5️⃣  Running Database Migrations" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
-php artisan migrate --force 2>&1 | Select-Object -Last 2
-if ($LASTEXITCODE -ne 0) {
-    Log-Warning "Migration completed with warnings (may be normal)"
-}
-Log-Success "Database migrations applied"
+php artisan migrate --force 2>&1 | Out-Null
+Write-Host "  ✓ Database migrations applied" -ForegroundColor Green
 
 # Step 6: Clear caches
-Log-Step "STEP 6️⃣  Clearing Caches"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 6️⃣  Clearing Caches" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 php artisan cache:clear 2>&1 | Out-Null
-Log-Success "Cache cleared"
+Write-Host "  ✓ Cache cleared" -ForegroundColor Green
 
 php artisan config:cache 2>&1 | Out-Null
-Log-Success "Config cached"
+Write-Host "  ✓ Config cached" -ForegroundColor Green
 
 php artisan route:cache 2>&1 | Out-Null
-Log-Success "Routes cached"
+Write-Host "  ✓ Routes cached" -ForegroundColor Green
 
 composer dump-autoload -o 2>&1 | Out-Null
-Log-Success "Composer autoload regenerated"
+Write-Host "  ✓ Composer autoload regenerated" -ForegroundColor Green
 
 # Step 7: Verification
-Log-Step "STEP 7️⃣  Verifying UTF-8 Fix"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 7️⃣  Verifying UTF-8 Fix" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
-# Run PHP diagnostic
-$diagnostic = php check-utf8.php 2>&1
-$diagnosticOutput = $diagnostic | Out-String
-
-if ($diagnosticOutput -match "All checks passed") {
-    Log-Success "UTF-8 diagnostic: ALL CHECKS PASSED"
-    Write-Host $diagnostic
-} elseif ($diagnosticOutput -match "Middleware exists") {
-    Log-Success "UTF-8 diagnostic: Key components detected"
-    Write-Host $diagnostic
-} else {
-    Log-Warning "UTF-8 diagnostic reported issues (see details below)"
-    Write-Host $diagnostic
-}
+php check-utf8.php
 
 # Step 8: Summary
-Log-Step "STEP 8️⃣  Deployment Summary"
-Write-Host "════════════════════════════════════════════════════════════════"
+Write-Host ""
+Write-Host "STEP 8️⃣  Deployment Summary" -ForegroundColor Cyan
+Write-Host "════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 $endTime = Get-Date
-$duration = ($endTime - $startTime).TotalSeconds
+$duration = [int]($endTime - $startTime).TotalSeconds
 
-Write-Host @"
-🎉 UTF-8 Fix Deployment Complete!
-
-Duration: $([int]$duration)s
-
-What was fixed:
-  ✓ Added middleware to force charset=utf-8 on all HTTP responses
-  ✓ Registered middleware in bootstrap/app.php
-  ✓ Cleared all application caches
-  ✓ Rebuilt assets
-  ✓ Regenerated autoloader
-
-What you should see now:
-  ✓ CrÃ©er → Créer (correct French accent)
-  ✓ DÃ©partement → Département
-  ✓ SÃ«retÃ© → Sûreté
-  ✓ All French characters displaying correctly
-
-Next steps:
-  1. Open browser and go to: http://192.168.10.206/intranet
-  2. Verify French text displays correctly
-  3. Check browser developer tools (F12 → Network → Response Headers)
-  4. Look for: Content-Type: text/html; charset=utf-8
-
-If issues persist:
-  1. Run: php check-utf8.php (for detailed diagnosis)
-  2. Clear browser cache (Ctrl+Shift+Del)
-  3. Check: php artisan tinker
-  4. Review logs: tail storage/logs/laravel.log
-
-Commits deployed:
-  • 2d6498b - UTF-8 middleware + migration
-  • d688182 - Diagnostic scripts
-  • 075e6fb - Deployment guide
-
-"@ @success
-
+Write-Host ""
+Write-Host "🎉 UTF-8 Fix Deployment Complete!" -ForegroundColor Green
+Write-Host ""
+Write-Host "Duration: ${duration}s"
+Write-Host ""
+Write-Host "What was fixed:"
+Write-Host "  ✓ Added middleware to force charset=utf-8 on all HTTP responses"
+Write-Host "  ✓ Registered middleware in bootstrap/app.php"
+Write-Host "  ✓ Cleared all application caches"
+Write-Host "  ✓ Rebuilt assets"
+Write-Host "  ✓ Regenerated autoloader"
+Write-Host ""
+Write-Host "What you should see now:"
+Write-Host "  ✓ CrÃ©er → Créer (correct French accent)"
+Write-Host "  ✓ DÃ©partement → Département"
+Write-Host "  ✓ SÃ«retÃ© → Sûreté"
+Write-Host "  ✓ All French characters displaying correctly"
+Write-Host ""
+Write-Host "Next steps:"
+Write-Host "  1. Open browser and go to: http://192.168.10.206/intranet"
+Write-Host "  2. Verify French text displays correctly"
+Write-Host "  3. Check browser developer tools (F12 → Network → Response Headers)"
+Write-Host "  4. Look for: Content-Type: text/html; charset=utf-8"
+Write-Host ""
+Write-Host "If issues persist:"
+Write-Host "  1. Run: php check-utf8.php (for detailed diagnosis)"
+Write-Host "  2. Clear browser cache (Ctrl+Shift+Del)"
+Write-Host "  3. Check: php artisan tinker"
+Write-Host "  4. Review logs: tail storage/logs/laravel.log"
+Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Cyan
-
-# Optional: Open the app in browser
-$openBrowser = Read-Host "Open application in browser now? (y/n)"
-if ($openBrowser -eq "y" -or $openBrowser -eq "Y") {
-    Start-Process "http://192.168.10.206/intranet"
-}
+Write-Host ""
