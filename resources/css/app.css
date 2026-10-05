@@ -1,3 +1,99 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/*
+ * L'intranet tourne sur le reseau local de la mine : aucune ressource ne doit
+ * etre telechargee depuis Internet. Le build Vite balaie donc les vues Blade
+ * compilees, les composants Livewire et les vues stockees en base afin que
+ * Tailwind y trouve les classes citees dynamiquement.
+ */
+@source '../../resources/views';
+@source '../../resources/js';
+@source '../../app/Livewire';
+@source '../../vendor/livewire/livewire/src/Mechanisms';
+
+/*
+ * Identite visuelle : graphite (structure, texte) et ambre (accent unique).
+ * L'ambre est reserve aux tags de categorie, aux chevrons et aux etats actifs :
+ * s'il se repande, l'interface perd sa hierarchie.
+ */
+@theme {
+    --font-sans:
+        'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+    --color-graphite-50: #f7f8f9;
+    --color-graphite-100: #eceef0;
+    --color-graphite-200: #d5d9dd;
+    --color-graphite-300: #b1b8be;
+    --color-graphite-400: #86919a;
+    --color-graphite-500: #68737d;
+    --color-graphite-600: #515c66;
+    --color-graphite-700: #424c55;
+    --color-graphite-800: #2b333a;
+    --color-graphite-900: #1b2126;
+    --color-graphite-950: #11161a;
+
+    --color-amber-50: #fffbeb;
+    --color-amber-100: #fef3c7;
+    --color-amber-200: #fde68a;
+    --color-amber-300: #fcd34d;
+    --color-amber-400: #fbbf24;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #d97706;
+    --color-amber-700: #b45309;
+    --color-amber-800: #92400e;
+    --color-amber-900: #78350f;
+
+    --radius-card: 0.625rem;
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-graphite-50 text-graphite-900 antialiased;
+    }
+
+    /* Cible tactile confortable : le cahier des charges exige un usage mobile. */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-amber-600;
+    }
+}
+
+@layer components {
+    /* Tag de categorie : petites capitales ambrees au-dessus du nom. */
+    .tag-ambre {
+        @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-amber-700;
+    }
+
+    .carte {
+        @apply rounded-[--radius-card] border border-graphite-200 bg-white shadow-sm;
+    }
+
+    .bouton-primaire {
+        @apply inline-flex items-center justify-center gap-2 rounded-md bg-graphite-900 px-4 py-2.5
+               text-sm font-semibold text-white transition hover:bg-graphite-800
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .bouton-secondaire {
+        @apply inline-flex items-center justify-center gap-2 rounded-md border border-graphite-300
+               bg-white px-4 py-2.5 text-sm font-semibold text-graphite-800 transition
+               hover:bg-graphite-100 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .champ {
+        @apply block w-full rounded-md border border-graphite-300 bg-white px-3 py-2.5
+               text-sm text-graphite-900 placeholder:text-graphite-400
+               focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20;
+    }
+
+    .etiquette {
+        @apply mb-1.5 block text-sm font-medium text-graphite-800;
+    }
+}

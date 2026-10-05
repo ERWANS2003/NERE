@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureUtf8Response;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -7,19 +9,18 @@ use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Toute reponse declare explicitement son charset : l'intranet est
         // integralement en francais et IIS peut sinon servir du latin-1, ce qui
         // produit des pages illisibles sur le serveur de production.
-        $middleware->append(\App\Http\Middleware\EnsureUtf8Response::class);
+        $middleware->append(EnsureUtf8Response::class);
 
         $middleware->alias([
-            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
-            'dept.role' => \App\Http\Middleware\RequireDepartmentRole::class,
+            'active' => EnsureUserIsActive::class,
         ]);
 
         $middleware->redirectGuestsTo('/connexion');

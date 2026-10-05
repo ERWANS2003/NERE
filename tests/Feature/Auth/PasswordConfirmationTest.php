@@ -1,32 +1,64 @@
 <?php
 
 use App\Models\User;
+use Database\Factories\UserFactory;
 
-test('confirm password screen can be rendered', function () {
-    $user = User::factory()->create();
+/*
+ * Confirmation du mot de passe avant une action sensible.
+ */
 
-    $response = $this->actingAs($user)->get('/confirm-password');
+it('affiche le formulaire de confirmation', function () {
+    $utilisateur = User::factory()->create();
 
-    $response->assertStatus(200);
+    $this->actingAs($utilisateur)
+        ->get('/mot-de-passe/confirmation')
+        ->assertOk();
 });
 
-test('password can be confirmed', function () {
-    $user = User::factory()->create();
+it('confirme le mot de passe', function () {
+    $utilisateur = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'password',
-    ]);
+    $this->actingAs($utilisateur)
+        ->post('/mot-de-passe/confirmation', ['password' => UserFactory::PASSWORD])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('accueil'));
 
-    $response->assertRedirect();
-    $response->assertSessionHasNoErrors();
+    expect(session('auth.password_confirmed_at'))->not->toBeNull();
 });
 
-test('password is not confirmed with invalid password', function () {
-    $user = User::factory()->create();
+it('refuse un mot de passe incorrect', function () {
+    $utilisateur = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'wrong-password',
-    ]);
+    $this->actingAs($utilisateur)
+        ->post('/mot-de-passe/confirmation', ['password' => 'mauvais-mot-de-passe'])
+        ->assertSessionHasErrors('password', trans('auth.password'));
 
-    $response->assertSessionHasErrors();
+    expect(session('auth.password_confirmed_at'))->toBeNull();
+});
+
+it('confirme aussi pour un utilisateur connecte avec son matricule', function () {
+    // La session d'authentification herite du matricule ou de l'email selon la
+    // saisie. Forcer `email` ferait echouer la validation pour quelqu'un
+    // connecte avec son matricule.
+    $utilisateur = User::factory()->create();
+
+    $this->post('/connexion', [
+        'identifiant' => (string) $utilisateur->matricule,
+        'password' => UserFactory::PASSWORD,
+    ])->assertRedirect('/accueil');
+
+    $this->post('/mot-de-passe/confirmation', ['password' => UserFactory::PASSWORD])
+        ->assertSessionHasNoErrors();
+
+    expect(session('auth.password_confirmed_at'))->not->toBeNull();
+});
+
+it('refuse un compte desactive', function () {
+    $utilisateur = User::factory()->inactive()->create();
+
+    $this->actingAs($utilisateur)
+        ->get('/mot-de-passe/confirmation')
+        ->assertRedirect('/connexion');
+
+    $this->assertGuest();
 });

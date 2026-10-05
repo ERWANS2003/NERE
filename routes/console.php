@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
 use App\Models\Ticket;
 use App\Notifications\SlaAlertNotification;
 use App\Services\SlaService;
+use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -24,7 +24,7 @@ Artisan::command('sla:verifier', function (SlaService $slaService) {
 
             collect([$ticket->technicien])->merge($ticket->team?->techniciens ?? collect())
                 ->filter()->unique('id')
-                ->each(fn($user) => $user->notify(new SlaAlertNotification($ticket, $seuil)));
+                ->each(fn ($user) => $user->notify(new SlaAlertNotification($ticket, $seuil)));
             $alertes++;
         });
 

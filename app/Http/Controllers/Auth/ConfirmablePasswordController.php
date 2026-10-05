@@ -20,21 +20,26 @@ class ConfirmablePasswordController extends Controller
     }
 
     /**
-     * Confirm the user's password.
+     * Confirme le mot de passe de l'utilisateur.
+     *
+     * La session d'authentification herite du matricule ou de l'email selon ce que
+     * l'utilisateur a saisi : on reutilise donc l'identifiant stocke en session
+     * plutot que de forcer `email`, sans quoi la validation echouerait pour
+     * quelqu'un connecte avec son matricule.
      */
     public function store(Request $request): RedirectResponse
     {
         if (! Auth::guard('web')->validate([
-            'email' => $request->user()->email,
+            $request->user()->getAuthIdentifierName() => $request->user()->getAuthIdentifier(),
             'password' => $request->password,
         ])) {
             throw ValidationException::withMessages([
-                'password' => __('auth.password'),
+                'password' => trans('auth.password'),
             ]);
         }
 
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('accueil', absolute: false));
     }
 }

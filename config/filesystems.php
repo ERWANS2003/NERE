@@ -41,10 +41,10 @@ return [
         // Disque privé pour les pièces jointes de l'intranet
         // Servi uniquement via la route authentifiée intranet.attachments.download
         'private' => [
-            'driver'     => 'local',
-            'root'       => storage_path('app/private'),
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
             'visibility' => 'private',
-            'throw'      => false,
+            'throw' => false,
         ],
 
         'public' => [

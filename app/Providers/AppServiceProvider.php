@@ -3,15 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Department;
-use App\Models\Form;
-use App\Models\Submission;
 use App\Policies\DepartmentPolicy;
-use App\Policies\FormPolicy;
-use App\Policies\SubmissionPolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,11 +19,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Une seule politique de mot de passe pour toute l'application : reponse a
+        // `Password::defaults()`, elle s'applique donc aux deux endroits ou un
+        // utilisateur peut fixer son propre mot de passe (reinitialisation et page
+        // "mon compte"). Un mot de passe d administration, lui, passe par une autre
+        // voie et sera traite a l'etape des comptes.
+        Password::defaults(fn () => Password::min(12)->mixedCase()->numbers()->symbols());
+
         // Les policies sont declarees explicitement : une autorisation ne doit
         // jamais reposer sur le seul nom de methode devine par convention.
+        // FormPolicy et SubmissionPolicy arriveront avec les etapes 3 et 4.
         Gate::policy(Department::class, DepartmentPolicy::class);
-        Gate::policy(Form::class, FormPolicy::class);
-        Gate::policy(Submission::class, SubmissionPolicy::class);
 
         // Environnement de developpement : les acces massifs aux relations sont
         // un gain de temps, ils sont interdits en production pour ne pas
