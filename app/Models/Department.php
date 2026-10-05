@@ -13,8 +13,8 @@ class Department extends Model
     /** @use HasFactory<DepartmentFactory> */
     use HasFactory;
 
-    /** Ambre du design system, utilisé quand aucun accent n'est défini. */
-    public const ACCENT_DEFAUT = '#b45309';
+    /** Rouge de marque NERE, utilisé quand aucun accent n'est défini. */
+    public const ACCENT_DEFAUT = '#c83530';
 
     protected $fillable = [
         'code',
@@ -77,7 +77,7 @@ class Department extends Model
      * La valeur est modifiable par un administrateur et finit injectée dans le
      * HTML : elle n'est donc reprise que si elle ressemble réellement à une
      * couleur. Un champ Alt text fourré de guillemets ne peut pas s'enfuir de
-     * l'attribut, il est simplement ignoré au profit de l'ambre par défaut.
+     * l'attribut, il est simplement ignoré au profit du rouge par défaut.
      */
     public function accentColor(): string
     {

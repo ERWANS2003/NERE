@@ -51,8 +51,8 @@ class DepartmentsSeeder extends Seeder
                 'description' => 'Ordinateurs, réseau, logiciels, accès aux applications et téléphonie.',
                 'icon' => 'informatique',
                 // Teintes volontairement ternes et de luminance voisine : l'accent ne
-                // colore que la pastille d'icône, jamais la carte. L'ambre reste réservé
-                // aux tags et aux états actifs.
+                // colore que la pastille d'icône, jamais la carte, et l'icône
+                // reste redondante avec le nom du service.
                 'color' => '#2f6f9f',
             ],
             [

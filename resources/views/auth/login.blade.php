@@ -53,7 +53,7 @@
                    name="remember"
                    value="1"
                    @checked(old('remember'))
-                   class="h-4 w-4 rounded border-graphite-300 text-amber-600 focus:ring-amber-600">
+                   class="h-4 w-4 rounded border-graphite-300 text-nere-600 focus:ring-nere-600">
             <span>Rester connecté sur ce poste</span>
         </label>
 

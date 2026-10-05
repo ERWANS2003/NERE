@@ -2,7 +2,7 @@
     <h2 class="text-base font-semibold text-graphite-900">Mes coordonnées</h2>
 
     @if (session('statut') === 'profil-modifie')
-        <div class="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div class="mt-3 rounded-md border border-or-300 bg-or-50 px-3 py-2 text-sm text-nere-950">
             Vos coordonnées ont été mises à jour.
         </div>
     @endif

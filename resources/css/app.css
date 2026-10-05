@@ -12,9 +12,17 @@
 @source '../../vendor/livewire/livewire/src/Mechanisms';
 
 /*
- * Identite visuelle : graphite (structure, texte) et ambre (accent unique).
- * L'ambre est reserve aux tags de categorie, aux chevrons et aux etats actifs :
- * s'il se repande, l'interface perd sa hierarchie.
+ * Identite visuelle : graphite pour la structure et le texte, rouge NERE pour
+ * les accents, or NERE pour les aplats.
+ *
+ * Les deux couleurs sont relevees sur public/images/logo-nere-mining.png :
+ * rouge #C83530 et or #FFD25A. Sur blanc, le rouge tient 5,2:1 et l'or
+ * seulement 1,4:1.
+ *
+ * L'or ne doit JAMAIS servir de couleur de texte sur fond clair : 1,4:1 sur
+ * blanc le rend illisible. Il est fait pour les aplats, les bordures et les
+ * logos sur bandeau sombre, la ou il depasse 12:1. Tout accent typographique
+ * passe donc par nere-600 ou nere-700.
  */
 @theme {
     --font-sans:
@@ -32,16 +40,30 @@
     --color-graphite-900: #1b2126;
     --color-graphite-950: #11161a;
 
-    --color-amber-50: #fffbeb;
-    --color-amber-100: #fef3c7;
-    --color-amber-200: #fde68a;
-    --color-amber-300: #fcd34d;
-    --color-amber-400: #fbbf24;
-    --color-amber-500: #f59e0b;
-    --color-amber-600: #d97706;
-    --color-amber-700: #b45309;
-    --color-amber-800: #92400e;
-    --color-amber-900: #78350f;
+    /* Rouge NERE : la teinte 600 est la couleur de marque exacte. */
+    --color-nere-50: #fdf2f1;
+    --color-nere-100: #fbe3e2;
+    --color-nere-200: #f7c8c6;
+    --color-nere-300: #f0a29f;
+    --color-nere-400: #e06c67;
+    --color-nere-500: #d04540;
+    --color-nere-600: #c83530;
+    --color-nere-700: #a82a26;
+    --color-nere-800: #87231f;
+    --color-nere-900: #6b1d1a;
+    --color-nere-950: #3d0f0e;
+
+    /* Or NERE : la teinte 400 est la couleur de marque exacte. */
+    --color-or-50: #fffbeb;
+    --color-or-100: #fef4d4;
+    --color-or-200: #fdeaa3;
+    --color-or-300: #fddf72;
+    --color-or-400: #ffd25a;
+    --color-or-500: #f0b52b;
+    --color-or-600: #c98f10;
+    --color-or-700: #9c6c0d;
+    --color-or-800: #78530d;
+    --color-or-900: #5c3f0b;
 
     --radius-card: 0.625rem;
 }
@@ -61,23 +83,23 @@
     }
 
     :focus-visible {
-        @apply outline-2 outline-offset-2 outline-amber-600;
+        @apply outline-2 outline-offset-2 outline-nere-600;
     }
 }
 
 @layer components {
-    /* Tag de categorie : petites capitales ambrees au-dessus du nom. */
-    .tag-ambre {
-        @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-amber-700;
+    /* Surtitre de rubrique ou code de service, au-dessus du nom. */
+    .tag-service {
+        @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-nere-700;
     }
 
     .carte {
-        @apply rounded-[--radius-card] border border-graphite-200 bg-white shadow-sm;
+        @apply rounded-card border border-graphite-200 bg-white shadow-sm;
     }
 
     .bouton-primaire {
-        @apply inline-flex items-center justify-center gap-2 rounded-md bg-graphite-900 px-4 py-2.5
-               text-sm font-semibold text-white transition hover:bg-graphite-800
+        @apply inline-flex items-center justify-center gap-2 rounded-md bg-nere-600 px-4 py-2.5
+               text-sm font-semibold text-white transition hover:bg-nere-700
                disabled:cursor-not-allowed disabled:opacity-50;
     }
 
@@ -90,7 +112,7 @@
     .champ {
         @apply block w-full rounded-md border border-graphite-300 bg-white px-3 py-2.5
                text-sm text-graphite-900 placeholder:text-graphite-400
-               focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20;
+               focus:border-nere-600 focus:ring-2 focus:ring-nere-600/20;
     }
 
     .etiquette {

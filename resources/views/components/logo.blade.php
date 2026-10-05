@@ -1,12 +1,20 @@
-<svg {{ $attributes->merge(['class' => 'h-8 w-auto text-graphite-900']) }}
-     viewBox="0 0 40 40"
-     fill="none"
-     xmlns="http://www.w3.org/2000/svg"
-     role="img"
-     aria-label="Nere Mining">
-    {{-- Monogramme « N » sobre, l'ambre marquant la diagonale : evite d'embarquer
-         un logo bitmap dont la lisibilite degrade au grand ecran. --}}
-    <rect width="40" height="40" rx="8" fill="currentColor" />
-    <path d="M11 29V11h3.2l11.6 12.4V11H29v18h-3.2L14.2 16.6V29H11Z" fill="#f8fafc" />
-    <path d="M11 29 29 11" stroke="#f59e0b" stroke-width="1.5" opacity="0.9" />
-</svg>
+{{--
+    Embleme NERE, seul bloc du logo lisible en petit : le fichier de marque
+    complet (logo-nere-mining.png, 628 x 126) associe cet embleme carre a une
+    signature or de 314 x 29 px, separee par 187 px de blanc. Afficher l'ensemble
+    dans une barre de 32 px de haut transformerait ce blanc en trou visible ;
+    l'embleme est donc utilise ici, et le nom de l'application est rendu en
+    texte a cote.
+
+    Les attributs width/height reprennent la taille reelle du fichier : le
+    navigateur reserve le bon rectangle avant le chargement, la mise en page ne
+    saute pas. La taille n'est pas imposee ici : la hauteur seule est fixee par
+    l'appelant, la largeur restant automatique, ce qui preserve le rapport de
+    127 x 126 sans deformation.
+--}}
+<img {{ $attributes->merge(['class' => 'shrink-0 object-contain']) }}
+     src="{{ asset('images/logo-nere-embleme.png') }}"
+     width="127"
+     height="126"
+     alt=""
+     aria-hidden="true">

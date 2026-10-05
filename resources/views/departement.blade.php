@@ -23,7 +23,7 @@
                 </span>
 
                 <div>
-                    <p class="tag-ambre">{{ $departement->tag }}</p>
+                    <p class="tag-service">{{ $departement->tag }}</p>
                     <h1 class="mt-1 text-2xl font-semibold tracking-tight text-graphite-900">
                         {{ $departement->name }}
                     </h1>

@@ -15,7 +15,7 @@
         <div class="flex min-h-screen flex-col justify-center bg-graphite-900 px-4 py-10">
             <div class="mx-auto w-full max-w-md">
                 <div class="mb-8 flex flex-col items-center text-center">
-                    <x-logo class="h-14 w-auto text-amber-600" />
+                    <x-logo class="h-16 w-auto" />
 
                     <h1 class="mt-5 text-xl font-semibold tracking-tight text-white">
                         {{ config('app.name') }}

@@ -7,7 +7,7 @@
     </p>
 
     @if (session('statut') === 'mot-de-passe-modifie')
-        <div class="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div class="mt-3 rounded-md border border-or-300 bg-or-50 px-3 py-2 text-sm text-nere-950">
             Mot de passe mis a jour.
         </div>
     @endif

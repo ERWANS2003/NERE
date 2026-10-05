@@ -4,7 +4,7 @@
     {{-- Salutation : la page doit situer l'agent dans le temps et lui rappeler
          l'objet du portail avant de lui proposer des services. --}}
     <section class="border-b border-graphite-200 pb-6">
-        <p class="tag-ambre">Portail des services</p>
+        <p class="tag-service">Portail des services</p>
 
         <h1 class="mt-1.5 text-2xl font-semibold tracking-tight text-graphite-900 sm:text-3xl">
             Bonjour {{ $utilisateur->name }}
@@ -68,7 +68,8 @@
                            class="carte group flex h-full flex-col p-5 transition hover:border-graphite-300 hover:shadow-md">
                             <div class="flex items-start justify-between gap-3">
                                 {{-- L'accent du service ne colore que cette pastille : la
-                                     carte reste graphite, l'ambre reste reserve aux tags. --}}
+                                     carte reste graphite, seule la pastille porte la
+                                     couleur du service. --}}
                                 <span class="flex size-11 shrink-0 items-center justify-center rounded-lg"
                                       style="background-color: {{ $accent }}1a; color: {{ $accent }}">
                                     <x-app-icon :nom="$service->icon" class="size-6" />
@@ -81,7 +82,7 @@
                                 @endif
                             </div>
 
-                            <p class="tag-ambre mt-4">{{ $service->tag }}</p>
+                            <p class="tag-service mt-4">{{ $service->tag }}</p>
 
                             <h3 id="service-{{ $service->code }}"
                                 class="mt-1 text-base font-semibold text-graphite-900">
@@ -93,7 +94,7 @@
                                 {{ $service->description }}
                             </p>
 
-                            <span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-amber-700">
+                            <span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-nere-700">
                                 Ouvrir
                                 <x-app-icon nom="chevron-droite" class="size-4 transition-transform group-hover:translate-x-0.5" />
                             </span>
