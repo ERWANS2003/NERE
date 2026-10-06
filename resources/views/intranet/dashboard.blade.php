@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Tableau de bord</h1>
-        <p class="mt-2 text-gray-600">Bienvenue, {{ auth()->user()->first_name }}!</p>
+        <p class="mt-2 text-gray-600">Bienvenue, {{ explode(' ', auth()->user()->name)[0] }}!</p>
     </div>
 
     <!-- Stats Cards -->

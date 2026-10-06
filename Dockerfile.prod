@@ -1,0 +1,64 @@
+# Dockerfile pour la production ITSM NERE Mining
+FROM php:8.2-fpm
+
+# Installation des dépendances système
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libpq-dev \
+    libzip-dev \
+    nodejs \
+    npm
+
+# Installation des extensions PHP
+RUN docker-php-ext-install pdo_pgsql pgsql zip exif pcntl
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+RUN docker-php-ext-install gd
+
+# Installation de Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Configuration du répertoire de travail
+WORKDIR /var/www/html
+
+# Copie des fichiers de dépendances
+COPY composer.json composer.lock ./
+COPY package.json package-lock.json ./
+
+# Installation des dépendances PHP
+RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
+
+# Installation des dépendances Node.js
+RUN npm ci --only=production
+
+# Copie du code source
+COPY . .
+
+# Construction des assets
+RUN npm run build
+
+# Configuration des permissions
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html/storage
+RUN chmod -R 755 /var/www/html/bootstrap/cache
+
+# Optimisation pour la production
+RUN composer dump-autoload --optimize
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache
+
+# Exposition du port
+EXPOSE 9000
+
+# Commande par défaut
+CMD ["php-fpm"]

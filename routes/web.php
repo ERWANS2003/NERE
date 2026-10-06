@@ -43,6 +43,24 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/mon-compte', [ProfileController::class, 'edit'])->name('profil.edit');
     Route::patch('/mon-compte', [ProfileController::class, 'update'])->name('profil.update');
+    
+    // Alias pour compatibilité avec les vues
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/settings', [ProfileController::class, 'edit'])->name('profile.settings');
+    
+    // Routes temporaires pour les liens dans les vues (à implémenter plus tard)
+    Route::get('/tickets/create', function() {
+        return redirect()->route('intranet.dashboard')->with('info', 'Système de tickets en cours de développement.');
+    })->name('tickets.create');
+    
+    Route::get('/reports/departments/{department}', function($department) {
+        return redirect()->route('intranet.departments.show', $department)->with('info', 'Système de rapports en cours de développement.');
+    })->name('reports.departments');
+    
+    Route::get('/admin/users/{user}', function($user) {
+        return redirect()->route('intranet.dashboard')->with('info', 'Administration des utilisateurs en cours de développement.');
+    })->name('admin.users.show');
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/intranet.php';

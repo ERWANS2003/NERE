@@ -6,7 +6,9 @@ use Database\Factories\DepartmentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
@@ -18,13 +20,21 @@ class Department extends Model
 
     protected $fillable = [
         'code',
-        'tag',
+        'tag', 
         'name',
         'description',
         'icon',
         'color',
         'position',
         'is_active',
+        // Nouveaux champs intranet
+        'email',
+        'phone',
+        'location', 
+        'budget',
+        'allow_ticket_creation',
+        'parent_id',
+        'manager_id',
     ];
 
     protected function casts(): array
@@ -32,6 +42,8 @@ class Department extends Model
         return [
             'position' => 'integer',
             'is_active' => 'boolean',
+            'allow_ticket_creation' => 'boolean',
+            'budget' => 'decimal:2',
         ];
     }
 
@@ -69,6 +81,30 @@ class Department extends Model
     {
         return $this->belongsToMany(User::class)
             ->withPivot(['role', 'tech_level']);
+    }
+
+    /**
+     * Département parent dans la hiérarchie
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'parent_id');
+    }
+
+    /**
+     * Sous-départements
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(Department::class, 'parent_id');
+    }
+
+    /**
+     * Manager du département
+     */
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
     }
 
     /**

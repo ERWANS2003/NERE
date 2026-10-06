@@ -70,9 +70,9 @@
                                 <button type="button" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" 
                                         onclick="toggleUserMenu()">
                                     <img class="h-8 w-8 rounded-full" 
-                                         src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->first_name . ' ' . auth()->user()->last_name) }}&color=7F9CF5&background=EBF4FF" 
-                                         alt="{{ auth()->user()->first_name }}">
-                                    <span class="ml-2 text-gray-700">{{ auth()->user()->first_name }}</span>
+                                         src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=7F9CF5&background=EBF4FF" 
+                                         alt="{{ auth()->user()->name }}">
+                                    <span class="ml-2 text-gray-700">{{ explode(' ', auth()->user()->name)[0] }}</span>
                                     <i class="fas fa-chevron-down ml-1 text-xs text-gray-500"></i>
                                 </button>
 
@@ -87,7 +87,7 @@
                                             Paramètres
                                         </a>
                                         <div class="border-t border-gray-100"></div>
-                                        <form method="POST" action="{{ route('auth.logout') }}">
+                                        <form method="POST" action="{{ route('logout') }}">
                                             @csrf
                                             <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                                 <i class="fas fa-sign-out-alt mr-2"></i>
