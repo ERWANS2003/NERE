@@ -81,7 +81,7 @@ class LoginRequest extends FormRequest
         // Un compte desactive n'obtient jamais de session, meme avec le bon mot de
         // passe. Le message est distinct du mot de passe faux pour que la personne
         // sache qu'il faut contacter l'administration plutot que ressaisir.
-        if (! $user->is_active) {
+        if (! $user->actif) {
             throw ValidationException::withMessages([
                 'identifiant' => trans('auth.inactive'),
             ]);

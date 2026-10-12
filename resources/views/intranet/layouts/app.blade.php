@@ -5,192 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'ITSM NERE') }} - @yield('title')</title>
+    {{-- Compatible avec les deux styles : <x-intranet-layout title="…"> et @extends + @section('title'). --}}
+    <title>{{ $title ?? (trim($__env->yieldContent('title')) ?: 'Intranet') }} - NÉRÉ Mining</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    {{-- Aucune police externe : l'intranet tourne sur le réseau local de la mine, sans Internet.
+         La pile de polices système est définie dans resources/css/app.css (--font-sans). --}}
 
-    <!-- Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/nere-design-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/fullcalendar-custom.css') }}">
+
+    @livewireStyles
     @stack('styles')
 </head>
-<body class="font-sans antialiased bg-gray-50">
-    <div class="min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex">
-                        <!-- Logo -->
-                        <div class="shrink-0 flex items-center">
-                            <a href="{{ route('intranet.dashboard') }}" class="text-xl font-bold text-blue-600">
-                                <i class="fas fa-building mr-2"></i>
-                                ITSM NERE
-                            </a>
-                        </div>
+<body class="bg-graphite-50 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        @include('intranet.partials.sidebar')
 
-                        <!-- Navigation Links -->
-                        <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                            <a href="{{ route('intranet.dashboard') }}" 
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('intranet.dashboard') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                <i class="fas fa-tachometer-alt mr-2"></i>
-                                Tableau de bord
-                            </a>
-                            <a href="{{ route('intranet.departments.index') }}" 
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('intranet.departments.*') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                <i class="fas fa-sitemap mr-2"></i>
-                                Départements
-                            </a>
-                            @can('manage_forms')
-                            <a href="{{ route('intranet.forms.index') }}" 
-                               class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('intranet.forms.*') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium">
-                                <i class="fas fa-wpforms mr-2"></i>
-                                Formulaires
-                            </a>
-                            @endcan
-                        </div>
-                    </div>
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            <!-- Header -->
+            @include('intranet.partials.header')
 
-                    <!-- Settings Dropdown -->
-                    <div class="hidden sm:flex sm:items-center sm:ml-6">
-                        <!-- Notifications -->
-                        <div class="relative mr-4">
-                            <button type="button" class="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                <span class="sr-only">Voir notifications</span>
-                                <i class="fas fa-bell h-6 w-6"></i>
-                            </button>
-                        </div>
-
-                        <div class="relative ml-3">
-                            <div class="relative inline-block text-left">
-                                <button type="button" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" 
-                                        onclick="toggleUserMenu()">
-                                    <img class="h-8 w-8 rounded-full" 
-                                         src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=7F9CF5&background=EBF4FF" 
-                                         alt="{{ auth()->user()->name }}">
-                                    <span class="ml-2 text-gray-700">{{ explode(' ', auth()->user()->name)[0] }}</span>
-                                    <i class="fas fa-chevron-down ml-1 text-xs text-gray-500"></i>
-                                </button>
-
-                                <div id="userMenu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                                    <div class="py-1">
-                                        <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <i class="fas fa-user mr-2"></i>
-                                            Mon Profil
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto bg-graphite-50 p-6">
+                @if (! empty($breadcrumbs))
+                    <nav class="mb-6" aria-label="Breadcrumb">
+                        <ol class="flex items-center space-x-2 text-sm text-graphite-600">
+                            <li>
+                                <a href="{{ route('intranet.dashboard') }}" class="hover:text-nere-600 transition">
+                                    Accueil
+                                </a>
+                            </li>
+                            @foreach ($breadcrumbs as $breadcrumb)
+                                <li class="flex items-center">
+                                    <svg class="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    @if (isset($breadcrumb['url']))
+                                        <a href="{{ $breadcrumb['url'] }}" class="hover:text-nere-600 transition">
+                                            {{ $breadcrumb['label'] }}
                                         </a>
-                                        <a href="{{ route('profile.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <i class="fas fa-cog mr-2"></i>
-                                            Paramètres
-                                        </a>
-                                        <div class="border-t border-gray-100"></div>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
-                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                <i class="fas fa-sign-out-alt mr-2"></i>
-                                                Déconnexion
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                    @else
+                                        <span class="text-graphite-900 font-medium">{{ $breadcrumb['label'] }}</span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ol>
+                    </nav>
+                @endif
 
-                    <!-- Mobile menu button -->
-                    <div class="-mr-2 flex items-center sm:hidden">
-                        <button type="button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                                onclick="toggleMobileMenu()">
-                            <span class="sr-only">Ouvrir menu principal</span>
-                            <i class="fas fa-bars h-6 w-6"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+                @isset($slot)
+                    {{ $slot }}
+                @else
+                    @yield('content')
+                @endisset
+            </main>
 
-            <!-- Mobile menu -->
-            <div id="mobileMenu" class="hidden sm:hidden">
-                <div class="pt-2 pb-3 space-y-1">
-                    <a href="{{ route('intranet.dashboard') }}" 
-                       class="block pl-3 pr-4 py-2 border-l-4 {{ request()->routeIs('intranet.dashboard') ? 'border-blue-500 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }} text-base font-medium">
-                        Tableau de bord
-                    </a>
-                    <a href="{{ route('intranet.departments.index') }}" 
-                       class="block pl-3 pr-4 py-2 border-l-4 {{ request()->routeIs('intranet.departments.*') ? 'border-blue-500 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }} text-base font-medium">
-                        Départements
-                    </a>
-                </div>
-            </div>
-        </nav>
+        </div>
 
-        <!-- Page Content -->
-        <main class="py-6">
-            <!-- Flash Messages -->
-            @if(session('success'))
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-                    <div class="bg-green-50 border border-green-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-green-400"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-green-800">
-                                    {{ session('success') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-circle text-red-400"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-red-800">
-                                    {{ session('error') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @yield('content')
-        </main>
     </div>
 
-    <!-- Scripts -->
-    <script>
-        function toggleUserMenu() {
-            const menu = document.getElementById('userMenu');
-            menu.classList.toggle('hidden');
-        }
+    <!-- Search Modal (Cmd+K) -->
+    @include('intranet.partials.search-modal')
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
-        }
+    {{-- Messages flash (success / error / status / warning) relayés en toasts.
+         Les contrôleurs redirigent avec ->with('success', …) ; sans ce pont,
+         ces messages n'étaient jamais affichés à l'utilisateur. --}}
+    @include('intranet.partials.flash-toasts')
 
-        // Close menus when clicking outside
-        document.addEventListener('click', function(event) {
-            const userMenu = document.getElementById('userMenu');
-            const mobileMenu = document.getElementById('mobileMenu');
-            
-            if (!event.target.closest('.relative')) {
-                userMenu.classList.add('hidden');
-                mobileMenu.classList.add('hidden');
-            }
-        });
-    </script>
-
+    {{-- Livewire embarque et démarre Alpine (sidebar, menus, recherche Cmd+K). --}}
+    @livewireScripts
     @stack('scripts')
 </body>
 </html>

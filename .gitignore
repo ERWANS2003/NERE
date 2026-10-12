@@ -1,10 +1,25 @@
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
+!.env.windows-server
 .env.backup
 .env.production
 .phpactor.json
 .phpunit.result.cache
+
+# Vues Blade compilées (régénérées automatiquement)
+/storage/framework/views/*.php
+
+# Dumps de schéma / base (contiennent la structure réelle de la prod)
+*.sql
+
+# Scripts de debug ponctuels (ne doivent pas partir en prod)
+/public/debug.php
+/public/debug-steps.php
+/public/simple-index.php
+/minimal-test.php
 /.codex
 /.cursor/
 /.idea

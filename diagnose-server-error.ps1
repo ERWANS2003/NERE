@@ -1,19 +1,20 @@
 # Script de diagnostic pour erreur serveur 500
 # Utilisation: .\diagnose-server-error.ps1
 
-Write-Host "🔍 Diagnostic d'erreur serveur ITSM NERE Mining..." -ForegroundColor Red
+Write-Host "Diagnostic d'erreur serveur ITSM NERE Mining..." -ForegroundColor Red
 
 # Fonction pour afficher les dernières lignes d'un fichier log
 function Show-LogTail {
     param($LogFile, $Lines = 20)
     
     if (Test-Path $LogFile) {
-        Write-Host "`n📄 Dernières $Lines lignes de $LogFile :" -ForegroundColor Yellow
-        Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "Dernieres $Lines lignes de $LogFile :" -ForegroundColor Yellow
+        Write-Host "=======================================================" -ForegroundColor Gray
         Get-Content $LogFile -Tail $Lines | ForEach-Object { Write-Host $_ -ForegroundColor White }
-        Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Gray
+        Write-Host "=======================================================" -ForegroundColor Gray
     } else {
-        Write-Host "❌ Fichier log non trouvé: $LogFile" -ForegroundColor Red
+        Write-Host "Fichier log non trouve: $LogFile" -ForegroundColor Red
     }
 }
 

@@ -5,6 +5,7 @@ use App\Notifications\SlaAlertNotification;
 use App\Services\SlaService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -30,3 +31,6 @@ Artisan::command('sla:verifier', function (SlaService $slaService) {
 
     $this->info("{$alertes} alerte(s) SLA générée(s).");
 })->purpose('Déclencher les alertes SLA à 75 % et 100 %');
+
+// Rappels des événements du calendrier prévus le lendemain, chaque jour à 7h.
+Schedule::command('intranet:rappels-evenements')->dailyAt('07:00');

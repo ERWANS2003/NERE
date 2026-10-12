@@ -11,31 +11,22 @@
              sur le reseau de la mine. La pile systeme est declaree dans app.css. --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="flex min-h-screen flex-col justify-center bg-graphite-900 px-4 py-10">
-            <div class="mx-auto w-full max-w-md">
-                <div class="mb-8 flex flex-col items-center text-center">
-                    <x-logo class="h-16 w-auto" />
-
-                    <h1 class="mt-5 text-xl font-semibold tracking-tight text-white">
-                        {{ config('app.name') }}
-                    </h1>
-
-                    <p class="mt-1 text-sm text-graphite-400">
-                        Portail interne — Nere Mining
-                    </p>
+    <body class="login-body">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-logo">
+                    <img src="{{ asset('images/logo-nere-embleme.png') }}" alt="Logo NERE Mining" />
                 </div>
-
-                <div class="carte p-6 sm:p-8">
-                    {{ $slot }}
-                </div>
-
-                <p class="mt-6 text-center text-xs text-graphite-500">
-                    Acces reserve au personnel autorise.
-                    <br>
-                    En cas de problème d'accès, contactez l'administration de l'intranet.
-                </p>
+                <h1>LOGIN</h1>
             </div>
+
+            {{ $slot }}
+
+            <p class="login-footer" style="margin-top: 30px; color: #666; font-size: 11px;">
+                Acces reserve au personnel autorise.
+                <br>
+                En cas de problème d'accès, contactez l'administration de l'intranet.
+            </p>
         </div>
     </body>
 </html>

@@ -6,7 +6,9 @@ use App\Enums\DepartmentRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +34,20 @@ class User extends Authenticatable
         'email',
         'password',
         'is_super_admin',
-        'is_active',
+        'actif',
+        'role_id',
+        'departement_id',
+        'site_id',
+        'telephone',
+        'poste',
+        'est_technicien',
+        'disponible',
+        // Organigramme
+        'manager_id',
+        'position_title',
+        'org_level',
+        'hire_date',
+        'birth_date',
     ];
 
     protected $hidden = [
@@ -46,10 +61,67 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
-            'is_active' => 'boolean',
+            'actif' => 'boolean',
+            'est_technicien' => 'boolean',
+            'disponible' => 'boolean',
             'failed_attempts' => 'integer',
             'locked_until' => 'datetime',
+            'org_level' => 'integer',
+            'hire_date' => 'date',
+            'birth_date' => 'date',
         ];
+    }
+
+    // Accesseur pour compatibilité avec is_active
+    public function getIsActiveAttribute()
+    {
+        return $this->actif;
+    }
+
+    public function setIsActiveAttribute($value)
+    {
+        $this->actif = $value;
+    }
+
+    /**
+     * URL de l'avatar. Aucune colonne de photo n'existe pour l'instant :
+     * l'annuaire se rabat sur les initiales. Renvoyer null explicitement évite
+     * une recherche d'attribut inexistant dans les vues.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Prénom déduit du nom complet (pas de colonne dédiée).
+     */
+    public function getFirstNameAttribute(): string
+    {
+        return explode(' ', trim($this->name))[0] ?? $this->name;
+    }
+
+    /**
+     * Initiales (2 lettres max) pour l'avatar.
+     */
+    public function getInitialsAttribute(): string
+    {
+        $mots = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $initiales = mb_substr($mots[0] ?? '', 0, 1);
+
+        if (count($mots) > 1) {
+            $initiales .= mb_substr($mots[count($mots) - 1], 0, 1);
+        }
+
+        return mb_strtoupper($initiales) ?: '?';
+    }
+
+    /**
+     * Poste affiché : privilégie position_title, retombe sur poste.
+     */
+    public function getJobTitleAttribute(): ?string
+    {
+        return $this->position_title ?: $this->poste;
     }
 
     // ── Relations ───────────────────────────────────────────────────────
@@ -63,6 +135,68 @@ class User extends Authenticatable
         return $this->belongsToMany(Department::class)
             ->withPivot(['role', 'tech_level'])
             ->withTimestamps();
+    }
+
+    /**
+     * Les rôles système de l'utilisateur
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class);
+    }
+
+    /**
+     * Ressources de la bibliothèque mises en favori par l'utilisateur.
+     */
+    public function favoriteResources(): BelongsToMany
+    {
+        return $this->belongsToMany(Resource::class, 'resource_user')->withTimestamps();
+    }
+
+    /**
+     * Supérieur hiérarchique direct (organigramme).
+     */
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'manager_id');
+    }
+
+    /**
+     * Collaborateurs directs (organigramme).
+     */
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(self::class, 'manager_id');
+    }
+
+    /**
+     * Départements que cet utilisateur dirige (droit de publier une annonce,
+     * de gérer services/formulaires...). L'admin général est traité à part
+     * par les appelants (canManageDepartment() le court-circuite déjà).
+     *
+     * @return \Illuminate\Support\Collection<int, Department>
+     */
+    public function directedDepartments(): \Illuminate\Support\Collection
+    {
+        if ($this->is_super_admin) {
+            return Department::active()->get();
+        }
+
+        $this->loadAuthorisations();
+
+        $ids = collect($this->memberships ?? [])
+            ->filter(fn (array $m) => $m['role'] === DepartmentRole::Director->value)
+            ->keys();
+
+        return $ids->isEmpty() ? collect() : Department::whereKey($ids)->active()->get();
+    }
+
+    /**
+     * Les demandes (soumissions de formulaires) creees par l'utilisateur.
+     */
+    public function formSubmissions(): HasMany
+    {
+        return $this->hasMany(FormSubmission::class);
     }
 
     // ── Droits par departement ───────────────────────────────────────────
@@ -234,6 +368,7 @@ class User extends Authenticatable
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('actif', true);
     }
 }
+

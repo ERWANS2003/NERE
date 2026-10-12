@@ -14,15 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Toute reponse declare explicitement son charset : l'intranet est
-        // integralement en francais et IIS peut sinon servir du latin-1, ce qui
-        // produit des pages illisibles sur le serveur de production.
-        $middleware->append(EnsureUtf8Response::class);
-
+        // Désactiver TOUS les middlewares temporairement pour test
+        // $middleware->append(EnsureUtf8Response::class);
+        
+        // Register custom middleware aliases
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
-
+        
         $middleware->redirectGuestsTo('/connexion');
         $middleware->redirectUsersTo('/');
 

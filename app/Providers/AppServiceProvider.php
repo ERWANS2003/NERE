@@ -2,8 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\Announcement;
 use App\Models\Department;
+use App\Models\Resource;
+use App\Models\User;
+use App\Observers\DepartmentObserver;
+use App\Observers\UserObserver;
+use App\Policies\AnnouncementPolicy;
 use App\Policies\DepartmentPolicy;
+use App\Policies\ResourcePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -30,6 +37,14 @@ class AppServiceProvider extends ServiceProvider
         // jamais reposer sur le seul nom de methode devine par convention.
         // FormPolicy et SubmissionPolicy arriveront avec les etapes 3 et 4.
         Gate::policy(Department::class, DepartmentPolicy::class);
+        Gate::policy(Announcement::class, AnnouncementPolicy::class);
+        Gate::policy(Resource::class, ResourcePolicy::class);
+
+        // Invalidation du cache structurel de l'intranet (organigramme, liste
+        // des départements, compteurs) à chaque changement de département ou
+        // d'utilisateur. Voir App\Services\Intranet\IntranetCache.
+        Department::observe(DepartmentObserver::class);
+        User::observe(UserObserver::class);
 
         // Environnement de developpement : les acces massifs aux relations sont
         // un gain de temps, ils sont interdits en production pour ne pas

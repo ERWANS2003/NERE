@@ -108,6 +108,30 @@ class Department extends Model
     }
 
     /**
+     * Services proposés par le département (vitrine intranet).
+     */
+    public function services(): HasMany
+    {
+        return $this->hasMany(DepartmentService::class);
+    }
+
+    /**
+     * Formulaires du département.
+     */
+    public function forms(): HasMany
+    {
+        return $this->hasMany(DepartmentForm::class);
+    }
+
+    /**
+     * Annonces rattachées au département.
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    /**
      * Teinte d'accent, utilisable dans un attribut `style`.
      *
      * La valeur est modifiable par un administrateur et finit injectée dans le
@@ -120,5 +144,49 @@ class Department extends Model
         return is_string($this->color) && preg_match('/^#[0-9a-fA-F]{6}$/', $this->color) === 1
             ? $this->color
             : self::ACCENT_DEFAUT;
+    }
+
+    /**
+     * Fichiers d'illustration livrés dans public/images/departments, indexés
+     * par code de département. Source unique de vérité : les vues ne
+     * recalculent plus de slug fragile à partir du nom.
+     *
+     * @var array<string, string>
+     */
+    private const ILLUSTRATIONS = [
+        'ADMIN' => '01-administration.png',
+        'RH' => '02-ressources-humaines.png',
+        'SEC' => '03-securite.png',
+        'MINING' => '04-mining.png',
+        'HSE' => '05-hse.png',
+        'PROC' => '06-processing.png',
+        'SCM' => '07-scm.png',
+        'IT' => '08-it.png',
+        'RELCOM' => '09-relations-communautaires.png',
+    ];
+
+    /**
+     * URL publique de l'illustration du département, ou null si aucune image
+     * n'est associée ou présente sur le disque.
+     */
+    public function illustrationUrl(): ?string
+    {
+        $fichier = self::ILLUSTRATIONS[$this->code] ?? null;
+
+        if ($fichier === null) {
+            return null;
+        }
+
+        return file_exists(public_path('images/departments/' . $fichier))
+            ? asset('images/departments/' . $fichier)
+            : null;
+    }
+
+    /**
+     * Accesseur pratique pour les vues Blade : {{ $department->image_url }}.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->illustrationUrl();
     }
 }

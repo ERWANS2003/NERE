@@ -3,53 +3,122 @@
 namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
+use App\Models\DepartmentForm;
+use App\Models\FormSubmission;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class SubmissionController extends Controller
 {
     /**
-     * Affiche la liste des soumissions
+     * Liste des demandes de l'utilisateur connecté (filtrable par statut).
      */
     public function index(Request $request): View
     {
-        // À implémenter quand les formulaires seront créés
-        return view('intranet.submissions.index');
+        $query = FormSubmission::with(['form.department'])
+            ->where('user_id', $request->user()->id);
+
+        if ($request->filled('status') && in_array($request->status, ['pending', 'approved', 'rejected'], true)) {
+            $query->where('status', $request->status);
+        }
+
+        $submissions = $query->latest()->paginate(15)->withQueryString();
+
+        return view('intranet.submissions.index', compact('submissions'));
     }
 
     /**
-     * Enregistre une nouvelle soumission
+     * Enregistre une nouvelle demande (soumission d'un formulaire).
      */
-    public function store(Request $request, $form)
+    public function store(Request $request, DepartmentForm $form): RedirectResponse
     {
-        // À implémenter
-        return redirect()->route('intranet.forms.show', $form);
+        $validated = $request->validate([
+            'data' => ['required', 'array'],
+        ]);
+
+        $submission = FormSubmission::create([
+            'form_id' => $form->id,
+            'user_id' => $request->user()->id,
+            'data' => $validated['data'],
+            'status' => 'pending',
+        ]);
+
+        return redirect()
+            ->route('intranet.submissions.show', $submission)
+            ->with('success', 'Votre demande a été soumise avec succès.');
     }
 
     /**
-     * Affiche une soumission
+     * Affiche une demande. L'utilisateur ne voit que ses propres demandes
+     * (sauf s'il peut traiter le département concerné).
      */
-    public function show($submission): View
+    public function show(Request $request, FormSubmission $submission): View
     {
-        // À implémenter
-        return view('intranet.submissions.show');
+        $submission->load(['form.department', 'user', 'reviewer']);
+
+        $user = $request->user();
+        $departmentId = $submission->form?->department_id;
+
+        $autorise = $submission->user_id === $user->id
+            || $user->is_super_admin
+            || ($departmentId !== null && $user->canHandleIn($departmentId));
+
+        abort_unless($autorise, 403);
+
+        return view('intranet.submissions.show', compact('submission'));
     }
 
     /**
-     * Met à jour une soumission
+     * Met à jour le statut d'une demande (validation / rejet par un traiteur).
      */
-    public function update(Request $request, $submission)
+    public function update(Request $request, FormSubmission $submission): RedirectResponse
     {
-        // À implémenter
-        return redirect()->route('intranet.submissions.show', $submission);
+        $departmentId = $submission->form?->department_id;
+
+        abort_unless(
+            $request->user()->is_super_admin
+                || ($departmentId !== null && $request->user()->canValidateIn($departmentId)),
+            403
+        );
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:approved,rejected'],
+            'review_comment' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $submission->update([
+            'status' => $validated['status'],
+            'review_comment' => $validated['review_comment'] ?? null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        // Prévient le demandeur du verdict (sauf s'il s'est auto-traité).
+        $demandeur = $submission->user;
+        if ($demandeur && $demandeur->id !== $request->user()->id && $demandeur->actif) {
+            $demandeur->notify(new \App\Notifications\SubmissionReviewed($submission));
+        }
+
+        return redirect()
+            ->route('intranet.submissions.show', $submission)
+            ->with('success', 'La demande a été mise à jour.');
     }
 
     /**
-     * Supprime une soumission
+     * Supprime une demande (le propriétaire tant qu'elle est en attente).
      */
-    public function destroy($submission)
+    public function destroy(Request $request, FormSubmission $submission): RedirectResponse
     {
-        // À implémenter
-        return redirect()->route('intranet.submissions.index');
+        abort_unless(
+            $submission->user_id === $request->user()->id && $submission->status === 'pending',
+            403
+        );
+
+        $submission->delete();
+
+        return redirect()
+            ->route('intranet.submissions.index')
+            ->with('success', 'La demande a été supprimée.');
     }
 }

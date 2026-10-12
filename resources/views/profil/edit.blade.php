@@ -1,9 +1,14 @@
-<x-app-layout>
-    <x-slot name="titre">Mon compte</x-slot>
+@php
+    $breadcrumbs = [
+        ['label' => 'Mon compte'],
+    ];
+@endphp
 
-    <h1 class="text-xl font-semibold tracking-tight text-graphite-900">Mon compte</h1>
+<x-intranet-layout title="Mon compte" :breadcrumbs="$breadcrumbs">
 
-    <p class="mt-1 text-sm text-graphite-500">
+    <h1 class="text-3xl font-bold text-graphite-900">Mon compte</h1>
+
+    <p class="mt-1 text-graphite-600">
         Mettez à jour vos coordonnées ou votre mot de passe.
     </p>
 
@@ -11,4 +16,4 @@
         @include('profil.partials.coordonnees')
         @include('profil.partials.mot-de-passe')
     </div>
-</x-app-layout>
+</x-intranet-layout>

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
+use App\Models\CalendarEvent;
 use App\Models\Department;
+use App\Models\FormSubmission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,51 +14,57 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     /**
-     * Affiche le tableau de bord intranet
+     * Affiche le tableau de bord intranet (page d'accueil).
      */
     public function index(Request $request): View
     {
-        // Statistiques générales
+        $user = $request->user();
+
+        // Statistiques générales affichées en haut du tableau de bord.
         $stats = [
-            'departments' => Department::count(),
-            'forms' => 0, // À implémenter quand les formulaires seront créés
-            'submissions' => 0, // À implémenter quand les soumissions seront créées
-            'users' => User::where('is_active', true)->count(),
+            'departments' => Department::active()->count(),
+            'users' => User::where('actif', true)->count(),
+            'announcements' => Announcement::where('is_active', true)->count(),
+            'events' => CalendarEvent::where('event_date', '>=', today())->count(),
+            'submissions' => FormSubmission::where('user_id', $user->id)->count(),
         ];
 
-        // Départements pour l'aperçu (limité à 6)
-        $departments = Department::with(['manager', 'users'])
-            ->withCount('users')
-            ->where('is_active', true)
+        // Tous les départements actifs pour la grille d'accueil.
+        $departments = Department::active()
+            ->withCount('services')
+            ->orderBy('position')
             ->orderBy('name')
-            ->limit(6)
             ->get();
 
-        // Activité récente (à implémenter plus tard avec un système de logs)
-        $recentActivity = [
-            [
-                'description' => 'Nouveau département créé: <strong>IT Support</strong>',
-                'icon' => 'plus',
-                'color' => 'blue',
-                'created_at' => now()->subHours(2),
-                'time_ago' => 'Il y a 2 heures'
-            ],
-            [
-                'description' => 'Utilisateur <strong>John Doe</strong> ajouté au département Marketing',
-                'icon' => 'user-plus',
-                'color' => 'green',
-                'created_at' => now()->subHours(4),
-                'time_ago' => 'Il y a 4 heures'
-            ],
-            [
-                'description' => 'Département <strong>RH</strong> mis à jour',
-                'icon' => 'edit',
-                'color' => 'yellow',
-                'created_at' => now()->subDay(),
-                'time_ago' => 'Hier'
-            ]
-        ];
+        // Widget : 3 dernières annonces publiées.
+        $recentAnnouncements = Announcement::with(['department', 'creator'])
+            ->where('is_active', true)
+            ->latest('published_at')
+            ->limit(3)
+            ->get();
 
-        return view('intranet.dashboard', compact('stats', 'departments', 'recentActivity'));
+        // Widget : 4 prochains événements de l'agenda.
+        $upcomingEvents = CalendarEvent::with('department')
+            ->where('event_date', '>=', today())
+            ->orderBy('event_date')
+            ->orderBy('event_time')
+            ->limit(4)
+            ->get();
+
+        // Section : 5 dernières demandes (soumissions de formulaires) de l'utilisateur.
+        $recentSubmissions = FormSubmission::with(['form.department'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('intranet.dashboard.index', compact(
+            'user',
+            'stats',
+            'departments',
+            'recentAnnouncements',
+            'upcomingEvents',
+            'recentSubmissions'
+        ));
     }
 }

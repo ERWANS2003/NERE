@@ -88,6 +88,21 @@
 }
 
 @layer components {
+    /* Navigation latérale de l'intranet. */
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
+               text-graphite-700 transition-colors duration-150
+               hover:bg-graphite-100 hover:text-graphite-900;
+    }
+
+    .sidebar-link.active {
+        @apply bg-nere-50 text-nere-700 hover:bg-nere-100;
+    }
+
+    .sidebar-link svg {
+        @apply shrink-0;
+    }
+
     /* Surtitre de rubrique ou code de service, au-dessus du nom. */
     .tag-service {
         @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-nere-700;
@@ -117,5 +132,125 @@
 
     .etiquette {
         @apply mb-1.5 block text-sm font-medium text-graphite-800;
+    }
+}
+
+
+/* ============================================================================
+ * STYLES PERSONNALISES POUR LA PAGE DE CONNEXION NERE
+ * ============================================================================ */
+
+@layer base {
+    /* Page de connexion avec design moderne NERE */
+    body {
+        @apply antialiased;
+    }
+
+    .login-body {
+        @apply flex justify-center items-center min-h-screen bg-white p-5;
+    }
+}
+
+@layer components {
+    /* Conteneur principal de connexion */
+    .login-container {
+        @apply relative w-full max-w-[500px] border-2 border-black bg-white p-[50px_40px] 
+               rounded-[8px] shadow-[8px_8px_0px_#000000];
+    }
+
+    .login-container::before {
+        @apply absolute top-[6px] left-[6px] right-[-6px] bottom-[-6px] 
+               border-2 border-black z-[-1] rounded-[8px] content-[''];
+    }
+
+    /* En-tête avec logo */
+    .login-header {
+        @apply text-center mb-[40px];
+    }
+
+    .login-logo {
+        @apply flex justify-center mb-[20px];
+    }
+
+    .login-logo img {
+        @apply h-[100px] w-auto object-contain;
+    }
+
+    .login-header h1 {
+        @apply text-[32px] font-bold tracking-[0.15em] text-black text-center;
+    }
+
+    /* Groupes d'input */
+    .input-group {
+        @apply mb-[25px] relative;
+    }
+
+    .input-group label {
+        @apply block mb-[10px] font-bold text-black text-[14px] 
+               tracking-[0.05em] uppercase;
+    }
+
+    .input-group input[type="text"],
+    .input-group input[type="email"],
+    .input-group input[type="password"] {
+        @apply w-full px-[15px] py-[14px] border-2 border-black 
+               bg-white text-[14px] outline-none transition-all duration-300;
+        font-family: 'Courier New', monospace;
+    }
+
+    .input-group input::placeholder {
+        @apply text-[#B0B0B0];
+    }
+
+    .input-group input:focus {
+        @apply shadow-[4px_4px_0px_#000000] border-nere-600;
+    }
+
+    /* Checkbox */
+    .checkbox-group {
+        @apply flex items-center my-[20px];
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        @apply w-4 h-4 cursor-pointer accent-nere-600;
+    }
+
+    .checkbox-group label {
+        @apply ml-2 cursor-pointer text-black text-[13px] m-0;
+    }
+
+    /* Bouton de connexion */
+    .btn-submit {
+        @apply w-full px-0 py-[14px] bg-nere-600 text-white border-2 border-black 
+               text-[14px] font-bold cursor-pointer mt-[15px] transition-all duration-300
+               tracking-[0.1em] uppercase;
+        font-family: 'Courier New', monospace;
+    }
+
+    .btn-submit:hover {
+        @apply shadow-[4px_4px_0px_#000000] -translate-x-[2px] -translate-y-[2px]
+               bg-nere-700;
+    }
+
+    .btn-submit:active {
+        @apply translate-x-0 translate-y-0 shadow-[2px_2px_0px_#000000];
+    }
+
+    /* Messages d'erreur */
+    .error-message {
+        @apply text-nere-600 text-[12px] mt-[5px] font-semibold;
+    }
+
+    /* Footer */
+    .login-footer {
+        @apply text-center mt-[30px] text-black text-[11px];
+    }
+
+    .login-footer a {
+        @apply text-nere-600 font-bold no-underline transition-all duration-300;
+    }
+
+    .login-footer a:hover {
+        @apply underline text-nere-700;
     }
 }

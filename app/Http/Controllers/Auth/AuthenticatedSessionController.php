@@ -25,7 +25,7 @@ class AuthenticatedSessionController extends Controller
         // qui vient de se connecter (fixation de session).
         $request->session()->regenerate();
 
-        return redirect()->intended(route('accueil', absolute: false));
+        return redirect()->intended(route('intranet.dashboard', absolute: false));
     }
 
     public function destroy(Request $request): RedirectResponse

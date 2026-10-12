@@ -49,9 +49,9 @@ class DepartmentController extends Controller
 
         // Statistiques
         $activeDepartments = Department::where('is_active', true)->count();
-        $totalUsers = User::where('is_active', true)->count();
+        $totalUsers = User::where('actif', true)->count();
 
-        return view('intranet.departments.index', compact(
+        return view('intranet.departments.manage.index', compact(
             'departments', 
             'activeDepartments', 
             'totalUsers'
@@ -63,16 +63,15 @@ class DepartmentController extends Controller
      */
     public function create(): View
     {
-        $managers = User::where('is_active', true)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
+        $managers = User::where('actif', true)
+            ->orderBy('name')
             ->get();
 
         $departments = Department::where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('intranet.departments.create', compact('managers', 'departments'));
+        return view('intranet.departments.manage.create', compact('managers', 'departments'));
     }
 
     /**
@@ -101,7 +100,7 @@ class DepartmentController extends Controller
         $department = Department::create($validated);
 
         return redirect()
-            ->route('intranet.departments.show', $department)
+            ->route('intranet.departments.manage.show', $department)
             ->with('success', 'Département créé avec succès.');
     }
 
@@ -120,7 +119,7 @@ class DepartmentController extends Controller
             'this_month' => 0,
         ];
 
-        return view('intranet.departments.show', compact('department', 'users', 'ticketStats'));
+        return view('intranet.departments.manage.show', compact('department', 'users', 'ticketStats'));
     }
 
     /**
@@ -128,9 +127,8 @@ class DepartmentController extends Controller
      */
     public function edit(Department $department): View
     {
-        $managers = User::where('is_active', true)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
+        $managers = User::where('actif', true)
+            ->orderBy('name')
             ->get();
 
         $departments = Department::where('is_active', true)
@@ -138,7 +136,7 @@ class DepartmentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('intranet.departments.edit', compact('department', 'managers', 'departments'));
+        return view('intranet.departments.manage.edit', compact('department', 'managers', 'departments'));
     }
 
     /**
@@ -167,7 +165,7 @@ class DepartmentController extends Controller
         $department->update($validated);
 
         return redirect()
-            ->route('intranet.departments.show', $department)
+            ->route('intranet.departments.manage.show', $department)
             ->with('success', 'Département mis à jour avec succès.');
     }
 
@@ -193,7 +191,7 @@ class DepartmentController extends Controller
         $department->delete();
 
         return redirect()
-            ->route('intranet.departments.index')
+            ->route('intranet.departments.manage.index')
             ->with('success', 'Département supprimé avec succès.');
     }
 }
