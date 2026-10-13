@@ -62,15 +62,20 @@ return [
     */
 
     'providers' => [
+        // Fournisseur de session : TOUJOURS la table locale `users`.
+        //
+        // L'authentification Active Directory ne passe PAS par un provider LDAP
+        // dédié : c'est le service App\Ldap\LdapAuthenticator qui vérifie le mot
+        // de passe contre l'AD, synchronise le compte local, puis ouvre la
+        // session via Auth::login(). Laravel n'a donc besoin que du provider
+        // Eloquent classique pour retrouver l'utilisateur par la suite.
+        //
+        // Avantage : fonctionne à l'identique avec ou sans ext-ldap, et le repli
+        // sur l'auth locale (admin de secours, comptes de démo) reste trivial.
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     /*

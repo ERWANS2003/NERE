@@ -12,11 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use LdapRecord\Laravel\Auth\AuthenticatesWithLdap;
+use LdapRecord\Laravel\Auth\LdapAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements LdapAuthenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, AuthenticatesWithLdap;
 
     /** Nombre d'echecs de connexion consecutifs avant verrouillage (EF1). */
     public const MAX_LOGIN_ATTEMPTS = 5;
@@ -48,6 +50,9 @@ class User extends Authenticatable
         'org_level',
         'hire_date',
         'birth_date',
+        // Liaison Active Directory (LdapRecord)
+        'guid',
+        'domain',
     ];
 
     protected $hidden = [

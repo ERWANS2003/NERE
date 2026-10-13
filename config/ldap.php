@@ -1,98 +1,95 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| Configuration LDAP / Active Directory (LdapRecord)
+|--------------------------------------------------------------------------
+|
+| Intégration avec l'Active Directory de NÉRÉ Mining.
+|
+| Infos fournies par la DSI :
+|   - Domaine AD        : neremining.com
+|   - DC principal      : KAR-NM-DC02.neremining.com (10.226.70.32)
+|   - DC secondaire     : 10.226.70.31
+|   - Base DN           : DC=neremining,DC=com
+|   - Compte de service : neremining\admt  (lecture seule)
+|   - Protocole         : LDAPS, port 636 (chiffré)
+|
+| Les valeurs sensibles (hôtes, compte de service, mot de passe) vivent dans
+| le fichier .env du serveur, jamais dans le dépôt. Les valeurs par défaut
+| ci-dessous reprennent les infos DSI pour fonctionner même sans .env complet,
+| sauf le mot de passe qui reste vide par sécurité.
+|
+*/
+
 return [
 
     /*
     |--------------------------------------------------------------------------
-    | LDAP / Active Directory Configuration
+    | Connexion LDAP par défaut
     |--------------------------------------------------------------------------
-    |
-    | Configuration pour l'intégration avec Active Directory de NERE Mining
-    |
     */
 
-    'enabled' => env('LDAP_ENABLED', false),
+    'default' => env('LDAP_CONNECTION', 'default'),
 
     /*
     |--------------------------------------------------------------------------
-    | Serveur LDAP
+    | Connexions LDAP
     |--------------------------------------------------------------------------
     */
 
-    'host' => env('LDAP_HOST', 'ldap://ad.nere-mining.com'),
-    'port' => env('LDAP_PORT', 389),
+    'connections' => [
+
+        'default' => [
+            // Les deux contrôleurs de domaine : LdapRecord bascule sur le
+            // secondaire si le principal ne répond pas.
+            'hosts' => array_filter(explode(',', (string) env(
+                'LDAP_HOSTS',
+                '10.226.70.32,10.226.70.31'
+            ))),
+
+            'username' => env('LDAP_USERNAME', 'neremining\\admt'),
+            'password' => env('LDAP_PASSWORD', ''),
+            'port' => (int) env('LDAP_PORT', 636),
+            'base_dn' => env('LDAP_BASE_DN', 'DC=neremining,DC=com'),
+
+            // Chiffrement (LdapRecord v4) :
+            //  - LDAPS : protocol = « ldaps » + port 636 (connexion chiffrée d'emblée) ;
+            //  - StartTLS : LDAP_PROTOCOL=ldap + LDAP_TLS=true + port 389.
+            'protocol' => env('LDAP_PROTOCOL', 'ldaps'),
+            'use_tls' => (bool) env('LDAP_TLS', false),
+            'use_starttls' => (bool) env('LDAP_STARTTLS', false),
+
+            'timeout' => (int) env('LDAP_TIMEOUT', 5),
+
+            // Ne pas suivre les référrals : évite les redirections AD qui font
+            // échouer les recherches sur un domaine à plusieurs contrôleurs.
+            'follow_referrals' => false,
+        ],
+
+    ],
 
     /*
     |--------------------------------------------------------------------------
-    | Base DN (Distinguished Name)
+    | Journalisation LDAP
     |--------------------------------------------------------------------------
     |
-    | Exemple: DC=nere-mining,DC=com
+    | Trace les opérations LDAP dans les logs Laravel. Utile pour diagnostiquer
+    | la connexion au DC ; peut être désactivé en production une fois stable.
     |
     */
 
-    'base_dn' => env('LDAP_BASE_DN', 'DC=nere-mining,DC=com'),
+    'logging' => env('LDAP_LOGGING', true),
 
     /*
     |--------------------------------------------------------------------------
-    | Compte de service
-    |--------------------------------------------------------------------------
-    |
-    | Compte utilisé pour lire l'annuaire AD
-    |
-    */
-
-    'bind_dn' => env('LDAP_BIND_DN', 'CN=Service Account,CN=Users,DC=nere-mining,DC=com'),
-    'bind_password' => env('LDAP_BIND_PASSWORD', ''),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filtres de recherche
+    | Cache LDAP
     |--------------------------------------------------------------------------
     */
 
-    'user_filter' => env('LDAP_USER_FILTER', '(&(objectClass=user)(objectCategory=person))'),
-    
-    /*
-    |--------------------------------------------------------------------------
-    | OU des utilisateurs
-    |--------------------------------------------------------------------------
-    |
-    | Unité d'organisation où se trouvent les utilisateurs
-    | Exemple: OU=Employees,DC=nere-mining,DC=com
-    |
-    */
-
-    'users_ou' => env('LDAP_USERS_OU', 'OU=Users,DC=nere-mining,DC=com'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Synchronisation automatique
-    |--------------------------------------------------------------------------
-    */
-
-    'auto_sync' => env('LDAP_AUTO_SYNC', false),
-    'sync_schedule' => env('LDAP_SYNC_SCHEDULE', 'daily'), // daily, hourly, etc.
-
-    /*
-    |--------------------------------------------------------------------------
-    | Mapping des attributs
-    |--------------------------------------------------------------------------
-    |
-    | Correspondance entre attributs LDAP et colonnes de la base
-    |
-    */
-
-    'attribute_map' => [
-        'username' => 'samaccountname',
-        'email' => 'mail',
-        'first_name' => 'givenname',
-        'last_name' => 'sn',
-        'display_name' => 'displayname',
-        'department' => 'department',
-        'title' => 'title',
-        'phone' => 'telephonenumber',
-        'mobile' => 'mobile',
+    'cache' => [
+        'enabled' => env('LDAP_CACHE', false),
+        'driver' => env('CACHE_STORE', 'file'),
     ],
 
 ];

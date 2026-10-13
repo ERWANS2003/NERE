@@ -40,6 +40,33 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // 1) Tentative Active Directory (si activé). Trois issues possibles :
+        //    - true  : authentifié via l'AD, session ouverte → terminé ;
+        //    - false : trouvé dans l'AD mais refusé (mot de passe faux ou compte
+        //              désactivé) → échec, sans repli local ;
+        //    - null  : pas un compte AD / AD indisponible → on tente le local.
+        $resultatAd = app(\App\Ldap\LdapAuthenticator::class)->attempt(
+            $this->identifiantBrut(),
+            $this->string('password')->value(),
+            $this->boolean('remember'),
+        );
+
+        if ($resultatAd === true) {
+            RateLimiter::clear($this->throttleKey());
+
+            return;
+        }
+
+        if ($resultatAd === false) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'identifiant' => trans('auth.failed'),
+            ]);
+        }
+
+        // 2) Repli : authentification locale (admin de secours, comptes de démo,
+        //    ou environnements sans AD).
         $user = $this->userByIdentifiant();
 
         // Meme message pour « compte inconnu » et « mot de passe faux » : sinon la
