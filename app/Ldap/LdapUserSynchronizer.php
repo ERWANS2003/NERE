@@ -33,13 +33,21 @@ class LdapUserSynchronizer
      */
     public function __invoke(User $database, LdapRecordModel $ldap): array
     {
+        $sam = $this->first($ldap, 'samaccountname');
+
         $attrs = [
             'name' => $this->first($ldap, 'displayname')
                 ?? trim($this->first($ldap, 'givenname').' '.$this->first($ldap, 'sn'))
                 ?: $this->first($ldap, 'cn'),
 
+            // La colonne email est NOT NULL : beaucoup de comptes AD n'ont pas de
+            // « mail » renseigné. On retombe sur l'UPN, puis sur une adresse de
+            // substitution déterministe (login@domaine) pour satisfaire la base
+            // sans jamais inventer une vraie boîte. Ces adresses « .local » sont
+            // reconnaissables et pourront être corrigées quand l'AD sera complété.
             'email' => $this->first($ldap, 'mail')
-                ?? $this->first($ldap, 'userprincipalname'),
+                ?? $this->first($ldap, 'userprincipalname')
+                ?? ($sam ? Str::lower($sam).'@ad.neremining.local' : null),
 
             'actif' => ! $this->estDesactiveDansAd($ldap),
         ];

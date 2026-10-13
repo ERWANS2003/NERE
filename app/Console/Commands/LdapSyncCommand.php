@@ -36,9 +36,10 @@ class LdapSyncCommand extends Command
         $imported = 0;
         $updated = 0;
         $disabled = 0;
+        $ignores = 0;
 
         try {
-            $ldapUsers = LdapUser::query()->paginate(500);
+            $ldapUsers = LdapUser::query()->paginate(1000);
         } catch (\Throwable $e) {
             $this->error('AD injoignable : '.$e->getMessage());
 
@@ -47,12 +48,21 @@ class LdapSyncCommand extends Command
 
         foreach ($ldapUsers as $ldap) {
             $guid = $ldap->getConvertedGuid();
-            if (blank($guid)) {
+            $sam = $ldap->getFirstAttribute('samaccountname');
+
+            // Filtre : on ignore les comptes système / techniques et les entrées
+            // sans identité exploitable (pas de nom affiché ni de login).
+            if (blank($guid) || blank($sam) || $this->estComptesSysteme($ldap, $sam)) {
+                $ignores++;
+
                 continue;
             }
 
             $user = User::query()->where('guid', $guid)->first()
-                ?? User::query()->where('email', $ldap->getFirstAttribute('mail'))->first()
+                ?? ($this->first($ldap, 'mail')
+                    ? User::query()->where('email', $this->first($ldap, 'mail'))->first()
+                    : null)
+                ?? User::query()->where('matricule', $sam)->first()
                 ?? new User();
 
             $existait = $user->exists;
@@ -60,6 +70,15 @@ class LdapSyncCommand extends Command
             $user->guid = $guid;
             $user->domain = $domain;
             $attributs = $synchronizer($user, $ldap);
+
+            // Collision d'email : deux comptes AD distincts peuvent porter la même
+            // adresse (alias, comptes partagés). La colonne est unique en base :
+            // on rend l'adresse unique en la suffixant avec le login, sans perdre
+            // le compte ni écraser l'autre.
+            if (! empty($attributs['email'])) {
+                $attributs['email'] = $this->emailUnique($attributs['email'], $sam, $user->id);
+            }
+
             $user->forceFill($attributs);
 
             if (! ($attributs['actif'] ?? true)) {
@@ -74,11 +93,71 @@ class LdapSyncCommand extends Command
         }
 
         $this->newLine();
-        $this->line("  Importés  : {$imported}");
-        $this->line("  Mis à jour: {$updated}");
-        $this->line("  Désactivés (AD) : {$disabled}");
+        $this->line("  Importés   : {$imported}");
+        $this->line("  Mis à jour : {$updated}");
+        $this->line("  Ignorés (système/incomplets) : {$ignores}");
+        $this->line("  Dont désactivés dans l'AD : {$disabled}");
         $this->info($dryRun ? 'Simulation terminée.' : 'Synchronisation terminée.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Comptes à ne jamais importer : comptes intégrés Windows et comptes
+     * techniques (service, admin AD) qui ne sont pas des employés.
+     */
+    private function estComptesSysteme(LdapUser $ldap, string $sam): bool
+    {
+        $exclus = [
+            'guest', 'krbtgt', 'defaultaccount', 'administrator',
+            'admt', // compte de service LDAP
+        ];
+
+        if (in_array(mb_strtolower($sam), $exclus, true)) {
+            return true;
+        }
+
+        // Comptes machine / ordinateur : leur sAMAccountName se termine par « $ »
+        // (ex. EDV-OPS$). Ce ne sont pas des employés.
+        if (str_ends_with($sam, '$')) {
+            return true;
+        }
+
+        // Sans nom affiché, l'entrée n'a pas d'intérêt dans l'annuaire.
+        return blank($this->first($ldap, 'displayname'))
+            && blank($this->first($ldap, 'cn'));
+    }
+
+    /**
+     * Garantit l'unicité de l'email en base. Si l'adresse est déjà prise par un
+     * AUTRE utilisateur, on la rend unique en insérant le login :
+     * « jdupont@x.com » devient « jdupont+sam@x.com ».
+     */
+    private function emailUnique(string $email, ?string $sam, ?int $idCourant): string
+    {
+        $existe = User::query()
+            ->where('email', $email)
+            ->when($idCourant, fn ($q) => $q->where('id', '!=', $idCourant))
+            ->exists();
+
+        if (! $existe) {
+            return $email;
+        }
+
+        if ($sam && str_contains($email, '@')) {
+            [$local, $domaine] = explode('@', $email, 2);
+
+            return $local.'+'.mb_strtolower($sam).'@'.$domaine;
+        }
+
+        // Dernier recours : préfixe aléatoire court.
+        return \Illuminate\Support\Str::random(6).'.'.$email;
+    }
+
+    private function first(LdapUser $ldap, string $attr): ?string
+    {
+        $v = $ldap->getFirstAttribute($attr);
+
+        return is_string($v) && $v !== '' ? $v : null;
     }
 }
