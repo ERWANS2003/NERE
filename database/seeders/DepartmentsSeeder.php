@@ -47,6 +47,14 @@ class DepartmentsSeeder extends Seeder
     {
         return [
             [
+                'code' => 'IT',
+                'name' => 'Département IT',
+                'tag' => 'Technologies',
+                'description' => 'Ordinateurs, réseau, logiciels, comptes et support technique.',
+                'icon' => 'informatique',
+                'color' => '#2f6f9f',
+            ],
+            [
                 'code' => 'ADMIN',
                 'name' => 'Administration de la mine',
                 'tag' => 'Administration',
@@ -101,14 +109,6 @@ class DepartmentsSeeder extends Seeder
                 'description' => "Demandes d'achat, gestion des stocks, fournisseurs et magasin.",
                 'icon' => 'logistique',
                 'color' => '#166a7a',
-            ],
-            [
-                'code' => 'IT',
-                'name' => 'Département IT',
-                'tag' => 'Technologies',
-                'description' => 'Ordinateurs, réseau, logiciels, comptes et support technique.',
-                'icon' => 'informatique',
-                'color' => '#2f6f9f',
             ],
             [
                 'code' => 'RELCOM',
