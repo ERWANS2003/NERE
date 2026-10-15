@@ -54,32 +54,59 @@ et alignent le nom de la colonne d'activation des utilisateurs. Elles préserven
 les données existantes. Si la migration échoue, arrêtez-vous et consultez le
 journal Laravel avant de continuer.
 
-## 5. Vérifier la configuration Active Directory si nécessaire
+## 5. Configurer Active Directory si l'authentification AD est activée
 
-N'éditez pas les secrets dans le dépôt. Le fichier
-`C:\inetpub\wwwroot\itsm-nere-mining\.env` doit contenir les paramètres LDAP
-propres à votre environnement, par exemple :
+Les secrets restent uniquement dans le `.env` de production et ne doivent jamais
+être copiés dans Git, un ticket ou un journal partagé. Configurez le compte de
+service AD en lecture seule (pas le mot de passe de chaque utilisateur) et les
+paramètres de connexion correspondant au réseau du serveur :
 
 ```
 # Active Directory
 LDAP_ENABLED=true
-AUTH_PROVIDER_DRIVER=ldap
-LDAP_HOSTS=<IP_DC_1>,<IP_DC_2>
+LDAP_HOSTS=<HOTE_OU_IP_DC_1>,<HOTE_OU_IP_DC_2>
 LDAP_BASE_DN="DC=<domaine>,DC=<suffixe>"
-LDAP_USERNAME="<DOMAINE>\<COMPTE_DE_SERVICE>"
-LDAP_PASSWORD=<MOT_DE_PASSE_DU_COMPTE_DE_SERVICE>
+LDAP_USERNAME="<DOMAINE>\<COMPTE_DE_SERVICE_LECTURE>"
+LDAP_PASSWORD="<SECRET_DU_COMPTE_DE_SERVICE>"
 LDAP_LOCAL_FALLBACK=true
 
-# Chiffrement :
-#  - si LDAPS est actif sur le DC (certificat posé) :
+# Transport recommandé en production : LDAPS avec un certificat DC approuvé
 LDAP_PROTOCOL=ldaps
 LDAP_PORT=636
-#  - sinon, temporairement en clair (réseau interne de confiance) :
-# LDAP_PROTOCOL=ldap
-# LDAP_PORT=389
+LDAP_TLS=false
+LDAP_STARTTLS=false
 ```
 
-> ⚠️ Mettre `LDAP_PASSWORD` entre guillemets (il contient des `@`).
+N'ajoutez pas `AUTH_PROVIDER_DRIVER` : l'application effectue l'authentification
+AD dans son propre service puis conserve le provider de session Laravel habituel.
+`LDAP_ENABLED=true` active le parcours AD ; `LDAP_LOCAL_FALLBACK=true` conserve
+le repli sur les comptes locaux. L'identifiant saisi est le `sAMAccountName`
+(login AD) ou l'adresse e-mail/UPN.
+
+LDAP sans chiffrement (port 389, `LDAP_PROTOCOL=ldap`, TLS et StartTLS désactivés)
+ne doit servir qu'à un diagnostic temporaire sur un réseau interne maîtrisé :
+le bind transmet les identifiants sans chiffrement. Ne l'utilisez pas en
+production. Si le serveur ne prend pas encore en charge LDAPS, faites activer
+et valider son certificat avant d'activer l'authentification AD.
+
+Après toute modification du `.env`, reconstruisez la configuration puis testez
+le bind et la lecture de l'annuaire, avant de demander aux utilisateurs de se
+connecter :
+
+```powershell
+php artisan config:clear
+php artisan ldap:test
+php artisan ldap:sync --dry-run
+php artisan optimize
+```
+
+`ldap:test` vérifie le bind de la connexion configurée ; `ldap:sync --dry-run`
+vérifie également que le compte de service peut lire les entrées AD, sans écrire
+dans la base. Ne lancez pas `ldap:sync` sans `--dry-run` lors d'une simple mise à
+jour. Si l'un des tests échoue, arrêtez-vous et corrigez le compte de service,
+la base DN, les permissions de recherche, le réseau ou le certificat. N'envoyez
+jamais un mot de passe d'utilisateur ou de service dans les logs ou la sortie
+d'un diagnostic.
 
 ## 6. Reconstruire les caches et redémarrer les workers
 
@@ -105,8 +132,10 @@ administratifs. Consultez les erreurs éventuelles avec :
 Get-Content storage\logs\laravel.log -Tail 60
 ```
 
-La synchronisation LDAP n'est pas nécessaire à chaque mise à jour. Ne relancez
-`ldap:sync` que si vous souhaitez réellement synchroniser les comptes.
+La synchronisation LDAP n'est pas nécessaire à chaque mise à jour. Les
+utilisateurs AD sont synchronisés lors de leur première connexion si la recherche
+et le bind sont opérationnels ; ne lancez une synchronisation réelle que si vous
+souhaitez importer les comptes à l'avance et après validation du mode simulation.
 
 ---
 
@@ -116,10 +145,16 @@ La synchronisation LDAP n'est pas nécessaire à chaque mise à jour. Ne relance
 
 ```powershell
 php artisan ldap:test
+php artisan ldap:sync --dry-run
 ```
-- En cas d'échec « Can't contact LDAP server » sur le port 636, vérifiez d'abord
-  le certificat LDAPS et la connectivité réseau. N'utilisez le port 389 qu'en
-  accord avec votre politique de sécurité.
+- « Can't contact LDAP server » : vérifiez les hôtes, le port, le pare-feu et le
+  certificat LDAPS.
+- « Search: Operations error » : vérifiez le compte de service, son secret, la
+  base DN et ses droits de lecture. Un test de bind réussi ne garantit pas que
+  la recherche AD soit autorisée.
+- Si les deux diagnostics réussissent, vérifiez la connexion avec un compte AD
+  autorisé sur la page de connexion, puis confirmez l'accès à l'intranet. Ne
+  demandez pas à l'utilisateur de communiquer son mot de passe.
 
 ### Synchroniser l'annuaire uniquement sur demande
 
@@ -136,7 +171,6 @@ php artisan ldap:sync             # import réel (~300 comptes)
 - **Revenir à l'auth locale** (désactiver l'AD sans redéployer) :
   ```
   LDAP_ENABLED=false
-  AUTH_PROVIDER_DRIVER=eloquent
   ```
   puis `php artisan config:clear`.
 - **Permissions** : `storage/` et `bootstrap/cache/` doivent être inscriptibles

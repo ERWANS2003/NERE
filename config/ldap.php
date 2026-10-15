@@ -59,9 +59,10 @@ return [
             //  - clair   : LDAP_PROTOCOL=ldap (ou vide) + port 389 — à n'utiliser
             //              que pour un diagnostic sur réseau interne de confiance.
             //
-            // La clé « protocol » n'est transmise QUE pour LDAPS : avec l'ext-ldap
-            // de Windows, forcer protocol=ldap casse ldap_connect (« Bad parameter »).
-            ...(env('LDAP_PROTOCOL', 'ldaps') === 'ldaps' ? ['protocol' => 'ldaps'] : []),
+            // LdapRecord attend le schéma URI complet (ldaps://) pour protocol.
+            // La clé n'est transmise que pour LDAPS : l'ext-ldap Windows rejette
+            // protocol=ldap dans ldap_connect (« Bad parameter »).
+            ...(env('LDAP_PROTOCOL', 'ldaps') === 'ldaps' ? ['protocol' => 'ldaps://'] : []),
 
             'use_tls' => (bool) env('LDAP_TLS', false),
             'use_starttls' => (bool) env('LDAP_STARTTLS', false),
