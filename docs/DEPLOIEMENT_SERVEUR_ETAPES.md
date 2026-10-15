@@ -1,58 +1,40 @@
 # Mise à jour de l'application sur le serveur Windows
 
-À exécuter dans l'ordre, en PowerShell, depuis `C:\inetpub\wwwroot\itsm-nere-mining`.
+Le script `update-windows-server.ps1` automatise une mise à jour d'une
+installation IIS existante. Exécutez PowerShell en administrateur depuis
+`C:\inetpub\wwwroot\itsm-nere-mining`.
 
 > Sauvegardez la base PostgreSQL avant toute mise à jour. Ne lancez jamais
 > `migrate:fresh`, `migrate:refresh` ni un import de dump pendant un déploiement.
 
----
-
-## 1. Récupérer le code
-
 ```powershell
-git pull --ff-only origin main
+.\update-windows-server.ps1 -BackupConfirmed
 ```
 
-Si Git refuse le fast-forward ou signale des modifications locales, arrêtez-vous
-et examinez l'état du dépôt au lieu de forcer la fusion.
+Le paramètre `-BackupConfirmed` confirme que la sauvegarde PostgreSQL a été faite.
+Le script vérifie les prérequis, `.env`, `APP_KEY`, `APP_DEBUG`, la branche `main`
+et l'absence de changements locaux. Il s'arrête au premier échec et exécute :
+`git pull --ff-only`, installation Composer, `npm ci`/build, nettoyage des caches,
+migrations `--force`, reconstruction des caches, redémarrage des workers et IIS.
+Il ne crée pas de `.env`, ne génère pas de clé et ne modifie pas la configuration
+des sites IIS.
 
-## 2. Vérifier `.env` et les prérequis
+Si Git signale un dépôt modifié, arrêtez-vous et examinez les changements. Ne
+forcez pas la fusion et ne supprimez pas les fichiers locaux pour faire passer
+le déploiement. En cas d'échec d'une migration, arrêtez-vous et consultez
+`storage\logs\laravel.log` avant toute nouvelle tentative.
 
-Conservez le `.env` de production existant. Ne lancez pas `key:generate` après
-la première installation : changer `APP_KEY` rendrait illisibles les données
-chiffrées et invaliderait les sessions. Vérifiez notamment la base de données,
-`APP_DEBUG=false`, les paramètres LDAP et l'extension PHP LDAP :
+Conservez le `.env` de production et sa `APP_KEY`. Le script refuse une clé
+manquante ou `APP_DEBUG=true`. Vérifiez les paramètres de base de données et
+LDAP avant de le lancer. Le projet requiert PHP 8.3 ou plus récent et l'extension
+LDAP si l'authentification AD est activée :
 
 ```powershell
 php -v
 php -m | Select-String ldap
 ```
 
-Ce projet requiert PHP 8.3 ou plus récent. Si l'extension LDAP manque, activez-la
-dans `C:\PHP\php.ini` puis redémarrez IIS après le déploiement.
-
-## 3. Installer les dépendances PHP et construire les assets
-
-```powershell
-composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-npm ci
-npm run build
-```
-
-`npm ci` doit aussi installer les dépendances de développement Vite/Tailwind
-nécessaires pour le build.
-
-## 4. Appliquer les migrations sans réinitialiser la base
-
-```powershell
-php artisan optimize:clear
-php artisan migrate --force
-```
-
-Les nouvelles migrations ajoutent les menus, journaux d'audit et notifications,
-et alignent le nom de la colonne d'activation des utilisateurs. Elles préservent
-les données existantes. Si la migration échoue, arrêtez-vous et consultez le
-journal Laravel avant de continuer.
+Si l'extension LDAP manque, activez-la dans `C:\PHP\php.ini`, puis redémarrez IIS.
 
 ## 5. Configurer Active Directory si l'authentification AD est activée
 
@@ -94,11 +76,12 @@ le bind et la lecture de l'annuaire, avant de demander aux utilisateurs de se
 connecter :
 
 ```powershell
-php artisan config:clear
-php artisan ldap:test
-php artisan ldap:sync --dry-run
-php artisan optimize
+.\verify-ad-configuration.ps1
 ```
+
+Le script exécute ces quatre commandes dans l'ordre et s'arrête dès qu'une
+commande échoue. Lancez-le depuis le dossier de l'application après `git pull`
+et la configuration du `.env`.
 
 `ldap:test` vérifie le bind de la connexion configurée ; `ldap:sync --dry-run`
 vérifie également que le compte de service peut lire les entrées AD, sans écrire
@@ -110,13 +93,14 @@ d'un diagnostic.
 
 ## 6. Reconstruire les caches et redémarrer les workers
 
+Le script de mise à jour réalise déjà ces opérations. Si vous avez effectué les
+étapes manuellement au lieu d'utiliser le script, exécutez :
+
 ```powershell
 php artisan optimize
 php artisan queue:restart
 iisreset
 ```
-
-`queue:restart` est utile si un worker Laravel tourne en service Windows.
 
 ## 7. Vérifier l'application
 
