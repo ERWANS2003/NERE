@@ -13,21 +13,16 @@ Route::get('/', function (Request $request) {
 
 // Routes d'authentification avec Breeze
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-    
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-    
-    // Redirection de l'ancienne URL
-    Route::get('/connexion', function () {
+    Route::get('/login', function () {
         return redirect()->route('login');
     });
+
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 });
 
 // Routes protégées - logout + profil
 Route::middleware(['auth'])->group(function () {
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 
     // Profil utilisateur (alias profile.edit pour les vues intranet, profil.* pour les vues profil)
     Route::get('/profil', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profil.edit');
