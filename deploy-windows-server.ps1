@@ -1,4 +1,4 @@
-# Script de déploiement pour Windows Server IIS
+﻿# Script de déploiement pour Windows Server IIS
 # Utilisation: .\deploy-windows-server.ps1
 
 param(
@@ -11,8 +11,10 @@ Write-Host "🚀 Déploiement ITSM NERE Mining sur Windows Server..." -Foregroun
 # Configuration
 $SiteName = "ITSM-NERE-Mining"
 $AppPoolName = "ITSM-NERE-AppPool"
-$SitePath = "C:\inetpub\wwwroot\itsm-nere"
+$SitePath = $PSScriptRoot
+$PublicPath = Join-Path $SitePath "public"
 $LogPath = "C:\logs\itsm-nere"
+Set-Location -Path $SitePath
 
 # Vérification des prérequis
 Write-Host "📋 Vérification des prérequis..." -ForegroundColor Yellow
@@ -22,7 +24,7 @@ try {
     $phpVersion = php -v
     Write-Host "✅ PHP installé: $($phpVersion[0])" -ForegroundColor Green
 } catch {
-    Write-Host "❌ PHP non trouvé. Veuillez installer PHP 8.2+ avec les extensions requises." -ForegroundColor Red
+    Write-Host "❌ PHP non trouvé. Veuillez installer PHP 8.3+ avec les extensions requises." -ForegroundColor Red
     exit 1
 }
 
@@ -75,7 +77,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Installation des dépendances Node.js
 Write-Host "📦 Installation des dépendances Node.js..." -ForegroundColor Yellow
-npm ci --only=production
+npm ci
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Erreur lors de l'installation des dépendances Node.js" -ForegroundColor Red
@@ -87,7 +89,7 @@ Write-Host "🏗️ Construction des assets..." -ForegroundColor Yellow
 npm run build
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Erreur lors de la construction des assets" -ForegroundColor Red
+    Write-Host "Erreur lors de la construction des assets" -ForegroundColor Red
     exit 1
 }
 
@@ -149,9 +151,11 @@ if (Get-Website -Name $SiteName -ErrorAction SilentlyContinue) {
 }
 
 if (-not (Get-Website -Name $SiteName -ErrorAction SilentlyContinue)) {
-    New-Website -Name $SiteName -ApplicationPool $AppPoolName -PhysicalPath (Get-Location).Path -Port 80
+    New-Website -Name $SiteName -ApplicationPool $AppPoolName -PhysicalPath $PublicPath -Port 80
     Write-Host "✅ Site web '$SiteName' créé sur le port 80" -ForegroundColor Green
 }
+
+Set-ItemProperty -Path "IIS:\Sites\$SiteName" -Name physicalPath -Value $PublicPath
 
 # Configuration des permissions
 Write-Host "🔐 Configuration des permissions..." -ForegroundColor Yellow
@@ -175,19 +179,18 @@ if (Test-Path .env) {
     icacls .env /grant "${appPoolIdentity}:R" /Q
 }
 
-# Cache des configurations Laravel
-Write-Host "🗂️ Mise en cache des configurations..." -ForegroundColor Yellow
-php artisan config:cache
-php artisan route:cache  
-php artisan view:cache
-
 # Migrations de base de données
 Write-Host "🗄️ Mise à jour de la base de données..." -ForegroundColor Yellow
 php artisan migrate --force
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "⚠️ Erreur lors des migrations (vérifiez la configuration de la base de données)" -ForegroundColor Yellow
+    Write-Host "❌ Erreur lors des migrations (vérifiez la configuration de la base de données)" -ForegroundColor Red
+    exit 1
 }
+
+# Cache des configurations Laravel
+Write-Host "🗂️ Mise en cache des configurations..." -ForegroundColor Yellow
+php artisan optimize
 
 # Optimisation finale
 Write-Host "⚡ Optimisation finale..." -ForegroundColor Yellow
@@ -215,9 +218,3 @@ Write-Host "3. Vérifiez les logs dans: $LogPath" -ForegroundColor White
 Write-Host "4. Configurez HTTPS si nécessaire" -ForegroundColor White
 Write-Host ""
 Write-Host "🌐 L'application est maintenant déployée sur IIS!" -ForegroundColor Green
-
-# Affichage des informations de connexion
-Write-Host ""
-Write-Host "🔐 Informations de connexion de test:" -ForegroundColor Magenta
-Write-Host "Email: admin@nere-mining.com" -ForegroundColor White
-Write-Host "Mot de passe: admin123" -ForegroundColor White

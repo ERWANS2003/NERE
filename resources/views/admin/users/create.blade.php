@@ -77,6 +77,19 @@
                 </div>
             </div>
 
+            <!-- Localisation repas -->
+            <div class="mb-6 pb-6 border-b border-gray-200">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Localisation restauration</label>
+                <p class="text-sm text-gray-500 mb-3">Laissez vide si cet utilisateur ne doit pas recevoir les menus du personnel.</p>
+                <select name="meal_location_id" class="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded focus:ring-nere-500 focus:border-nere-500">
+                    <option value="">— Aucune —</option>
+                    @foreach($mealLocations as $location)
+                        <option value="{{ $location->id }}" @selected((string) old('meal_location_id') === (string) $location->id)>{{ $location->name }}</option>
+                    @endforeach
+                </select>
+                @error('meal_location_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
             <!-- Départements -->
             <div class="mb-6 pb-6 border-b border-gray-200">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Départements</label>

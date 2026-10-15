@@ -53,6 +53,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         // Liaison Active Directory (LdapRecord)
         'guid',
         'domain',
+        'meal_location_id',
     ];
 
     protected $hidden = [
@@ -156,6 +157,20 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function favoriteResources(): BelongsToMany
     {
         return $this->belongsToMany(Resource::class, 'resource_user')->withTimestamps();
+    }
+
+    /**
+     * Localisation de restauration définie dans l'intranet, jamais par l'AD.
+     */
+    public function mealLocation(): BelongsTo
+    {
+        return $this->belongsTo(MealLocation::class, 'meal_location_id');
+    }
+
+    /** Menus hebdomadaires choisis par l'utilisateur. */
+    public function weeklyMenuChoices(): HasMany
+    {
+        return $this->hasMany(WeeklyMenuChoice::class);
     }
 
     /**
@@ -298,6 +313,28 @@ class User extends Authenticatable implements LdapAuthenticatable
         $role = $this->roleIn($departmentId);
 
         return $role !== null && in_array($role, $roles, true);
+    }
+
+    /**
+     * Indique si l'utilisateur dirige au moins un département. Les contrôles
+     * d'accès peuvent l'utiliser sans charger toute la relation en mémoire.
+     */
+    public function managesAnyDepartment(): bool
+    {
+        return $this->is_super_admin
+            || $this->departments()->wherePivot('role', DepartmentRole::Director->value)->exists();
+    }
+
+    /**
+     * Indique si l'utilisateur dispose d'un rôle opérationnel dans au moins un
+     * département (technicien ou directeur).
+     */
+    public function handlesAnyDepartment(): bool
+    {
+        return $this->is_super_admin
+            || $this->departments()
+                ->wherePivotIn('role', [DepartmentRole::Technician->value, DepartmentRole::Director->value])
+                ->exists();
     }
 
     /** Le directeur herite des droits technicien dans son departement. */

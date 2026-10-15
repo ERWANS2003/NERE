@@ -8,6 +8,7 @@ use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentCont
 use App\Http\Controllers\Intranet\DepartmentShowController;
 use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FormController;
+use App\Http\Controllers\Intranet\MenuChoiceController;
 use App\Http\Controllers\Intranet\NotificationController;
 use App\Http\Controllers\Intranet\OrganizationController;
 use App\Http\Controllers\Intranet\ResourceController;
@@ -114,6 +115,10 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::post('/tout-lu', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
         Route::post('/{notification}/lu', [NotificationController::class, 'markRead'])->name('mark-read');
     });
+
+    // Menu du personnel (choix hebdomadaires)
+    Route::get('/menu', [MenuChoiceController::class, 'index'])->name('menu.index');
+    Route::post('/menu/{menu}', [MenuChoiceController::class, 'store'])->name('menu.store');
 
     // Congés (Time Off)
     Route::prefix('time-off')->name('time-off.')->group(function () {
