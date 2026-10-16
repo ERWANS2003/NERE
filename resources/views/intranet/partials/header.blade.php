@@ -150,37 +150,4 @@
         </div>
     </div>
 
-    @if (request()->routeIs('intranet.home', 'intranet.dashboard'))
-        @php
-            $headerHour = (int) now()->format('H');
-            $headerGreeting = $headerHour < 18 ? 'Bonjour' : 'Bonsoir';
-            $headerFirstName = auth()->user()->first_name ?? explode(' ', auth()->user()->name)[0];
-        @endphp
-        <section
-            class="relative isolate overflow-hidden text-white"
-            style="background: linear-gradient(135deg, #3d0f0e 0%, #6b1d1a 55%, #c83530 100%);"
-        >
-            <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full border border-white/10"></div>
-            <div aria-hidden="true" class="pointer-events-none absolute -right-2 top-8 h-52 w-52 rounded-full border border-or-400/30"></div>
-            <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-1/3 h-64 w-64 rounded-full bg-or-400/10 blur-3xl"></div>
-            <div class="relative mx-auto max-w-screen-2xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
-                <div class="max-w-4xl">
-                    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                        <span class="h-2 w-2 rounded-full bg-or-400 shadow-[0_0_12px_rgba(255,210,90,0.9)]"></span>
-                        Espace collaborateur
-                    </div>
-                    <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                        Bienvenue dans l’intranet
-                        <span class="mt-1 block text-or-300">NÉRÉ Mining</span>
-                    </h1>
-                    <p class="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
-                        {{ $headerGreeting }}, {{ $headerFirstName }}. Retrouvez vos services, vos équipes et les informations essentielles de l’entreprise au même endroit.
-                    </p>
-                    <div class="mt-6 h-1 w-20 rounded-full bg-or-400"></div>
-                </div>
-            </div>
-            <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
-        </section>
-    @endif
-
 </header>
