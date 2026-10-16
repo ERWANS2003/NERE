@@ -1,38 +1,6 @@
 <x-intranet-layout title="Tableau de bord">
 
     {{-- ============================================================
-         JOUR 1 — Banner de bienvenue avec greeting dynamique
-    ============================================================ --}}
-    @php
-        $heure = (int) now()->format('H');
-        $salutation = $heure < 18 ? 'Bonjour' : 'Bonsoir';
-        $prenom = $user->first_name ?? explode(' ', $user->name)[0];
-    @endphp
-
-    <div class="mb-8">
-        <div class="relative overflow-hidden bg-nere-600 rounded-2xl p-8 text-white shadow-lg">
-            <!-- Décor -->
-            <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20"></div>
-            <div class="absolute bottom-0 right-20 w-40 h-40 bg-or-400/10 rounded-full -mb-10"></div>
-
-            <div class="relative">
-                <div class="flex items-center gap-2 text-white/80 text-sm mb-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <span>{{ \Carbon\Carbon::now()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</span>
-                </div>
-                <h1 class="text-3xl font-bold mb-2">
-                    {{ $salutation }}, {{ $prenom }} 👋
-                </h1>
-                <p class="text-white/90">
-                    Accédez aux services et aux formulaires de chaque département.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    {{-- ============================================================
          Statistiques rapides
     ============================================================ --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

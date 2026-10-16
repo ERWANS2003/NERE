@@ -1,44 +1,36 @@
 <!-- Header -->
-<header class="h-16 bg-white border-b border-graphite-200 flex items-center justify-between px-6">
+<header class="intranet-header shrink-0 border-b border-graphite-200 bg-white">
     
-    <!-- Left: Mobile Menu Toggle + Search -->
-    <div class="flex items-center gap-4 flex-1">
+    <!-- Navigation, search, notifications and user profile -->
+    <div class="flex min-h-16 items-center justify-between gap-3 px-4 sm:gap-5 sm:px-6">
         
-        <!-- Mobile Menu Toggle -->
-        <button 
-            @click="sidebarOpen = !sidebarOpen"
-            class="lg:hidden p-2 rounded-lg hover:bg-graphite-100 text-graphite-600 transition"
-            aria-label="Toggle menu"
-        >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-        </button>
+        <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+            <button
+                @click="sidebarOpen = !sidebarOpen"
+                class="rounded-lg p-2 text-graphite-600 transition hover:bg-graphite-100 lg:hidden"
+                aria-label="Ouvrir le menu"
+            >
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
 
-        @if (request()->routeIs('intranet.home', 'intranet.dashboard'))
-            <p class="hidden shrink-0 text-sm font-semibold text-graphite-800 lg:block">
-                Bienvenue dans l'intranet de NÉRÉ Mining
-            </p>
-        @endif
+            <button
+                @click="$dispatch('open-search')"
+                class="flex w-full max-w-xl min-w-0 items-center gap-3 rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2.5 transition hover:border-nere-200 hover:bg-white sm:px-4"
+                aria-label="Ouvrir la recherche"
+            >
+                <svg class="h-5 w-5 shrink-0 text-nere-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <span class="flex-1 truncate text-left text-sm text-graphite-500">Rechercher dans l’intranet...</span>
+                <kbd class="hidden items-center gap-1 rounded-md border border-graphite-200 bg-white px-2 py-1 text-xs font-semibold text-graphite-600 sm:inline-flex">
+                    <span class="text-xs">⌘</span>K
+                </kbd>
+            </button>
+        </div>
 
-        <!-- Search Bar -->
-        <button 
-            @click="$dispatch('open-search')"
-            class="flex items-center gap-3 px-4 py-2 bg-graphite-50 hover:bg-graphite-100 border border-graphite-200 rounded-lg transition max-w-md w-full"
-        >
-            <svg class="w-5 h-5 text-graphite-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <span class="text-graphite-500 text-sm flex-1 text-left">Rechercher...</span>
-            <kbd class="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-graphite-600 bg-white border border-graphite-200 rounded">
-                <span class="text-xs">⌘</span>K
-            </kbd>
-        </button>
-
-    </div>
-
-    <!-- Right: Date + Notifications + User Profile -->
-    <div class="flex items-center gap-6">
+        <div class="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
 
         <!-- Notifications -->
         <x-notification-dropdown />
@@ -155,6 +147,37 @@
 
         </div>
 
+        </div>
     </div>
+
+    @if (request()->routeIs('intranet.home', 'intranet.dashboard'))
+        @php
+            $headerHour = (int) now()->format('H');
+            $headerGreeting = $headerHour < 18 ? 'Bonjour' : 'Bonsoir';
+            $headerFirstName = auth()->user()->first_name ?? explode(' ', auth()->user()->name)[0];
+        @endphp
+        <section class="relative isolate overflow-hidden bg-gradient-to-br from-nere-900 via-nere-800 to-nere-600 text-white">
+            <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full border border-white/10"></div>
+            <div aria-hidden="true" class="pointer-events-none absolute -right-2 top-8 h-52 w-52 rounded-full border border-or-400/30"></div>
+            <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-1/3 h-64 w-64 rounded-full bg-or-400/10 blur-3xl"></div>
+            <div class="relative mx-auto max-w-screen-2xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+                <div class="max-w-4xl">
+                    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
+                        <span class="h-2 w-2 rounded-full bg-or-400 shadow-[0_0_12px_rgba(255,210,90,0.9)]"></span>
+                        Espace collaborateur
+                    </div>
+                    <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                        Bienvenue dans l’intranet
+                        <span class="mt-1 block text-or-300">NÉRÉ Mining</span>
+                    </h1>
+                    <p class="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+                        {{ $headerGreeting }}, {{ $headerFirstName }}. Retrouvez vos services, vos équipes et les informations essentielles de l’entreprise au même endroit.
+                    </p>
+                    <div class="mt-6 h-1 w-20 rounded-full bg-or-400"></div>
+                </div>
+            </div>
+            <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-or-400/80 to-transparent"></div>
+        </section>
+    @endif
 
 </header>

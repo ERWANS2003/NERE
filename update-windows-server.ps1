@@ -16,6 +16,7 @@ function Invoke-CheckedCommand {
         [string]$Executable,
 
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [string[]]$Arguments
     )
 
