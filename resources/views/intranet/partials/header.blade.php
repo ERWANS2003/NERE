@@ -156,7 +156,10 @@
             $headerGreeting = $headerHour < 18 ? 'Bonjour' : 'Bonsoir';
             $headerFirstName = auth()->user()->first_name ?? explode(' ', auth()->user()->name)[0];
         @endphp
-        <section class="relative isolate overflow-hidden bg-linear-to-br from-nere-900 via-nere-800 to-nere-600 text-white">
+        <section
+            class="relative isolate overflow-hidden text-white"
+            style="background: linear-gradient(135deg, #3d0f0e 0%, #6b1d1a 55%, #c83530 100%);"
+        >
             <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full border border-white/10"></div>
             <div aria-hidden="true" class="pointer-events-none absolute -right-2 top-8 h-52 w-52 rounded-full border border-or-400/30"></div>
             <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-1/3 h-64 w-64 rounded-full bg-or-400/10 blur-3xl"></div>
