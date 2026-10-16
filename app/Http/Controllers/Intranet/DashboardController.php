@@ -32,8 +32,7 @@ class DashboardController extends Controller
         // Tous les départements actifs pour la grille d'accueil.
         $departments = Department::active()
             ->withCount('services')
-            ->orderBy('position')
-            ->orderBy('name')
+            ->ordered()
             ->get();
 
         // Widget : 3 dernières annonces publiées.

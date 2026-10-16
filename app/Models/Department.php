@@ -74,7 +74,10 @@ class Department extends Model
 
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('position')->orderBy('name');
+        return $query
+            ->orderByRaw("CASE WHEN code = 'IT' THEN 0 ELSE 1 END")
+            ->orderBy('position')
+            ->orderBy('name');
     }
 
     public function users(): BelongsToMany

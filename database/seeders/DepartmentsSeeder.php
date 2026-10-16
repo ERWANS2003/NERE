@@ -56,7 +56,7 @@ class DepartmentsSeeder extends Seeder
             ],
             [
                 'code' => 'ADMIN',
-                'name' => 'Administration de la mine',
+                'name' => 'Administration',
                 'tag' => 'Administration',
                 'description' => 'Direction générale, réservations de salles et de véhicules, courrier et services généraux.',
                 'icon' => 'batiment',

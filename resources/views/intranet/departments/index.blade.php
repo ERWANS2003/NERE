@@ -13,7 +13,7 @@
     <!-- Departments Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        @foreach(\App\Models\Department::where('is_active', true)->withCount('services')->orderBy('position')->orderBy('name')->get() as $department)
+        @foreach(\App\Models\Department::active()->withCount('services')->ordered()->get() as $department)
             <a 
                 href="{{ route('intranet.departments.show', strtolower($department->code)) }}"
                 class="bg-white rounded-xl border-2 border-graphite-200 hover:border-nere-500 hover:shadow-lg transition-all duration-300 overflow-hidden group"
