@@ -14,10 +14,6 @@
         <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-1/3 h-64 w-64 rounded-full bg-or-400/10 blur-3xl"></div>
         <div class="relative mx-auto max-w-screen-2xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
             <div class="max-w-4xl">
-                <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                    <span class="h-2 w-2 rounded-full bg-or-400 shadow-[0_0_12px_rgba(255,210,90,0.9)]"></span>
-                    Espace collaborateur
-                </div>
                 <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                     Bienvenue dans l’intranet
                     <span class="mt-1 block text-or-300">NÉRÉ Mining</span>
