@@ -29,18 +29,26 @@
             </section>
 
             <section class="login-panel" aria-labelledby="login-title">
-                <div class="login-panel-emblem-wrap">
-                    <img
-                        class="login-panel-emblem"
-                        src="{{ asset('images/logo-nere-embleme.png') }}"
-                        alt="Emblème NÉRÉ"
-                    />
-                </div>
-                <div class="login-header">
-                    <h2 id="login-title">Connexion</h2>
-                </div>
+                <img
+                    class="login-floating-emblem"
+                    src="{{ asset('images/logo-nere-embleme.png') }}"
+                    alt=""
+                    aria-hidden="true"
+                />
+                <div class="login-panel-content">
+                    <div class="login-panel-emblem-wrap">
+                        <img
+                            class="login-panel-emblem"
+                            src="{{ asset('images/logo-nere-embleme.png') }}"
+                            alt="Emblème NÉRÉ"
+                        />
+                    </div>
+                    <div class="login-header">
+                        <h2 id="login-title">Connexion</h2>
+                    </div>
 
-                {{ $slot }}
+                    {{ $slot }}
+                </div>
             </section>
         </main>
         <script>

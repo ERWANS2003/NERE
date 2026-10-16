@@ -271,8 +271,25 @@
     }
 
     .login-panel {
-        @apply flex flex-col justify-center px-8 py-10 sm:px-12 lg:px-14;
+        @apply relative flex flex-col justify-center overflow-hidden px-8 py-10 sm:px-12 lg:px-14;
         animation: login-panel-enter 850ms 100ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    }
+
+    .login-floating-emblem {
+        position: absolute;
+        z-index: 0;
+        top: 50%;
+        left: 50%;
+        width: min(72vw, 34rem);
+        height: auto;
+        opacity: 0.055;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        animation: login-emblem-float 18s ease-in-out infinite;
+    }
+
+    .login-panel-content {
+        @apply relative z-10 w-full;
     }
 
     .login-panel-emblem-wrap {
@@ -280,7 +297,7 @@
     }
 
     .login-panel-emblem {
-        @apply size-[4.5rem] rounded-full bg-nere-50 p-1.5 object-contain;
+        @apply size-[clamp(7rem,12vw,10rem)] rounded-full bg-nere-50 p-3 object-contain;
         animation: login-emblem-enter 900ms 300ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
     }
 
@@ -408,6 +425,17 @@
     }
 }
 
+@keyframes login-emblem-float {
+    0%,
+    100% {
+        transform: translate(-50%, -50%) rotate(-8deg) scale(0.96);
+    }
+
+    50% {
+        transform: translate(-50%, -53%) rotate(8deg) scale(1.04);
+    }
+}
+
 @keyframes login-orbit {
     from {
         transform: rotate(-12deg) scale(0.94);
@@ -457,6 +485,7 @@
 
     .login-container,
     .login-panel,
+    .login-floating-emblem,
     .login-brand-logo-wrap,
     .login-brand-message h1,
     .login-panel-emblem,
