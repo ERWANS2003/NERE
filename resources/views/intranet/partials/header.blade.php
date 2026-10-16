@@ -15,6 +15,12 @@
             </svg>
         </button>
 
+        @if (request()->routeIs('intranet.home', 'intranet.dashboard'))
+            <p class="hidden shrink-0 text-sm font-semibold text-graphite-800 lg:block">
+                Bienvenue dans l'intranet de NÉRÉ Mining
+            </p>
+        @endif
+
         <!-- Search Bar -->
         <button 
             @click="$dispatch('open-search')"

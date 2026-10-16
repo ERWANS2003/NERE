@@ -4,9 +4,8 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Identifiant (email or matricule) -->
         <div class="input-group">
-            <label for="identifiant">EMAIL</label>
+            <label for="identifiant">Email ou username</label>
             <input id="identifiant" 
                    type="text" 
                    name="identifiant" 
@@ -14,15 +13,14 @@
                    required 
                    autofocus 
                    autocomplete="username" 
-                   placeholder="your@email.com" />
+                   placeholder="nom@nere-mining.com" />
             @if($errors->has('identifiant'))
-                <div class="error-message">{{ $errors->first('identifiant') }}</div>
+                <p class="error-message">{{ $errors->first('identifiant') }}</p>
             @endif
         </div>
 
-        <!-- Password -->
         <div class="input-group">
-            <label for="password">PASSWORD</label>
+            <label for="password">Mot de passe</label>
             <input id="password" 
                    type="password"
                    name="password"
@@ -30,20 +28,20 @@
                    autocomplete="current-password" 
                    placeholder="••••••••" />
             @if($errors->has('password'))
-                <div class="error-message">{{ $errors->first('password') }}</div>
+                <p class="error-message">{{ $errors->first('password') }}</p>
             @endif
         </div>
 
-        <!-- Remember Me -->
         <div class="checkbox-group">
             <input id="remember_me" 
                    type="checkbox" 
-                   name="remember">
-            <label for="remember_me">Remember me</label>
+                   name="remember"
+                   value="1">
+            <label for="remember_me">Se souvenir de moi</label>
         </div>
 
         <button type="submit" class="btn-submit">
-            SIGN IN
+            Se connecter
         </button>
     </form>
 </x-guest-layout>

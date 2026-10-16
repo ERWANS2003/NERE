@@ -59,13 +59,20 @@ php artisan ldap:sync             # écriture réelle
 ## Points en attente (à confirmer avec la DSI)
 
 - **LDAPS réellement actif sur le DC ?** La fiche indiquait « protocole LDAPS 636 »
-  mais « LDAPS activé = Non ». Si LDAPS n'est pas disponible, deux options :
+  mais « LDAPS activé = Non » ; le test de connexion échoue actuellement. Si LDAPS
+  n'est pas disponible, deux options :
   - activer LDAPS côté DC (certificat), ou
-  - passer en StartTLS : `LDAP_PROTOCOL=ldap`, `LDAP_PORT=389`, `LDAP_STARTTLS=true`.
+  - confirmer StartTLS et son certificat, puis utiliser
+    `LDAP_PROTOCOL=ldap`, `LDAP_PORT=389`, `LDAP_STARTTLS=true`.
   > Ne jamais transmettre de mots de passe sur du LDAP 389 non chiffré.
-- **Mot de passe du compte de service** : vérifier le caractère spécial (`@dm£nNM2220` ?).
-- **Attributs** : `mail`, `department`, `title` non cochés sur la fiche — à confirmer
-  renseignés dans l'AD pour que l'email/service/poste remontent.
+- **Mot de passe du compte de service** : il était visible sur la photo transmise.
+  Le faire renouveler avant toute utilisation, puis stocker le nouveau secret uniquement
+  dans le `.env` du serveur, jamais dans Git ni dans cette documentation.
+- **Attributs** : `sAMAccountName`, `mail`, `givenName`, `sn` et `displayName` sont
+  cochés sur la fiche. `department`, `title`, téléphone, matricule et manager ne le
+  sont pas ; ne pas attendre ces valeurs depuis l'AD sans confirmation de la DSI.
+- **Unités d'organisation à exclure** : la fiche indique qu'il faut en exclure, mais
+  ne donne pas leurs DN. Obtenir les DN exacts avant de configurer un filtre.
 
 ## Revenir à l'auth 100 % locale
 

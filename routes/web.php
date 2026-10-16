@@ -12,12 +12,13 @@ Route::get('/', function (Request $request) {
 })->name('racine');
 
 // Routes d'authentification avec Breeze
+// Les routes canoniques sont definies dans routes/auth.php pour eviter les collisions
+// de noms de route avec /connexion et /deconnexion.
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-    
+    // Compatibilite historique: ancien chemin /login redirige vers la page de connexion
+    Route::get('/login', [AuthenticatedSessionController::class, 'create']);
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-    
+
     // Redirection de l'ancienne URL
     Route::get('/connexion', function () {
         return redirect()->route('login');
@@ -26,8 +27,8 @@ Route::middleware('guest')->group(function () {
 
 // Routes protégées - logout + profil
 Route::middleware(['auth'])->group(function () {
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+    // Compatibilite historique: alias /logout sans redeclarer le nom de route global
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 
     // Profil utilisateur (alias profile.edit pour les vues intranet, profil.* pour les vues profil)
     Route::get('/profil', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profil.edit');

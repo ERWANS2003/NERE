@@ -54,14 +54,15 @@ return [
             'base_dn' => env('LDAP_BASE_DN', 'DC=neremining,DC=com'),
 
             // Chiffrement (LdapRecord v4) :
-            //  - LDAPS   : LDAP_PROTOCOL=ldaps + port 636 (chiffré d'emblée) ;
+            //  - LDAPS   : LDAP_PROTOCOL=ldaps + port 636 (chiffré d'emblée).
             //  - StartTLS: LDAP_PROTOCOL=ldap + LDAP_STARTTLS=true + port 389 ;
             //  - clair   : LDAP_PROTOCOL=ldap (ou vide) + port 389 — à n'utiliser
             //              que pour un diagnostic sur réseau interne de confiance.
             //
-            // La clé « protocol » n'est transmise QUE pour LDAPS : avec l'ext-ldap
-            // de Windows, forcer protocol=ldap casse ldap_connect (« Bad parameter »).
-            ...(env('LDAP_PROTOCOL', 'ldaps') === 'ldaps' ? ['protocol' => 'ldaps'] : []),
+            // LdapRecord attend l'URI complète du protocole, pas « ldaps » seul.
+            // Ne définir cette option que pour LDAPS afin de garder le comportement
+            // LDAP classique quand LDAP_PROTOCOL=ldap.
+            ...(env('LDAP_PROTOCOL', 'ldaps') === 'ldaps' ? ['protocol' => 'ldaps://'] : []),
 
             'use_tls' => (bool) env('LDAP_TLS', false),
             'use_starttls' => (bool) env('LDAP_STARTTLS', false),
