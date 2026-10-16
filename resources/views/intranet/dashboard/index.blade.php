@@ -16,7 +16,7 @@
             <div class="max-w-4xl">
                 <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
                     Bienvenue dans l’intranet
-                    <span class="mt-1 block text-or-300">NÉRÉ Mining</span>
+                    <span class="mt-1 block text-or-300">NÉRÉ MINING</span>
                 </h1>
                 <p class="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
                     {{ $headerGreeting }}, {{ $headerFirstName }}. Retrouvez vos services, vos équipes et les informations essentielles de l’entreprise au même endroit.

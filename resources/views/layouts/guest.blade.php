@@ -22,8 +22,8 @@
                     />
                 </div>
                 <div class="login-brand-message">
-                    <h1 aria-label="Bienvenue dans l'Intranet de NERE Mining">
-                        <span data-typing-text aria-hidden="true">Bienvenue dans l'Intranet de NERE Mining</span>
+                    <h1 aria-label="Bienvenue dans l'Intranet de NÉRÉ MINING">
+                        <span data-typing-text aria-hidden="true">Bienvenue dans l'Intranet de NÉRÉ MINING</span>
                     </h1>
                 </div>
             </section>

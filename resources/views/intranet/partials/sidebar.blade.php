@@ -137,19 +137,6 @@
         </ul>
     </nav>
 
-    <!-- Footer -->
-    <div class="border-t border-graphite-200 p-4">
-        <div class="flex items-center justify-between text-xs text-graphite-600">
-            <span>Karma · Burkina Faso</span>
-            <a 
-                href="{{ route('intranet.departments.show', 'it') }}" 
-                class="text-nere-600 hover:text-nere-700 font-medium transition"
-            >
-                Support IT
-            </a>
-        </div>
-    </div>
-
 </aside>
 
 <!-- Sidebar Overlay (Mobile) -->
