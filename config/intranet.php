@@ -18,23 +18,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Organigramme
-    |--------------------------------------------------------------------------
-    | Regroupement des départements en branches sous la Direction générale.
-    | Chaque branche liste les codes de département qu'elle regroupe. Un
-    | département absent de toutes les branches est affiché dans « Autres ».
-    */
-    'organization' => [
-        'branches' => [
-            ['name' => 'Administration & Support', 'departments' => ['ADMIN', 'RH', 'IT']],
-            ['name' => 'Opérations', 'departments' => ['MINING', 'PROC']],
-            ['name' => 'HSE & Sûreté', 'departments' => ['HSE', 'SEC']],
-            ['name' => 'Approvisionnement & Communauté', 'departments' => ['SCM', 'RELCOM']],
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Couleurs de la marque
     |--------------------------------------------------------------------------
     */

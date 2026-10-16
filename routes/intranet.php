@@ -9,7 +9,6 @@ use App\Http\Controllers\Intranet\DepartmentShowController;
 use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FormController;
 use App\Http\Controllers\Intranet\NotificationController;
-use App\Http\Controllers\Intranet\OrganizationController;
 use App\Http\Controllers\Intranet\ResourceController;
 use App\Http\Controllers\Intranet\SubmissionController;
 use App\Http\Controllers\Intranet\TimeOffApprovalController;
@@ -76,9 +75,6 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
 
     // Annuaire
     Route::get('/directory', [DirectoryController::class, 'index'])->name('directory');
-
-    // Organigramme
-    Route::get('/orgchart', [OrganizationController::class, 'index'])->name('orgchart');
 
     // Analytics
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
