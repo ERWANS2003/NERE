@@ -61,11 +61,15 @@ class LdapAuthenticator
         // Compte désactivé dans l'AD : accès refusé (règle DSI), sans repli local.
         $uac = (int) $ldap->getFirstAttribute('useraccountcontrol');
         if (($uac & 2) === 2) {
+            Log::notice('Authentification LDAP refusée : compte AD désactivé');
+
             return false;
         }
 
         // Vérifie le mot de passe contre le DN de l'utilisateur AD.
         if (! $this->checkPassword($ldap->getDn(), $password)) {
+            Log::warning('Authentification LDAP refusée : bind utilisateur rejeté');
+
             return false;
         }
 
@@ -73,6 +77,8 @@ class LdapAuthenticator
         $user = $this->syncToDatabase($ldap);
 
         if (! $user->actif) {
+            Log::warning('Authentification LDAP refusée : compte local inactif après synchronisation');
+
             return false;
         }
 
