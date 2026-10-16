@@ -5,7 +5,7 @@
         @csrf
 
         <div class="input-group">
-            <label for="identifiant">Email ou username</label>
+            <label for="identifiant">Username</label>
             <input id="identifiant" 
                    type="text" 
                    name="identifiant" 
@@ -13,7 +13,7 @@
                    required 
                    autofocus 
                    autocomplete="username" 
-                   placeholder="nom@nere-mining.com" />
+                   placeholder="Saisissez votre username" />
             @if($errors->has('identifiant'))
                 <p class="error-message">{{ $errors->first('identifiant') }}</p>
             @endif
