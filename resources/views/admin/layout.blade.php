@@ -27,19 +27,9 @@
                 
                 <div class="my-4 border-t border-gray-800"></div>
                 
-                <a href="{{ route('admin.monitoring') }}"
-                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.monitoring') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                    <i class="fas fa-chart-line mr-2"></i> Supervision globale
-                </a>
-
                 <a href="{{ route('admin.users.index') }}" 
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.users.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                     <i class="fas fa-users mr-2"></i> Utilisateurs
-                </a>
-
-                <a href="{{ route('admin.menus.index') }}"
-                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.menus.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                    <i class="fas fa-utensils mr-2"></i> Menus du personnel
                 </a>
                 
                 <a href="{{ route('admin.roles.index') }}" 

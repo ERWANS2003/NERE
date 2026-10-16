@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\MonitoringController;
-use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\Admin\WeeklyMenuController;
+use App\Http\Controllers\Admin\RoleManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +16,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
-    // Supervision globale
-    Route::get('monitoring', [MonitoringController::class, 'index'])->name('monitoring');
-
     // Gestion des utilisateurs
     Route::resource('users', UserManagementController::class);
     Route::post('users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])
@@ -28,16 +23,6 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     
     // Gestion des rôles
     Route::resource('roles', RoleManagementController::class);
-
-    // Menus hebdomadaires du personnel
-    Route::get('menus', [WeeklyMenuController::class, 'index'])->name('menus.index');
-    Route::get('menus/create', [WeeklyMenuController::class, 'create'])->name('menus.create');
-    Route::post('menus', [WeeklyMenuController::class, 'store'])->name('menus.store');
-    Route::get('menus/{menu}', [WeeklyMenuController::class, 'show'])->name('menus.show');
-    Route::post('menus/{menu}/publier', [WeeklyMenuController::class, 'publish'])->name('menus.publish');
-    Route::post('menus/{menu}/cloturer', [WeeklyMenuController::class, 'close'])->name('menus.close');
-    Route::get('menus/{menu}/export', [WeeklyMenuController::class, 'export'])->name('menus.export');
-    Route::delete('menus/{menu}', [WeeklyMenuController::class, 'destroy'])->name('menus.destroy');
     
     // Synchronisation LDAP
     Route::get('ldap/sync', function() {

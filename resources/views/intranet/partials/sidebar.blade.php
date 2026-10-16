@@ -1,9 +1,4 @@
 <!-- Sidebar -->
-@php
-    $currentUser = auth()->user();
-    $isIntranetAdmin = (bool) $currentUser?->is_super_admin;
-    $isDepartmentManager = $currentUser?->managesAnyDepartment() ?? false;
-@endphp
 {{-- Mobile : tiroir hors écran, ouvert par le bouton de l'en-tête (sidebarOpen).
      Grand écran (lg) : toujours visible, l'état sidebarOpen n'a aucun effet. --}}
 <aside
@@ -90,19 +85,6 @@
                 </a>
             </li>
 
-            <!-- Menu du personnel -->
-            @if($currentUser?->meal_location_id)
-                <li>
-                    <a href="{{ route('intranet.menu.index') }}"
-                       class="sidebar-link {{ request()->routeIs('intranet.menu.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v7a4 4 0 008 0V3M7 3v18m10-8v8m0-18a5 5 0 00-5 5v5h5V3z"/>
-                        </svg>
-                        <span>Menu du personnel</span>
-                    </a>
-                </li>
-            @endif
-
             <!-- Annonces -->
             <li>
                 <a 
@@ -162,24 +144,6 @@
                     <span>Analytics</span>
                 </a>
             </li>
-
-            @if($isDepartmentManager)
-                <li>
-                    <a href="{{ route('intranet.time-off.approvals') }}" class="sidebar-link {{ request()->routeIs('intranet.time-off.approvals') ? 'active' : '' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5v12a2 2 0 002 2h12"/></svg>
-                        <span>Approbations</span>
-                    </a>
-                </li>
-            @endif
-
-            @if($isIntranetAdmin)
-                <li class="pt-3 mt-2 border-t border-graphite-200">
-                    <a href="{{ route('admin.monitoring') }}" class="sidebar-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-6m3 6v-4m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v11z"/></svg>
-                        <span>Administration</span>
-                    </a>
-                </li>
-            @endif
 
         </ul>
     </nav>

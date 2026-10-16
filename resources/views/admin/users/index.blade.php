@@ -15,7 +15,7 @@
 
 <!-- Filtres -->
 <div class="bg-white rounded-lg shadow p-4 mb-6">
-    <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
             <input type="text" name="search" value="{{ request('search') }}" 
                    placeholder="Rechercher..." 
@@ -38,13 +38,6 @@
                 @endforeach
             </select>
         </div>
-        <div>
-            <select name="source" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-nere-500 focus:border-nere-500">
-                <option value="">Toutes les sources</option>
-                <option value="ad" {{ request('source') === 'ad' ? 'selected' : '' }}>Active Directory</option>
-                <option value="local" {{ request('source') === 'local' ? 'selected' : '' }}>Comptes locaux</option>
-            </select>
-        </div>
         <div class="flex space-x-2">
             <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
                 <i class="fas fa-search"></i>
@@ -64,7 +57,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Utilisateur</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Email</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Matricule</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Départements / rôles</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Départements</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Actions</th>
             </tr>
@@ -79,13 +72,9 @@
                         </div>
                         <div>
                             <div class="font-medium text-gray-900">{{ $user->name }}</div>
-                            @if($user->guid)
-                            <span class="text-xs text-blue-600">
-                                <i class="fas fa-network-wired"></i> AD
-                            </span>
-                            @elseif($user->is_super_admin)
+                            @if($user->is_super_admin)
                             <span class="text-xs text-nere-600">
-                                <i class="fas fa-shield-alt"></i> Admin local
+                                <i class="fas fa-shield-alt"></i> Admin
                             </span>
                             @endif
                         </div>
@@ -94,18 +83,7 @@
                 <td class="px-6 py-4 text-sm text-gray-600">{{ $user->email }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ $user->matricule ?: '-' }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">
-                    @forelse($user->departments as $dept)
-                        @php
-                            $roleLabel = match($dept->pivot->role) {
-                                'director' => 'Directeur',
-                                'technician' => 'Technicien N'.($dept->pivot->tech_level ?: '?'),
-                                default => 'Utilisateur',
-                            };
-                        @endphp
-                        <div>{{ $dept->name }} <span class="text-xs text-gray-400">({{ $roleLabel }})</span></div>
-                    @empty
-                        -
-                    @endforelse
+                    {{ $user->departments->pluck('name')->join(', ') ?: '-' }}
                 </td>
                 <td class="px-6 py-4">
                     @if($user->actif)

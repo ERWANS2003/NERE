@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DepartmentsSeeder::class,
-            MealLocationSeeder::class,
+            DemoEmployeesSeeder::class,
             AnnouncementSeeder::class,
             CalendarEventSeeder::class,
             DepartmentServiceSeeder::class,
