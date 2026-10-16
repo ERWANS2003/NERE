@@ -50,13 +50,13 @@
                 if (!title) return;
 
                 const text = title.textContent.trim();
-                const letters = Array.from(text);
 
                 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                     title.textContent = text;
                     return;
                 }
 
+                const letters = Array.from(text);
                 title.textContent = '';
                 let index = 0;
                 const timer = window.setInterval(() => {
