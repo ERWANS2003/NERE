@@ -138,11 +138,22 @@
                                     <p class="text-sm text-graphite-500 line-clamp-1">{{ $form->description }}</p>
                                 @endif
                             </div>
-                            {{-- Le module formulaires dynamiques n'est pas encore implémenté : on
-                                 l'indique honnêtement plutôt que de pointer vers une page vide. --}}
-                            <span class="shrink-0 rounded bg-graphite-100 px-2.5 py-1 text-xs font-medium text-graphite-600">
-                                Bientôt disponible
-                            </span>
+                            @php
+                                $formUrl = $department->code === 'RH' && $form->name === 'Demande de congé'
+                                    ? route('intranet.time-off.create')
+                                    : ($form->form_schema['fields'] ?? []
+                                        ? route('intranet.forms.show', $form)
+                                        : null);
+                            @endphp
+                            @if($formUrl)
+                                <a href="{{ $formUrl }}" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
+                                    Faire une demande
+                                </a>
+                            @else
+                                <span class="shrink-0 rounded bg-graphite-100 px-2.5 py-1 text-xs font-medium text-graphite-600">
+                                    Bientôt disponible
+                                </span>
+                            @endif
                         </div>
                     @endforeach
                 </div>

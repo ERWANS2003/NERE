@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Department;
+use App\Models\DepartmentForm;
 use App\Models\DepartmentService;
+use App\Support\DepartmentRequestCatalog;
 use Illuminate\Database\Seeder;
 
 /**
@@ -95,6 +97,7 @@ class DepartmentServiceSeeder extends Seeder
             'Sauvegarde et restauration' => 'backup',
             'Sécurité informatique' => 'security',
         ];
+        $serviceForms = DepartmentRequestCatalog::serviceForms();
 
         foreach ($services as $deptCode => $deptServices) {
             $dept = $departments->where('code', $deptCode)->first();
@@ -107,6 +110,14 @@ class DepartmentServiceSeeder extends Seeder
                     ? ($itTicketCategories[$service['name']] ?? null)
                     : null;
                 $supportIt = $deptCode === 'IT' && $service['name'] === 'Support IT';
+                $formName = $serviceForms[$deptCode][$service['name']] ?? null;
+                $form = $formName
+                    ? DepartmentForm::query()
+                        ->where('department_id', $dept->id)
+                        ->where('name', $formName)
+                        ->first()
+                    : null;
+                $isTimeOff = $deptCode === 'RH' && $service['name'] === 'Demande de congé';
 
                 DepartmentService::updateOrCreate(
                     [
@@ -116,10 +127,14 @@ class DepartmentServiceSeeder extends Seeder
                     [
                         'description' => $service['description'],
                         'icon' => $service['icon'],
-                        'link_type' => $supportIt || $ticketCategory ? 'page' : 'form',
+                        'link_type' => $supportIt || $ticketCategory || $form || $isTimeOff ? 'page' : 'form',
                         'link_url' => $supportIt
                             ? '/intranet/tickets'
-                            : ($ticketCategory ? '/intranet/tickets/create?category='.$ticketCategory : null),
+                            : ($ticketCategory
+                                ? '/intranet/tickets/create?category='.$ticketCategory
+                                : ($form
+                                    ? '/intranet/forms/'.$form->id
+                                    : ($isTimeOff ? '/intranet/time-off/demande' : null))),
                         'order' => $index + 1,
                         'is_active' => true,
                     ]

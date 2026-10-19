@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use App\Support\DepartmentRequestCatalog;
 use Database\Seeders\DepartmentServiceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -89,6 +90,89 @@ it('updates existing IT service links when the ticket service migration runs', f
             'link_type' => 'page',
             'link_url' => '/intranet/tickets/create?category=backup',
         ]);
+});
+
+it('activates HR and administration service forms and accepts valid submissions', function () {
+    $hr = Department::factory()->create(['code' => 'RH', 'name' => 'Ressources humaines']);
+    $admin = Department::factory()->create(['code' => 'ADMIN', 'name' => 'Administration']);
+
+    foreach ([
+        ...array_keys(DepartmentRequestCatalog::serviceForms()['RH']),
+        'Demande de congé',
+    ] as $name) {
+        DepartmentService::create([
+            'department_id' => $hr->id,
+            'name' => $name,
+            'description' => 'Service RH',
+            'link_type' => 'form',
+            'order' => 1,
+            'is_active' => true,
+        ]);
+    }
+    foreach (array_keys(DepartmentRequestCatalog::serviceForms()['ADMIN']) as $name) {
+        DepartmentService::create([
+            'department_id' => $admin->id,
+            'name' => $name,
+            'description' => 'Service administratif',
+            'link_type' => 'form',
+            'order' => 1,
+            'is_active' => true,
+        ]);
+    }
+
+    $migration = require database_path('migrations/2026_10_19_150000_activate_hr_admin_request_forms.php');
+    $migration->up();
+
+    $form = DepartmentForm::where('department_id', $hr->id)
+        ->where('name', 'Attestation de travail')
+        ->firstOrFail();
+    $service = DepartmentService::where('department_id', $hr->id)
+        ->where('name', 'Attestation de travail')
+        ->firstOrFail();
+    $user = User::factory()->create();
+
+    expect($service->link_url)->toBe('/intranet/forms/'.$form->id)
+        ->and($service->link_type)->toBe('page')
+        ->and(DepartmentService::where('department_id', $hr->id)
+            ->where('name', 'Demande de congé')
+            ->value('link_url'))->toBe('/intranet/time-off/demande')
+        ->and(DepartmentService::where('department_id', $admin->id)->where('link_type', 'page')->count())->toBe(5);
+
+    $this->actingAs($user)
+        ->get(route('intranet.forms.show', $form))
+        ->assertOk()
+        ->assertSee('Motif de la demande')
+        ->assertSee('Format souhaité');
+
+    $this->get(route('intranet.departments.show', 'RH'))
+        ->assertOk()
+        ->assertSee('href="/intranet/forms/'.$form->id.'"', false)
+        ->assertSee('href="/intranet/time-off/demande"', false);
+
+    $adminForm = DepartmentForm::where('department_id', $admin->id)
+        ->where('name', 'Réservation de salle')
+        ->firstOrFail();
+    $this->get(route('intranet.departments.show', 'ADMIN'))
+        ->assertOk()
+        ->assertSee('href="/intranet/forms/'.$adminForm->id.'"', false);
+
+    $this->post(route('intranet.submissions.store', $form), [
+        'data' => [
+            'purpose' => 'Dossier bancaire',
+            'format' => 'PDF',
+            'extra' => 'doit être rejeté du stockage',
+        ],
+    ])->assertRedirect();
+
+    expect(FormSubmission::firstOrFail()->data)
+        ->toBe(['purpose' => 'Dossier bancaire', 'format' => 'PDF']);
+
+    $this->post(route('intranet.submissions.store', $form), [
+        'data' => [
+            'purpose' => 'Dossier bancaire',
+            'format' => 'Exécutable',
+        ],
+    ])->assertSessionHasErrors('data.format');
 });
 
 it('recovers the ticket migration when the main table already exists', function () {

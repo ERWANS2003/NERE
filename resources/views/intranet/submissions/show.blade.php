@@ -1,4 +1,5 @@
 @php
+    $formFieldsByKey = collect($submission->form?->form_schema['fields'] ?? [])->keyBy('key');
     $breadcrumbs = [
         ['label' => 'Mes demandes', 'url' => route('intranet.submissions.index')],
         ['label' => '#' . str_pad($submission->id, 5, '0', STR_PAD_LEFT)],
@@ -73,7 +74,7 @@
                         <dl class="space-y-2">
                             @foreach($submission->data as $champ => $valeur)
                                 <div class="flex flex-col sm:flex-row sm:gap-4">
-                                    <dt class="text-graphite-500 sm:w-1/3">{{ ucfirst(str_replace('_', ' ', $champ)) }}</dt>
+                                    <dt class="text-graphite-500 sm:w-1/3">{{ $formFieldsByKey->get($champ)['label'] ?? ucfirst(str_replace('_', ' ', $champ)) }}</dt>
                                     <dd class="text-graphite-900 sm:w-2/3">{{ is_array($valeur) ? implode(', ', $valeur) : $valeur }}</dd>
                                 </div>
                             @endforeach

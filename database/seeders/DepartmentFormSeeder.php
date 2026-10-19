@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Department;
 use App\Models\DepartmentForm;
+use App\Support\DepartmentRequestCatalog;
 use Illuminate\Database\Seeder;
 
 /**
@@ -15,16 +16,13 @@ class DepartmentFormSeeder extends Seeder
 {
     public function run(): void
     {
+        $catalog = DepartmentRequestCatalog::forms();
         $parCode = [
             'IT' => [
                 "Demande d'accès à une application",
                 'Signalement de panne matérielle',
             ],
-            'RH' => [
-                'Demande de congé',
-                'Attestation de travail',
-                'Avance sur salaire',
-            ],
+            'RH' => array_keys($catalog['RH']),
             'HSE' => [
                 "Déclaration d'incident",
                 'Observation de sécurité',
@@ -34,10 +32,7 @@ class DepartmentFormSeeder extends Seeder
                 "Demande d'achat",
                 'Référencement fournisseur',
             ],
-            'ADMIN' => [
-                'Ordre de mission',
-                'Réservation de véhicule',
-            ],
+            'ADMIN' => array_keys($catalog['ADMIN']),
             'MINING' => [
                 "Demande d'intervention engin",
             ],
@@ -65,8 +60,11 @@ class DepartmentFormSeeder extends Seeder
                 DepartmentForm::updateOrCreate(
                     ['department_id' => $departement->id, 'name' => $nom],
                     [
-                        'description' => 'Formulaire ' . mb_strtolower($nom) . ' du département ' . $departement->name . '.',
-                        'form_schema' => [],
+                        'description' => $catalog[$code][$nom]['description']
+                            ?? 'Formulaire '.mb_strtolower($nom).' du département '.$departement->name.'.',
+                        'form_schema' => isset($catalog[$code][$nom])
+                            ? ['fields' => $catalog[$code][$nom]['fields']]
+                            : [],
                         'is_active' => true,
                         'order' => $index,
                     ]

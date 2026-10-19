@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Intranet;
 use App\Http\Controllers\Controller;
 use App\Models\DepartmentForm;
 use App\Models\FormSubmission;
+use App\Notifications\SubmissionReviewed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SubmissionController extends Controller
@@ -33,14 +35,43 @@ class SubmissionController extends Controller
      */
     public function store(Request $request, DepartmentForm $form): RedirectResponse
     {
-        $validated = $request->validate([
-            'data' => ['required', 'array'],
-        ]);
+        abort_unless($form->is_active, 404);
+
+        $rules = ['data' => ['required', 'array']];
+        foreach ($form->form_schema['fields'] ?? [] as $field) {
+            $key = $field['key'];
+            $fieldRules = [($field['required'] ?? false) ? 'required' : 'nullable'];
+
+            if ($field['type'] === 'number') {
+                $fieldRules[] = 'numeric';
+            } elseif ($field['type'] === 'date') {
+                $fieldRules[] = 'date';
+            } elseif ($field['type'] === 'time') {
+                $fieldRules[] = 'date_format:H:i';
+            } elseif ($field['type'] === 'datetime-local') {
+                $fieldRules[] = 'date_format:Y-m-d\TH:i';
+            } elseif ($field['type'] === 'select') {
+                $fieldRules[] = Rule::in(
+                    array_column($field['options'] ?? [], 'value')
+                );
+            } else {
+                $fieldRules[] = 'string';
+                $fieldRules[] = 'max:5000';
+            }
+
+            $rules['data.'.$key] = $fieldRules;
+        }
+
+        $validated = $request->validate($rules);
+        $submittedData = array_intersect_key(
+            $validated['data'],
+            array_column($form->form_schema['fields'] ?? [], null, 'key')
+        );
 
         $submission = FormSubmission::create([
             'form_id' => $form->id,
             'user_id' => $request->user()->id,
-            'data' => $validated['data'],
+            'data' => $submittedData,
             'status' => 'pending',
         ]);
 
@@ -97,7 +128,7 @@ class SubmissionController extends Controller
         // Prévient le demandeur du verdict (sauf s'il s'est auto-traité).
         $demandeur = $submission->user;
         if ($demandeur && $demandeur->id !== $request->user()->id && $demandeur->actif) {
-            $demandeur->notify(new \App\Notifications\SubmissionReviewed($submission));
+            $demandeur->notify(new SubmissionReviewed($submission));
         }
 
         return redirect()

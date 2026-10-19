@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
+use App\Models\DepartmentForm;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -39,10 +40,12 @@ class FormController extends Controller
     /**
      * Affiche un formulaire
      */
-    public function show($form): View
+    public function show(DepartmentForm $form): View
     {
-        // À implémenter
-        return view('intranet.forms.show');
+        abort_unless($form->is_active, 404);
+        $form->load('department');
+
+        return view('intranet.forms.department-show', compact('form'));
     }
 
     /**
