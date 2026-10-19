@@ -44,22 +44,94 @@ it('shows ticket support as a service on the IT department page', function () {
 
 it('recovers the ticket migration when the main table already exists', function () {
     Schema::dropIfExists('notifications');
-    Schema::dropIfExists('ticket_activities');
-    Schema::dropIfExists('ticket_attachments');
-    Schema::dropIfExists('ticket_comments');
+    Schema::dropIfExists('it_support_ticket_activities');
+    Schema::dropIfExists('it_support_ticket_attachments');
+    Schema::dropIfExists('it_support_ticket_comments');
+    Schema::dropIfExists('it_support_tickets');
+    Schema::create('tickets', function ($table) {
+        $table->id();
+        $table->string('reference');
+        $table->string('title');
+    });
+    DB::table('tickets')->insert([
+        'reference' => 'LEGACY-001',
+        'title' => 'Historique ITSM existant',
+    ]);
 
     $migration = require database_path('migrations/2026_10_19_110000_create_tickets_table.php');
     $migration->up();
 
-    expect(Schema::hasTable('tickets'))
+    expect(Schema::hasTable('it_support_tickets'))
         ->toBeTrue()
-        ->and(Schema::hasTable('ticket_comments'))
+        ->and(DB::table('tickets')->where('reference', 'LEGACY-001')->value('title'))
+        ->toBe('Historique ITSM existant')
+        ->and(Schema::hasTable('it_support_ticket_comments'))
         ->toBeTrue()
-        ->and(Schema::hasTable('ticket_attachments'))
+        ->and(Schema::hasTable('it_support_ticket_attachments'))
         ->toBeTrue()
-        ->and(Schema::hasTable('ticket_activities'))
+        ->and(Schema::hasTable('it_support_ticket_activities'))
         ->toBeTrue()
         ->and(Schema::hasTable('notifications'))
+        ->toBeTrue();
+});
+
+it('moves only this module ticket table and preserves the legacy tickets table', function () {
+    $it = departementIt();
+    Schema::dropIfExists('it_support_ticket_activities');
+    Schema::dropIfExists('it_support_ticket_attachments');
+    Schema::dropIfExists('it_support_ticket_comments');
+    Schema::dropIfExists('ticket_activities');
+    Schema::dropIfExists('ticket_attachments');
+    Schema::dropIfExists('ticket_comments');
+    Schema::dropIfExists('it_support_tickets');
+    Schema::create('tickets', function ($table) {
+        $table->id();
+        $table->string('number')->unique();
+        $table->foreignId('department_id')->constrained()->restrictOnDelete();
+        $table->foreignId('requester_id')->nullable()->constrained('users')->nullOnDelete();
+        $table->foreignId('assignee_id')->nullable()->constrained('users')->nullOnDelete();
+        $table->string('subject', 180);
+        $table->text('description');
+        $table->string('category', 40);
+        $table->string('priority', 20)->default('normal');
+        $table->string('status', 30)->default('new');
+        $table->timestamp('resolved_at')->nullable();
+        $table->timestamp('closed_at')->nullable();
+        $table->timestamps();
+    });
+    DB::table('tickets')->insert([
+        'number' => 'IT-009999',
+        'department_id' => $it->id,
+        'subject' => 'Nouveau support existant',
+        'description' => 'À conserver lors du renommage.',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+    Schema::create('ticket_comments', function ($table) {
+        $table->id();
+        $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
+        $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+        $table->text('body');
+        $table->boolean('is_internal')->default(false);
+        $table->timestamps();
+    });
+    DB::table('ticket_comments')->insert([
+        'ticket_id' => 1,
+        'body' => 'Commentaire à conserver.',
+        'is_internal' => false,
+    ]);
+
+    $migration = require database_path('migrations/2026_10_19_130000_move_it_support_tickets_to_dedicated_table.php');
+    $migration->up();
+
+    expect(Schema::hasTable('tickets'))
+        ->toBeFalse()
+        ->and(Ticket::where('number', 'IT-009999')->exists())
+        ->toBeTrue()
+        ->and(Schema::hasTable('it_support_ticket_comments'))
+        ->toBeTrue()
+        ->and(DB::table('it_support_ticket_comments')->where('body', 'Commentaire à conserver.')->exists())
         ->toBeTrue();
 });
 

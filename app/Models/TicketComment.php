@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TicketComment extends Model
 {
+    protected $table = 'it_support_ticket_comments';
+
     protected $fillable = ['ticket_id', 'user_id', 'body', 'is_internal'];
 
     protected function casts(): array

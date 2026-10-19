@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketActivity extends Model
 {
+    protected $table = 'it_support_ticket_activities';
+
     protected $fillable = ['ticket_id', 'user_id', 'event', 'changes'];
 
     protected function casts(): array

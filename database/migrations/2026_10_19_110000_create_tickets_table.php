@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $this->createIfMissing('tickets', [
+        $this->createIfMissing('it_support_tickets', [
             'id', 'number', 'department_id', 'requester_id', 'assignee_id',
             'subject', 'description', 'category', 'priority', 'status',
             'resolved_at', 'closed_at', 'created_at', 'updated_at',
@@ -32,11 +32,11 @@ return new class extends Migration
             $table->index(['assignee_id', 'status']);
         });
 
-        $this->createIfMissing('ticket_comments', [
+        $this->createIfMissing('it_support_ticket_comments', [
             'id', 'ticket_id', 'user_id', 'body', 'is_internal', 'created_at', 'updated_at',
         ], function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('ticket_id')->constrained('it_support_tickets')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->text('body');
             $table->boolean('is_internal')->default(false);
@@ -45,13 +45,13 @@ return new class extends Migration
             $table->index(['ticket_id', 'created_at']);
         });
 
-        $this->createIfMissing('ticket_attachments', [
+        $this->createIfMissing('it_support_ticket_attachments', [
             'id', 'ticket_id', 'ticket_comment_id', 'user_id', 'disk', 'path',
             'original_name', 'mime_type', 'size', 'created_at', 'updated_at',
         ], function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('ticket_comment_id')->nullable()->constrained('ticket_comments')->cascadeOnDelete();
+            $table->foreignId('ticket_id')->constrained('it_support_tickets')->cascadeOnDelete();
+            $table->foreignId('ticket_comment_id')->nullable()->constrained('it_support_ticket_comments')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('disk', 40)->default('local');
             $table->string('path');
@@ -63,11 +63,11 @@ return new class extends Migration
             $table->index(['ticket_id', 'ticket_comment_id']);
         });
 
-        $this->createIfMissing('ticket_activities', [
+        $this->createIfMissing('it_support_ticket_activities', [
             'id', 'ticket_id', 'user_id', 'event', 'changes', 'created_at', 'updated_at',
         ], function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('ticket_id')->constrained('it_support_tickets')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('event', 40);
             $table->json('changes')->nullable();
@@ -90,10 +90,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('ticket_activities');
-        Schema::dropIfExists('ticket_attachments');
-        Schema::dropIfExists('ticket_comments');
-        Schema::dropIfExists('tickets');
+        Schema::dropIfExists('it_support_ticket_activities');
+        Schema::dropIfExists('it_support_ticket_attachments');
+        Schema::dropIfExists('it_support_ticket_comments');
+        Schema::dropIfExists('it_support_tickets');
     }
 
     /**

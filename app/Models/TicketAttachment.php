@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketAttachment extends Model
 {
+    protected $table = 'it_support_ticket_attachments';
+
     protected $fillable = [
         'ticket_id',
         'ticket_comment_id',

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
+    protected $table = 'it_support_tickets';
+
     protected $fillable = [
         'number',
         'department_id',
