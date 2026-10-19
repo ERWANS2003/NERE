@@ -3,7 +3,9 @@
 use App\Enums\DepartmentRole;
 use App\Enums\TicketStatus;
 use App\Models\Department;
+use App\Models\DepartmentForm;
 use App\Models\DepartmentService;
+use App\Models\FormSubmission;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\User;
@@ -188,11 +190,12 @@ it('restricts requesters to their tickets and hides internal comments', function
         ->assertDontSee('Information réservée à l’équipe IT.');
 });
 
-it('allows IT technicians to update a ticket and records its status change', function () {
+it('allows IT technicians to update ticket status without changing its assignment', function () {
     Notification::fake();
     $it = departementIt();
     $requester = User::factory()->create();
     $technician = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $otherTechnician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
     $ticket = Ticket::create([
         'number' => 'IT-000102',
         'department_id' => $it->id,
@@ -208,16 +211,117 @@ it('allows IT technicians to update a ticket and records its status change', fun
         ->put(route('intranet.tickets.update', $ticket), [
             'status' => 'in_progress',
             'priority' => 'high',
-            'assignee_id' => $technician->id,
+            'assignee_id' => $otherTechnician->id,
         ])
         ->assertRedirect(route('intranet.tickets.show', $ticket));
 
     expect($ticket->fresh()->status)->toBe(TicketStatus::InProgress)
         ->and($ticket->fresh()->priority->value)->toBe('high')
-        ->and($ticket->fresh()->assignee_id)->toBe($technician->id)
+        ->and($ticket->fresh()->assignee_id)->toBeNull()
         ->and($ticket->activities()->where('event', 'updated')->exists())->toBeTrue();
 
     Notification::assertSentTo($requester, TicketNotification::class);
+});
+
+it('lets the IT director take a ticket or assign it to an active technician', function () {
+    Notification::fake();
+    $it = departementIt();
+    $director = User::factory()->withRole($it, DepartmentRole::Director)->create();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+    $requester = User::factory()->create();
+    $ticket = Ticket::create([
+        'number' => 'IT-000104',
+        'department_id' => $it->id,
+        'requester_id' => $requester->id,
+        'subject' => 'Écran noir',
+        'description' => 'Le poste ne démarre plus.',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($director)
+        ->get(route('intranet.tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('Prendre en charge')
+        ->assertSee($technician->name);
+
+    $this->post(route('intranet.tickets.take', $ticket))
+        ->assertRedirect(route('intranet.tickets.show', $ticket));
+
+    expect($ticket->fresh()->assignee_id)->toBe($director->id)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::InProgress);
+
+    $this->put(route('intranet.tickets.update', $ticket), [
+        'status' => 'waiting',
+        'priority' => 'high',
+        'assignee_id' => $technician->id,
+    ])->assertRedirect(route('intranet.tickets.show', $ticket));
+
+    expect($ticket->fresh()->assignee_id)->toBe($technician->id)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::Waiting);
+
+    Notification::assertSentTo($requester, TicketNotification::class);
+});
+
+it('shows recent forms from handled departments and tickets the user may access', function () {
+    $it = departementIt();
+    $hse = Department::factory()->create(['code' => 'HSE', 'name' => 'Santé et sécurité']);
+    $finance = Department::factory()->create(['code' => 'FIN', 'name' => 'Finances']);
+    $technician = User::factory()->withRole($hse, DepartmentRole::Technician, 1)->create();
+    $colleague = User::factory()->create();
+    $hseForm = DepartmentForm::create([
+        'department_id' => $hse->id,
+        'name' => 'Demande HSE visible',
+        'form_schema' => [],
+    ]);
+    $financeForm = DepartmentForm::create([
+        'department_id' => $finance->id,
+        'name' => 'Demande confidentielle',
+        'form_schema' => [],
+    ]);
+    $ownForm = DepartmentForm::create([
+        'department_id' => $it->id,
+        'name' => 'Mon formulaire IT',
+        'form_schema' => [],
+    ]);
+    FormSubmission::create([
+        'form_id' => $hseForm->id,
+        'user_id' => $colleague->id,
+        'data' => [],
+        'status' => 'pending',
+    ]);
+    FormSubmission::create([
+        'form_id' => $financeForm->id,
+        'user_id' => $colleague->id,
+        'data' => [],
+        'status' => 'pending',
+    ]);
+    FormSubmission::create([
+        'form_id' => $ownForm->id,
+        'user_id' => $technician->id,
+        'data' => [],
+        'status' => 'pending',
+    ]);
+    $ticket = Ticket::create([
+        'number' => 'IT-000105',
+        'department_id' => $it->id,
+        'requester_id' => $technician->id,
+        'subject' => 'Mon ticket IT',
+        'description' => 'Demande personnelle.',
+        'category' => 'software',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($technician)
+        ->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Demande HSE visible')
+        ->assertSee('Mon formulaire IT')
+        ->assertSee('Mon ticket IT')
+        ->assertDontSee('Demande confidentielle')
+        ->assertSee(route('intranet.tickets.show', $ticket), false);
 });
 
 it('prevents non-IT users from updating tickets or adding internal comments', function () {
@@ -240,6 +344,10 @@ it('prevents non-IT users from updating tickets or adding internal comments', fu
             'priority' => 'normal',
             'assignee_id' => '',
         ])
+        ->assertForbidden();
+
+    $this->actingAs($requester)
+        ->post(route('intranet.tickets.take', $ticket))
         ->assertForbidden();
 
     $this->actingAs($requester)

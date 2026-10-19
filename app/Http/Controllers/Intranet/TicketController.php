@@ -135,13 +135,16 @@ class TicketController extends Controller
         ]);
 
         $department = $this->itDepartment();
+        $user = $request->user();
+        $canAssign = $user->canValidateIn($department->id);
 
         return view('intranet.tickets.show', [
             'ticket' => $ticket,
-            'isAgent' => $request->user()->canHandleIn($department->id),
+            'isAgent' => $user->canHandleIn($department->id),
+            'canAssign' => $canAssign,
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
-            'agents' => $this->itAgents($department)->sortBy('name')->values(),
+            'agents' => $this->itTechnicians($department)->sortBy('name')->values(),
         ]);
     }
 
@@ -149,16 +152,23 @@ class TicketController extends Controller
     {
         $this->authorizeAgent($request->user(), $ticket);
         $department = $this->itDepartment();
+        $canAssign = $request->user()->canValidateIn($department->id);
 
-        $validated = $request->validate([
+        $rules = [
             'status' => ['required', Rule::enum(TicketStatus::class)],
             'priority' => ['required', Rule::enum(TicketPriority::class)],
-            'assignee_id' => ['present', 'nullable', 'integer', 'exists:users,id'],
-        ]);
+        ];
 
-        if ($validated['assignee_id'] !== null && ! $this->itAgents($department)->contains('id', (int) $validated['assignee_id'])) {
-            return back()->withErrors(['assignee_id' => 'Le responsable doit être un technicien ou directeur actif du département IT.'])->withInput();
+        if ($canAssign) {
+            $rules['assignee_id'] = [
+                'present',
+                'nullable',
+                'integer',
+                Rule::in($this->itTechnicians($department)->modelKeys()),
+            ];
         }
+
+        $validated = $request->validate($rules);
 
         $before = [
             'status' => $ticket->status->value,
@@ -170,7 +180,7 @@ class TicketController extends Controller
         $ticket->update([
             'status' => $status,
             'priority' => $validated['priority'],
-            'assignee_id' => $validated['assignee_id'],
+            'assignee_id' => $canAssign ? $validated['assignee_id'] : $ticket->assignee_id,
             'resolved_at' => $status === TicketStatus::Resolved ? ($ticket->resolved_at ?? now()) : null,
             'closed_at' => $status === TicketStatus::Closed ? ($ticket->closed_at ?? now()) : null,
         ]);
@@ -201,7 +211,7 @@ class TicketController extends Controller
                 $requester->notify(new TicketNotification(
                     $ticket,
                     'Mise à jour de votre ticket',
-                    'Le statut ou la priorité de votre ticket a été modifié.'
+                    'Votre ticket a été mis à jour par l’équipe informatique.'
                 ));
             }
 
@@ -219,6 +229,54 @@ class TicketController extends Controller
         return redirect()
             ->route('intranet.tickets.show', $ticket)
             ->with('success', 'Le ticket a été mis à jour.');
+    }
+
+    public function take(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeAgent($request->user(), $ticket);
+        abort_unless($request->user()->canValidateIn($ticket->department_id), 403);
+        abort_unless($ticket->status !== TicketStatus::Closed, 422, 'Un ticket fermé ne peut plus être pris en charge.');
+
+        if ($ticket->assignee_id === $request->user()->id && $ticket->status === TicketStatus::InProgress) {
+            return redirect()
+                ->route('intranet.tickets.show', $ticket)
+                ->with('success', 'Vous avez déjà pris ce ticket en charge.');
+        }
+
+        $before = [
+            'status' => $ticket->status->value,
+            'assignee_id' => $ticket->assignee_id,
+        ];
+
+        $ticket->update([
+            'assignee_id' => $request->user()->id,
+            'status' => TicketStatus::InProgress,
+            'resolved_at' => null,
+            'closed_at' => null,
+        ]);
+
+        TicketActivity::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'event' => 'taken',
+            'changes' => [
+                'status' => ['from' => $before['status'], 'to' => TicketStatus::InProgress->value],
+                'assignee_id' => ['from' => $before['assignee_id'], 'to' => $request->user()->id],
+            ],
+        ]);
+
+        $requester = $ticket->requester;
+        if ($requester && $requester->actif && ! $requester->is($request->user())) {
+            $requester->notify(new TicketNotification(
+                $ticket,
+                'Votre ticket est pris en charge',
+                'Le responsable IT a pris en charge votre ticket.'
+            ));
+        }
+
+        return redirect()
+            ->route('intranet.tickets.show', $ticket)
+            ->with('success', 'Vous avez pris le ticket en charge.');
     }
 
     public function comment(Request $request, Ticket $ticket): RedirectResponse
@@ -302,6 +360,17 @@ class TicketController extends Controller
             ->whereHas('departments', fn ($query) => $query
                 ->where('departments.id', $department->id)
                 ->whereIn('department_user.role', [DepartmentRole::Technician->value, DepartmentRole::Director->value]))
+            ->get();
+    }
+
+    /** @return Collection<int, User> */
+    private function itTechnicians(Department $department): Collection
+    {
+        return User::query()
+            ->where('actif', true)
+            ->whereHas('departments', fn ($query) => $query
+                ->where('departments.id', $department->id)
+                ->where('department_user.role', DepartmentRole::Technician->value))
             ->get();
     }
 

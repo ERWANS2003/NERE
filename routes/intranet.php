@@ -81,6 +81,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::post('/', [TicketController::class, 'store'])->name('store');
         Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
         Route::put('/{ticket}', [TicketController::class, 'update'])->name('update');
+        Route::post('/{ticket}/take', [TicketController::class, 'take'])->name('take');
         Route::post('/{ticket}/comments', [TicketController::class, 'comment'])->name('comments.store');
         Route::get('/attachments/{attachment}', [TicketController::class, 'download'])->name('attachments.download');
     });

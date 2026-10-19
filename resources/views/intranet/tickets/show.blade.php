@@ -62,8 +62,18 @@
 
         @if($isAgent)
             <section class="rounded-xl border border-graphite-200 bg-white p-6">
-                <h2 class="mb-4 text-lg font-semibold text-graphite-900">Traitement du ticket</h2>
-                <form method="POST" action="{{ route('intranet.tickets.update', $ticket) }}" class="grid gap-4 sm:grid-cols-3">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-lg font-semibold text-graphite-900">Traitement du ticket</h2>
+                    @if($canAssign && $ticket->status->value !== 'closed')
+                        <form method="POST" action="{{ route('intranet.tickets.take', $ticket) }}">
+                            @csrf
+                            <button type="submit" class="rounded-lg border border-nere-700 px-4 py-2 text-sm font-semibold text-nere-700 hover:bg-nere-50">
+                                Prendre en charge
+                            </button>
+                        </form>
+                    @endif
+                </div>
+                <form method="POST" action="{{ route('intranet.tickets.update', $ticket) }}" class="grid gap-4 {{ $canAssign ? 'sm:grid-cols-3' : 'sm:grid-cols-2' }}">
                     @csrf
                     @method('PUT')
                     <div>
@@ -84,17 +94,19 @@
                         </select>
                         @error('priority')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                     </div>
-                    <div>
-                        <label for="assignee_id" class="mb-1 block text-sm font-medium text-graphite-700">Responsable</label>
-                        <select id="assignee_id" name="assignee_id" class="w-full rounded-lg border border-graphite-300 px-3 py-2">
-                            <option value="">Non attribué</option>
-                            @foreach($agents as $agent)
-                                <option value="{{ $agent->id }}" @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $agent->id)>{{ $agent->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('assignee_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="sm:col-span-3">
+                    @if($canAssign)
+                        <div>
+                            <label for="assignee_id" class="mb-1 block text-sm font-medium text-graphite-700">Affecter à un technicien</label>
+                            <select id="assignee_id" name="assignee_id" class="w-full rounded-lg border border-graphite-300 px-3 py-2">
+                                <option value="">Non attribué</option>
+                                @foreach($agents as $agent)
+                                    <option value="{{ $agent->id }}" @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $agent->id)>{{ $agent->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('assignee_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                        </div>
+                    @endif
+                    <div class="{{ $canAssign ? 'sm:col-span-3' : 'sm:col-span-2' }}">
                         <button type="submit" class="rounded-lg bg-nere-700 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-800">Enregistrer le traitement</button>
                     </div>
                 </form>
@@ -108,7 +120,11 @@
                     <div class="flex gap-3 text-xs text-graphite-500">
                         <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-nere-500"></span>
                         <p>
-                            {{ $activity->event === 'created' ? 'Ticket créé' : 'Ticket mis à jour' }}
+                            {{ match ($activity->event) {
+                                'created' => 'Ticket créé',
+                                'taken' => 'Ticket pris en charge',
+                                default => 'Ticket mis à jour',
+                            } }}
                             par {{ $activity->user?->name ?? 'Compte supprimé' }}
                             · {{ $activity->created_at->format('d/m/Y H:i') }}
                         </p>

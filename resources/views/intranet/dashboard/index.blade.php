@@ -149,55 +149,62 @@
                 </div>
             </section>
 
-            {{-- JOUR 5 — Section Mes demandes récentes (remplace la section Tickets) --}}
             <section>
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-graphite-900">Mes demandes récentes</h2>
+                    <h2 class="text-xl font-bold text-graphite-900">Demandes récentes</h2>
                     <a href="{{ route('intranet.submissions.index') }}" class="text-sm text-nere-600 hover:text-nere-700 font-medium">
-                        Tout voir →
+                        Mes formulaires →
                     </a>
                 </div>
 
                 <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden">
-                    @if($recentSubmissions->count() > 0)
+                    @if($recentRequests->isNotEmpty())
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead class="bg-graphite-50 text-graphite-600">
                                     <tr>
                                         <th class="text-left font-semibold px-4 py-3">Réf</th>
-                                        <th class="text-left font-semibold px-4 py-3">Formulaire</th>
+                                        <th class="text-left font-semibold px-4 py-3">Demande</th>
                                         <th class="text-left font-semibold px-4 py-3 hidden md:table-cell">Département</th>
+                                        <th class="text-left font-semibold px-4 py-3 hidden lg:table-cell">Demandeur</th>
                                         <th class="text-left font-semibold px-4 py-3">Statut</th>
                                         <th class="text-left font-semibold px-4 py-3 hidden sm:table-cell">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-graphite-100">
-                                    @foreach($recentSubmissions as $submission)
+                                    @foreach($recentRequests as $requestItem)
                                         <tr class="hover:bg-graphite-50 transition">
                                             <td class="px-4 py-3">
-                                                <a href="{{ route('intranet.submissions.show', $submission->id) }}" class="font-medium text-nere-600 hover:text-nere-700">
-                                                    #{{ str_pad($submission->id, 5, '0', STR_PAD_LEFT) }}
+                                                <a href="{{ $requestItem['url'] }}" class="font-medium text-nere-600 hover:text-nere-700">
+                                                    {{ $requestItem['reference'] }}
                                                 </a>
                                             </td>
                                             <td class="px-4 py-3 text-graphite-900">
-                                                {{ $submission->form?->name ?? '—' }}
+                                                <span class="mr-1 rounded bg-graphite-100 px-1.5 py-0.5 text-xs text-graphite-600">{{ $requestItem['kind'] }}</span>
+                                                {{ $requestItem['title'] }}
                                             </td>
                                             <td class="px-4 py-3 text-graphite-600 hidden md:table-cell">
-                                                {{ $submission->form?->department?->name ?? '—' }}
+                                                {{ $requestItem['department'] }}
                                             </td>
+                                            <td class="px-4 py-3 text-graphite-600 hidden lg:table-cell">{{ $requestItem['requester'] }}</td>
                                             <td class="px-4 py-3">
                                                 @php
                                                     $statutMap = [
                                                         'pending' => ['label' => 'En attente', 'type' => 'warning'],
                                                         'approved' => ['label' => 'Approuvée', 'type' => 'success'],
                                                         'rejected' => ['label' => 'Rejetée', 'type' => 'danger'],
+                                                        'new' => ['label' => 'Nouveau', 'type' => 'info'],
+                                                        'in_progress' => ['label' => 'En cours', 'type' => 'warning'],
+                                                        'waiting' => ['label' => 'En attente', 'type' => 'warning'],
+                                                        'resolved' => ['label' => 'Résolu', 'type' => 'success'],
+                                                        'closed' => ['label' => 'Fermé', 'type' => 'default'],
                                                     ];
-                                                    $statut = $statutMap[$submission->status] ?? ['label' => ucfirst($submission->status ?? 'N/A'), 'type' => 'info'];
+                                                    $statut = $statutMap[$requestItem['status']] ?? ['label' => ucfirst($requestItem['status'] ?? 'N/A'), 'type' => 'info'];
                                                 @endphp
                                                 <x-badge :type="$statut['type']">{{ $statut['label'] }}</x-badge>
                                             </td>
                                             <td class="px-4 py-3 text-graphite-500 hidden sm:table-cell">
-                                                {{ $submission->created_at?->format('d/m/Y') }}
+                                                {{ $requestItem['date']?->format('d/m/Y') }}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -209,7 +216,7 @@
                             <svg class="w-12 h-12 text-graphite-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            <p class="text-graphite-600 mb-1">Aucune demande pour le moment</p>
+                            <p class="text-graphite-600 mb-1">Aucune demande récente pour le moment</p>
                             <a href="{{ route('intranet.forms.index') }}" class="text-sm text-nere-600 hover:text-nere-700 font-medium">
                                 Faire une nouvelle demande →
                             </a>
