@@ -32,12 +32,16 @@
 - **Bibliothèque de widgets** - Ajoutez facilement de nouveaux widgets
 
 ### 🎫 Gestion Complète des Tickets
-- Création, assignation, workflow intelligent
-- Statuts personnalisables (Nouveau, Ouvert, En cours, Résolu, Fermé...)
-- Priorités basées sur impact/urgence
-- Commentaires et pièces jointes
-- Historique complet et audit trail
-- SLA tracking avec alertes
+- Création et suivi des tickets depuis le service « Support IT » de la page du département IT
+- File personnelle pour le demandeur et file complète réservée aux techniciens/directeurs IT
+- Catégories (matériel, logiciel, accès, réseau, messagerie, autre), priorité et statuts (Nouveau, En cours, En attente, Résolu, Fermé)
+- Attribution à un technicien, commentaires publics et notes internes IT
+- Pièces jointes privées (5 fichiers maximum, 10 Mo chacun) et historique des changements
+- Notifications dans l’intranet et par e-mail ; configurer le transport `MAIL_*` en production
+- Les rôles et départements restent gérés localement et ne sont pas modifiés par la synchronisation LDAP
+- Les SLA et alertes de délai ne sont pas encore activés
+
+Après déploiement, exécuter les migrations Laravel (`php artisan migrate --force`) pour créer les tables des tickets et pièces jointes. Les fichiers sont stockés sur le disque privé local de Laravel et ne sont pas servis directement depuis `public/`.
 
 ### 🏢 Structure Organisationnelle
 - **11 rôles hiérarchiques** (Directeur Général → Consultant)

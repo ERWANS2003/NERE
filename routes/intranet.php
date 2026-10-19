@@ -13,6 +13,7 @@ use App\Http\Controllers\Intranet\ResourceController;
 use App\Http\Controllers\Intranet\SubmissionController;
 use App\Http\Controllers\Intranet\TimeOffApprovalController;
 use App\Http\Controllers\Intranet\TimeOffController;
+use App\Http\Controllers\Intranet\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -71,6 +72,17 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/{submission}', [SubmissionController::class, 'show'])->name('show');
         Route::put('/{submission}', [SubmissionController::class, 'update'])->name('update');
         Route::delete('/{submission}', [SubmissionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Support informatique
+    Route::prefix('tickets')->name('tickets.')->group(function () {
+        Route::get('/', [TicketController::class, 'index'])->name('index');
+        Route::get('/create', [TicketController::class, 'create'])->name('create');
+        Route::post('/', [TicketController::class, 'store'])->name('store');
+        Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
+        Route::put('/{ticket}', [TicketController::class, 'update'])->name('update');
+        Route::post('/{ticket}/comments', [TicketController::class, 'comment'])->name('comments.store');
+        Route::get('/attachments/{attachment}', [TicketController::class, 'download'])->name('attachments.download');
     });
 
     // Annuaire

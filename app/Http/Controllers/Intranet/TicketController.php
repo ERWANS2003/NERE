@@ -1,0 +1,342 @@
+<?php
+
+namespace App\Http\Controllers\Intranet;
+
+use App\Enums\DepartmentRole;
+use App\Enums\TicketCategory;
+use App\Enums\TicketPriority;
+use App\Enums\TicketStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\Ticket;
+use App\Models\TicketActivity;
+use App\Models\TicketAttachment;
+use App\Models\TicketComment;
+use App\Models\User;
+use App\Notifications\TicketNotification;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class TicketController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $department = $this->itDepartment();
+        $user = $request->user();
+        $isAgent = $user->canHandleIn($department->id);
+
+        $query = Ticket::query()
+            ->with(['requester', 'assignee'])
+            ->where('department_id', $department->id);
+
+        if (! $isAgent) {
+            $query->where('requester_id', $user->id);
+        }
+
+        if ($request->filled('status') && TicketStatus::tryFrom($request->string('status')->toString())) {
+            $query->where('status', $request->string('status')->toString());
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->string('search')->toString());
+            $query->where(fn ($tickets) => $tickets
+                ->where('number', 'like', "%{$search}%")
+                ->orWhere('subject', 'like', "%{$search}%"));
+        }
+
+        $tickets = $query->latest()->paginate(20)->withQueryString();
+
+        return view('intranet.tickets.index', [
+            'tickets' => $tickets,
+            'isAgent' => $isAgent,
+            'statuses' => TicketStatus::options(),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('intranet.tickets.create', [
+            'categories' => TicketCategory::options(),
+            'priorities' => TicketPriority::options(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $department = $this->itDepartment();
+
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:180'],
+            'description' => ['required', 'string', 'max:10000'],
+            'category' => ['required', Rule::enum(TicketCategory::class)],
+            'priority' => ['required', Rule::enum(TicketPriority::class)],
+            'attachments' => ['sometimes', 'array', 'max:5'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
+        ]);
+
+        $ticket = DB::transaction(function () use ($request, $department, $validated) {
+            $ticket = Ticket::create([
+                'number' => 'pending',
+                'department_id' => $department->id,
+                'requester_id' => $request->user()->id,
+                'subject' => $validated['subject'],
+                'description' => $validated['description'],
+                'category' => $validated['category'],
+                'priority' => $validated['priority'],
+                'status' => TicketStatus::New,
+            ]);
+
+            $ticket->update(['number' => 'IT-'.str_pad((string) $ticket->id, 6, '0', STR_PAD_LEFT)]);
+
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'event' => 'created',
+            ]);
+
+            return $ticket;
+        });
+
+        $this->saveAttachments($request, $ticket);
+
+        $recipients = $this->itAgents($department)->reject(
+            fn (User $agent) => $agent->is($request->user())
+        );
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new TicketNotification(
+                $ticket,
+                'Nouveau ticket à traiter',
+                'Un nouveau ticket a été soumis au support informatique.'
+            ));
+        }
+
+        return redirect()
+            ->route('intranet.tickets.show', $ticket)
+            ->with('success', 'Votre ticket a été créé.');
+    }
+
+    public function show(Request $request, Ticket $ticket): View
+    {
+        $this->authorizeView($request->user(), $ticket);
+
+        $ticket->load([
+            'requester',
+            'assignee',
+            'comments.user',
+            'comments.attachments',
+            'attachments' => fn ($query) => $query->whereNull('ticket_comment_id'),
+            'activities.user',
+        ]);
+
+        $department = $this->itDepartment();
+
+        return view('intranet.tickets.show', [
+            'ticket' => $ticket,
+            'isAgent' => $request->user()->canHandleIn($department->id),
+            'statuses' => TicketStatus::options(),
+            'priorities' => TicketPriority::options(),
+            'agents' => $this->itAgents($department)->sortBy('name')->values(),
+        ]);
+    }
+
+    public function update(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeAgent($request->user(), $ticket);
+        $department = $this->itDepartment();
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::enum(TicketStatus::class)],
+            'priority' => ['required', Rule::enum(TicketPriority::class)],
+            'assignee_id' => ['present', 'nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        if ($validated['assignee_id'] !== null && ! $this->itAgents($department)->contains('id', (int) $validated['assignee_id'])) {
+            return back()->withErrors(['assignee_id' => 'Le responsable doit être un technicien ou directeur actif du département IT.'])->withInput();
+        }
+
+        $before = [
+            'status' => $ticket->status->value,
+            'priority' => $ticket->priority->value,
+            'assignee_id' => $ticket->assignee_id,
+        ];
+        $status = TicketStatus::from($validated['status']);
+
+        $ticket->update([
+            'status' => $status,
+            'priority' => $validated['priority'],
+            'assignee_id' => $validated['assignee_id'],
+            'resolved_at' => $status === TicketStatus::Resolved ? ($ticket->resolved_at ?? now()) : null,
+            'closed_at' => $status === TicketStatus::Closed ? ($ticket->closed_at ?? now()) : null,
+        ]);
+
+        $after = [
+            'status' => $ticket->status->value,
+            'priority' => $ticket->priority->value,
+            'assignee_id' => $ticket->assignee_id,
+        ];
+        $changes = array_filter(
+            ['status' => ['from' => $before['status'], 'to' => $after['status']],
+                'priority' => ['from' => $before['priority'], 'to' => $after['priority']],
+                'assignee_id' => ['from' => $before['assignee_id'], 'to' => $after['assignee_id']]],
+            fn (array $change, string $key) => $change['from'] !== $change['to'],
+            ARRAY_FILTER_USE_BOTH
+        );
+
+        if ($changes !== []) {
+            TicketActivity::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'event' => 'updated',
+                'changes' => $changes,
+            ]);
+
+            $requester = $ticket->requester;
+            if ($requester && $requester->actif && ! $requester->is($request->user())) {
+                $requester->notify(new TicketNotification(
+                    $ticket,
+                    'Mise à jour de votre ticket',
+                    'Le statut ou la priorité de votre ticket a été modifié.'
+                ));
+            }
+
+            if ($ticket->assignee && $ticket->assignee->actif
+                && $ticket->assignee->id !== $request->user()->id
+                && $ticket->assignee_id !== $before['assignee_id']) {
+                $ticket->assignee->notify(new TicketNotification(
+                    $ticket,
+                    'Ticket qui vous est attribué',
+                    'Un ticket du support informatique vous a été attribué.'
+                ));
+            }
+        }
+
+        return redirect()
+            ->route('intranet.tickets.show', $ticket)
+            ->with('success', 'Le ticket a été mis à jour.');
+    }
+
+    public function comment(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorizeView($user, $ticket);
+        abort_unless($ticket->status !== TicketStatus::Closed, 422, 'Un ticket fermé ne peut plus recevoir de commentaire.');
+        $department = $this->itDepartment();
+        $isAgent = $user->canHandleIn($department->id);
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:10000'],
+            'is_internal' => ['sometimes', 'boolean'],
+            'attachments' => ['sometimes', 'array', 'max:5'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
+        ]);
+
+        $internal = $isAgent && $request->boolean('is_internal');
+        $comment = $ticket->comments()->create([
+            'user_id' => $user->id,
+            'body' => $validated['body'],
+            'is_internal' => $internal,
+        ]);
+        $this->saveAttachments($request, $ticket, $comment);
+
+        $recipients = collect();
+        if ($ticket->requester && ! $ticket->requester->is($user) && ! $internal && $ticket->requester->actif) {
+            $recipients->push($ticket->requester);
+        }
+
+        if ($isAgent) {
+            if ($ticket->assignee && ! $ticket->assignee->is($user) && $ticket->assignee->actif) {
+                $recipients->push($ticket->assignee);
+            }
+        } else {
+            $recipients = $recipients->merge(
+                $ticket->assignee ? collect([$ticket->assignee]) : $this->itAgents($department)
+            );
+        }
+
+        $recipients = $recipients
+            ->filter(fn (User $recipient) => $recipient->actif && ! $recipient->is($user))
+            ->unique('id');
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new TicketNotification(
+                $ticket,
+                $internal ? 'Nouvelle note interne' : 'Nouveau commentaire sur un ticket',
+                $internal ? 'Une note interne a été ajoutée au ticket.' : 'Un nouveau commentaire a été ajouté au ticket.'
+            ));
+        }
+
+        return redirect()
+            ->route('intranet.tickets.show', $ticket)
+            ->with('success', 'Votre commentaire a été ajouté.');
+    }
+
+    public function download(Request $request, TicketAttachment $attachment)
+    {
+        $this->authorizeView($request->user(), $attachment->ticket);
+
+        if ($attachment->comment?->is_internal) {
+            $this->authorizeAgent($request->user(), $attachment->ticket);
+        }
+
+        abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
+
+        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name);
+    }
+
+    private function itDepartment(): Department
+    {
+        return Department::query()->where('code', 'IT')->where('is_active', true)->firstOrFail();
+    }
+
+    /** @return Collection<int, User> */
+    private function itAgents(Department $department): Collection
+    {
+        return User::query()
+            ->where('actif', true)
+            ->whereHas('departments', fn ($query) => $query
+                ->where('departments.id', $department->id)
+                ->whereIn('department_user.role', [DepartmentRole::Technician->value, DepartmentRole::Director->value]))
+            ->get();
+    }
+
+    private function authorizeView(User $user, Ticket $ticket): void
+    {
+        abort_unless(
+            $user->is_super_admin
+                || $ticket->requester_id === $user->id
+                || ($ticket->department_id === $this->itDepartment()->id && $user->canHandleIn($ticket->department_id)),
+            403
+        );
+    }
+
+    private function authorizeAgent(User $user, Ticket $ticket): void
+    {
+        abort_unless(
+            $user->is_super_admin
+                || ($ticket->department_id === $this->itDepartment()->id && $user->canHandleIn($ticket->department_id)),
+            403
+        );
+    }
+
+    private function saveAttachments(Request $request, Ticket $ticket, ?TicketComment $comment = null): void
+    {
+        foreach ($request->file('attachments', []) as $file) {
+            $path = $file->store('tickets/'.$ticket->id, 'local');
+            $ticket->attachments()->create([
+                'ticket_comment_id' => $comment?->id,
+                'user_id' => $request->user()->id,
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                'size' => $file->getSize(),
+            ]);
+        }
+    }
+}

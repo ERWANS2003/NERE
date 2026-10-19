@@ -2,17 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\DepartmentService;
 use App\Models\Department;
+use App\Models\DepartmentService;
 use Illuminate\Database\Seeder;
 
 /**
  * Services proposés par chaque département (onglet « Services » de la page
  * vitrine). Objectif : 5-6 services par département.
  *
- * Idempotent : chaque service est identifié par (département, nom). Les
- * destinations (link_url) restent nulles tant que le module de formulaires
- * dynamiques n'est pas livré ; la vue affiche alors « Bientôt disponible ».
+ * Idempotent : chaque service est identifié par (département, nom). Support IT
+ * est relié au module de tickets ; les autres destinations restent à configurer.
  */
 class DepartmentServiceSeeder extends Seeder
 {
@@ -22,7 +21,7 @@ class DepartmentServiceSeeder extends Seeder
 
         $services = [
             'IT' => [
-                ['name' => 'Support technique', 'description' => 'Assistance pour tous vos problèmes informatiques : ordinateurs, logiciels, réseau, imprimantes.', 'icon' => 'wrench'],
+                ['name' => 'Support IT', 'description' => 'Signaler un incident informatique et suivre vos demandes d’assistance : matériel, logiciels, réseau, imprimantes et accès.', 'icon' => 'wrench'],
                 ['name' => 'Demande de matériel', 'description' => 'Demander du nouveau matériel informatique (ordinateur, écran, clavier, etc.).', 'icon' => 'laptop'],
                 ['name' => 'Création de compte', 'description' => 'Demander la création d\'un compte utilisateur ou l\'accès à une application.', 'icon' => 'user-plus'],
                 ['name' => 'Téléphonie et réseau', 'description' => 'Demander une ligne téléphonique, un accès VPN ou signaler un problème réseau.', 'icon' => 'phone'],
@@ -91,9 +90,13 @@ class DepartmentServiceSeeder extends Seeder
 
         foreach ($services as $deptCode => $deptServices) {
             $dept = $departments->where('code', $deptCode)->first();
-            if (!$dept) continue;
+            if (! $dept) {
+                continue;
+            }
 
             foreach ($deptServices as $index => $service) {
+                $supportIt = $deptCode === 'IT' && $service['name'] === 'Support IT';
+
                 DepartmentService::updateOrCreate(
                     [
                         'department_id' => $dept->id,
@@ -102,9 +105,8 @@ class DepartmentServiceSeeder extends Seeder
                     [
                         'description' => $service['description'],
                         'icon' => $service['icon'],
-                        'link_type' => 'form',
-                        // Aucune destination branchée pour l'instant : la vue affiche « Bientôt disponible ».
-                        'link_url' => null,
+                        'link_type' => $supportIt ? 'page' : 'form',
+                        'link_url' => $supportIt ? '/intranet/tickets' : null,
                         'order' => $index + 1,
                         'is_active' => true,
                     ]
