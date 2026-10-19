@@ -125,9 +125,10 @@
                            {{ old('is_super_admin', $user->is_super_admin) ? 'checked' : '' }}
                            class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
                     <span class="ml-2 text-sm text-gray-700">
-                        <i class="fas fa-shield-alt text-nere-600"></i> Super administrateur
+                        <i class="fas fa-shield-alt text-nere-600"></i> Administrateur système global
                     </span>
                 </label>
+                <p class="ml-6 text-xs text-gray-500">Droit transversal, indépendant de tout département métier.</p>
             </div>
 
             <!-- Boutons -->

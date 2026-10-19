@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Announcement;
+use App\Models\AppSetting;
 use App\Models\Department;
 use App\Models\Resource;
 use App\Policies\AnnouncementPolicy;
@@ -11,6 +12,7 @@ use App\Policies\ResourcePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -36,6 +38,22 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Department::class, DepartmentPolicy::class);
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
         Gate::policy(Resource::class, ResourcePolicy::class);
+
+        View::composer('*', static function ($view): void {
+            $settings = AppSetting::query()
+                ->whereIn('key', ['site_name', 'support_email'])
+                ->pluck('value', 'key');
+            $siteName = $settings->get('site_name') ?: config('app.name');
+            $supportEmail = $settings->get('support_email');
+
+            config([
+                'app.name' => $siteName,
+                'app.support_email' => $supportEmail,
+            ]);
+
+            $view->with('siteName', $siteName);
+            $view->with('supportEmail', $supportEmail);
+        });
 
         // Environnement de developpement : les acces massifs aux relations sont
         // un gain de temps, ils sont interdits en production pour ne pas

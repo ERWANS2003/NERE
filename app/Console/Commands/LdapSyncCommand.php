@@ -3,8 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Ldap\LdapUserSynchronizer;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
+use LdapRecord\Connection;
+use LdapRecord\Container;
 use LdapRecord\Models\ActiveDirectory\User as LdapUser;
 
 /**
@@ -24,9 +28,9 @@ class LdapSyncCommand extends Command
     public function handle(LdapUserSynchronizer $synchronizer): int
     {
         if (! config('ldap_integration.enabled')) {
-            $this->warn('Intégration AD désactivée (LDAP_ENABLED=false). Rien à faire.');
+            $this->error('Intégration AD désactivée (LDAP_ENABLED=false).');
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
 
         $dryRun = (bool) $this->option('dry-run');
@@ -37,9 +41,31 @@ class LdapSyncCommand extends Command
         $updated = 0;
         $disabled = 0;
         $ignores = 0;
+        $protectedLocalAdmins = 0;
 
         try {
-            $ldapUsers = LdapUser::query()->paginate(1000);
+            $ldapConnectionConfig = config("ldap.connections.{$domain}");
+            $connection = Container::getConnection($domain);
+            $ldapUsers = null;
+
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                try {
+                    $ldapUsers = LdapUser::query()->paginate(1000);
+
+                    break;
+                } catch (\Throwable $e) {
+                    if ($attempt === 3) {
+                        throw $e;
+                    }
+
+                    $this->warn('Recherche AD interrompue; reconnexion avant la tentative '.($attempt + 1).'/3.');
+                    $connection->disconnect();
+                    $connection = new Connection($ldapConnectionConfig);
+                    Container::addConnection($connection, $domain);
+
+                    usleep(500_000);
+                }
+            }
         } catch (\Throwable $e) {
             $this->error('AD injoignable : '.$e->getMessage());
 
@@ -63,7 +89,13 @@ class LdapSyncCommand extends Command
                     ? User::query()->where('email', $this->first($ldap, 'mail'))->first()
                     : null)
                 ?? User::query()->where('matricule', $sam)->first()
-                ?? new User();
+                ?? new User;
+
+            if ($user->exists && $user->is_super_admin && blank($user->guid) && blank($user->domain)) {
+                $protectedLocalAdmins++;
+
+                continue;
+            }
 
             $existait = $user->exists;
 
@@ -96,8 +128,21 @@ class LdapSyncCommand extends Command
         $this->line("  Importés   : {$imported}");
         $this->line("  Mis à jour : {$updated}");
         $this->line("  Ignorés (système/incomplets) : {$ignores}");
+        $this->line("  Administrateurs locaux protégés : {$protectedLocalAdmins}");
         $this->line("  Dont désactivés dans l'AD : {$disabled}");
         $this->info($dryRun ? 'Simulation terminée.' : 'Synchronisation terminée.');
+
+        if (! $dryRun) {
+            AppSetting::saveValues([
+                'ldap_last_sync_at' => now()->toIso8601String(),
+                'ldap_last_sync_summary' => json_encode([
+                    'imported' => $imported,
+                    'updated' => $updated,
+                    'ignored' => $ignores,
+                    'disabled' => $disabled,
+                ], JSON_THROW_ON_ERROR),
+            ]);
+        }
 
         return self::SUCCESS;
     }
@@ -151,7 +196,7 @@ class LdapSyncCommand extends Command
         }
 
         // Dernier recours : préfixe aléatoire court.
-        return \Illuminate\Support\Str::random(6).'.'.$email;
+        return Str::random(6).'.'.$email;
     }
 
     private function first(LdapUser $ldap, string $attr): ?string

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Department;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -22,10 +22,10 @@ class UserManagementController extends Controller
         // Recherche
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'ILIKE', "%{$search}%")
-                  ->orWhere('email', 'ILIKE', "%{$search}%")
-                  ->orWhere('matricule', 'ILIKE', "%{$search}%");
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('matricule', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -36,7 +36,7 @@ class UserManagementController extends Controller
 
         // Filtre par département
         if ($request->filled('department')) {
-            $query->whereHas('departments', function($q) use ($request) {
+            $query->whereHas('departments', function ($q) use ($request) {
                 $q->where('departments.id', $request->department);
             });
         }
@@ -54,6 +54,7 @@ class UserManagementController extends Controller
     {
         $departments = Department::active()->orderBy('name')->get();
         $roles = Role::orderBy('nom')->get();
+
         return view('admin.users.create', compact('departments', 'roles'));
     }
 
@@ -104,6 +105,7 @@ class UserManagementController extends Controller
     public function show(User $user)
     {
         $user->load(['departments', 'roles']);
+
         return view('admin.users.show', compact('user'));
     }
 
@@ -115,6 +117,7 @@ class UserManagementController extends Controller
         $user->load(['departments', 'roles']);
         $departments = Department::active()->orderBy('name')->get();
         $roles = Role::orderBy('nom')->get();
+
         return view('admin.users.edit', compact('user', 'departments', 'roles'));
     }
 
@@ -137,6 +140,17 @@ class UserManagementController extends Controller
             'roles' => 'array',
             'roles.*' => 'exists:roles,id',
         ]);
+
+        $actif = $request->boolean('actif');
+        $administrateur = $request->boolean('is_super_admin');
+        if ($request->user()->is($user) && (! $actif || ! $administrateur)) {
+            return back()->with('error', 'Vous ne pouvez pas désactiver ni retirer vos propres droits d’administrateur système.');
+        }
+
+        if ($user->is_super_admin && $user->actif && (! $actif || ! $administrateur)
+            && User::where('is_super_admin', true)->where('actif', true)->count() <= 1) {
+            return back()->with('error', 'Il faut conserver au moins un administrateur système actif.');
+        }
 
         // Mise à jour du mot de passe seulement si fourni
         if ($request->filled('password')) {
@@ -170,6 +184,15 @@ class UserManagementController extends Controller
      */
     public function destroy(User $user)
     {
+        if (request()->user()->is($user)) {
+            return back()->with('error', 'Vous ne pouvez pas désactiver votre propre compte administrateur.');
+        }
+
+        if ($user->is_super_admin && $user->actif
+            && User::where('is_super_admin', true)->where('actif', true)->count() <= 1) {
+            return back()->with('error', 'Il faut conserver au moins un administrateur système actif.');
+        }
+
         // Ne pas supprimer, seulement désactiver
         $user->update(['actif' => false]);
 

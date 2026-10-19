@@ -134,6 +134,20 @@
                 </a>
             </li>
 
+            @if(auth()->user()?->is_super_admin)
+            <li>
+                <a
+                    href="{{ route('admin.settings') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.*') ? 'active' : '' }}"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 13.944a1.96 1.96 0 100-3.92 1.96 1.96 0 000 3.92zm7.44-1.96a7.44 7.44 0 00-.12-1.32l1.43-1.11-1.44-2.49-1.72.69a7.4 7.4 0 00-2.28-1.32L15.03 4h-2.88l-.26 2.43a7.4 7.4 0 00-2.28 1.32l-1.72-.69-1.44 2.49 1.43 1.11a7.44 7.44 0 000 2.64l-1.43 1.11 1.44 2.49 1.72-.69a7.4 7.4 0 002.28 1.32l.26 2.43h2.88l.26-2.43a7.4 7.4 0 002.28-1.32l1.72.69 1.44-2.49-1.43-1.11c.08-.43.12-.87.12-1.32z"/>
+                    </svg>
+                    <span>Paramètres</span>
+                </a>
+            </li>
+            @endif
+
         </ul>
     </nav>
 

@@ -39,7 +39,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         })->name('index');
 
         // CRUD administration des départements (contrôleur), sous /manage
-        Route::prefix('manage')->name('manage.')->group(function () {
+        Route::middleware('admin')->prefix('manage')->name('manage.')->group(function () {
             Route::get('/', [IntranetDepartmentController::class, 'index'])->name('index');
             Route::get('/create', [IntranetDepartmentController::class, 'create'])->name('create');
             Route::post('/', [IntranetDepartmentController::class, 'store'])->name('store');

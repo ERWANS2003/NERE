@@ -48,6 +48,12 @@
                     </div>
 
                     {{ $slot }}
+                    @if($supportEmail)
+                        <p class="mt-6 text-center text-sm text-graphite-500">
+                            Besoin d’aide ?
+                            <a href="mailto:{{ $supportEmail }}" class="font-medium text-nere-700 hover:underline">{{ $supportEmail }}</a>
+                        </p>
+                    @endif
                 </div>
             </section>
         </main>

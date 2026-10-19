@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') - Administration ITSM NERE</title>
+    <title>@yield('title') - {{ $siteName ?? config('app.name') }}</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -15,9 +15,9 @@
         <aside class="w-64 bg-gray-900 text-white">
             <div class="p-4 border-b border-gray-800">
                 <h1 class="text-xl font-bold text-nere-500">
-                    <i class="fas fa-shield-alt mr-2"></i>Administration
+                    <i class="fas fa-shield-alt mr-2"></i>Administration système
                 </h1>
-                <p class="text-xs text-gray-400 mt-1">ITSM NERE Mining</p>
+                <p class="text-xs text-gray-400 mt-1">{{ $siteName ?? config('app.name') }} · Système</p>
             </div>
             
             <nav class="p-4">
@@ -26,6 +26,11 @@
                 </a>
                 
                 <div class="my-4 border-t border-gray-800"></div>
+
+                <a href="{{ route('admin.dashboard') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-gauge-high mr-2"></i>Vue d'ensemble
+                </a>
                 
                 <a href="{{ route('admin.users.index') }}" 
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.users.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
@@ -37,9 +42,14 @@
                     <i class="fas fa-user-tag mr-2"></i> Rôles
                 </a>
                 
-                <a href="{{ route('admin.ldap.sync') }}" 
-                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.ldap.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                    <i class="fas fa-sync mr-2"></i> Synchronisation AD
+                <a href="{{ route('intranet.departments.manage.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('intranet.departments.manage.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-building mr-2"></i> Départements
+                </a>
+
+                <a href="{{ route('admin.settings') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.settings*', 'admin.ldap.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-cog mr-2"></i> Paramètres
                 </a>
             </nav>
         </aside>

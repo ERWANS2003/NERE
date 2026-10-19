@@ -74,7 +74,7 @@
                             <div class="font-medium text-gray-900">{{ $user->name }}</div>
                             @if($user->is_super_admin)
                             <span class="text-xs text-nere-600">
-                                <i class="fas fa-shield-alt"></i> Admin
+                                <i class="fas fa-shield-alt"></i> Admin système
                             </span>
                             @endif
                         </div>

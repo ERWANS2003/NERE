@@ -37,7 +37,7 @@
                     <p class="text-gray-600">{{ $user->email }}</p>
                     @if($user->is_super_admin)
                     <span class="inline-block mt-1 px-2 py-1 text-xs bg-nere-100 text-nere-700 rounded">
-                        <i class="fas fa-shield-alt"></i> Super Administrateur
+                        <i class="fas fa-shield-alt"></i> Administrateur système global
                     </span>
                     @endif
                 </div>
