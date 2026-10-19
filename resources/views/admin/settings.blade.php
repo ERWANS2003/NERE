@@ -89,6 +89,15 @@
                     <i class="fas fa-sync mr-2"></i>Lancer la synchronisation
                 </button>
             </form>
+            @if($lastSyncError)
+                <div class="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                    <p class="font-semibold">Détail de la dernière erreur</p>
+                    <p class="mt-1 break-words">{{ $lastSyncError }}</p>
+                </div>
+            @endif
+            @if($lastSyncAttemptAt)
+                <p class="mt-3 text-xs text-gray-500">Dernière tentative : {{ \Illuminate\Support\Carbon::parse($lastSyncAttemptAt)->format('d/m/Y à H:i') }}</p>
+            @endif
             @if($lastSyncAt)
                 <p class="mt-4 text-xs text-gray-500">Dernière réussite : {{ \Illuminate\Support\Carbon::parse($lastSyncAt)->format('d/m/Y à H:i') }}</p>
                 @if($lastSyncSummary)

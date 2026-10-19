@@ -23,6 +23,20 @@ it('reserves the system settings area for active system administrators', functio
         ->assertSee('Synchronisation Active Directory');
 });
 
+it('shows the latest AD synchronization failure details to administrators', function () {
+    AppSetting::saveValues([
+        'ldap_last_sync_attempt_at' => now()->toIso8601String(),
+        'ldap_last_sync_error' => 'AD injoignable : timeout connexion.',
+    ]);
+
+    $this->actingAs(User::factory()->superAdmin()->create())
+        ->get(route('admin.settings'))
+        ->assertOk()
+        ->assertSee('Détail de la dernière erreur')
+        ->assertSee('AD injoignable : timeout connexion.')
+        ->assertSee('Dernière tentative');
+});
+
 it('does not grant system administration based on department membership', function () {
     $department = Department::factory()->create(['name' => 'Administration']);
     $user = User::factory()->withRole($department, DepartmentRole::Director)->create();
