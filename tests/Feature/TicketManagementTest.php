@@ -11,6 +11,7 @@ use App\Notifications\TicketNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -39,6 +40,27 @@ it('shows ticket support as a service on the IT department page', function () {
         ->assertSee('Support IT')
         ->assertSee('href="/intranet/tickets"', false)
         ->assertDontSee('Mes tickets / file IT');
+});
+
+it('recovers the ticket migration when the main table already exists', function () {
+    Schema::dropIfExists('notifications');
+    Schema::dropIfExists('ticket_activities');
+    Schema::dropIfExists('ticket_attachments');
+    Schema::dropIfExists('ticket_comments');
+
+    $migration = require database_path('migrations/2026_10_19_110000_create_tickets_table.php');
+    $migration->up();
+
+    expect(Schema::hasTable('tickets'))
+        ->toBeTrue()
+        ->and(Schema::hasTable('ticket_comments'))
+        ->toBeTrue()
+        ->and(Schema::hasTable('ticket_attachments'))
+        ->toBeTrue()
+        ->and(Schema::hasTable('ticket_activities'))
+        ->toBeTrue()
+        ->and(Schema::hasTable('notifications'))
+        ->toBeTrue();
 });
 
 it('lets an active user create an IT ticket and notifies the IT team', function () {

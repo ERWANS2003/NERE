@@ -8,7 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tickets', function (Blueprint $table) {
+        $this->createIfMissing('tickets', [
+            'id', 'number', 'department_id', 'requester_id', 'assignee_id',
+            'subject', 'description', 'category', 'priority', 'status',
+            'resolved_at', 'closed_at', 'created_at', 'updated_at',
+        ], function (Blueprint $table) {
             $table->id();
             $table->string('number')->unique();
             $table->foreignId('department_id')->constrained()->restrictOnDelete();
@@ -28,7 +32,9 @@ return new class extends Migration
             $table->index(['assignee_id', 'status']);
         });
 
-        Schema::create('ticket_comments', function (Blueprint $table) {
+        $this->createIfMissing('ticket_comments', [
+            'id', 'ticket_id', 'user_id', 'body', 'is_internal', 'created_at', 'updated_at',
+        ], function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -39,7 +45,10 @@ return new class extends Migration
             $table->index(['ticket_id', 'created_at']);
         });
 
-        Schema::create('ticket_attachments', function (Blueprint $table) {
+        $this->createIfMissing('ticket_attachments', [
+            'id', 'ticket_id', 'ticket_comment_id', 'user_id', 'disk', 'path',
+            'original_name', 'mime_type', 'size', 'created_at', 'updated_at',
+        ], function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('ticket_comment_id')->nullable()->constrained('ticket_comments')->cascadeOnDelete();
@@ -54,7 +63,9 @@ return new class extends Migration
             $table->index(['ticket_id', 'ticket_comment_id']);
         });
 
-        Schema::create('ticket_activities', function (Blueprint $table) {
+        $this->createIfMissing('ticket_activities', [
+            'id', 'ticket_id', 'user_id', 'event', 'changes', 'created_at', 'updated_at',
+        ], function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -65,16 +76,16 @@ return new class extends Migration
             $table->index(['ticket_id', 'created_at']);
         });
 
-        if (! Schema::hasTable('notifications')) {
-            Schema::create('notifications', function (Blueprint $table) {
-                $table->uuid('id')->primary();
-                $table->string('type');
-                $table->morphs('notifiable');
-                $table->text('data');
-                $table->timestamp('read_at')->nullable();
-                $table->timestamps();
-            });
-        }
+        $this->createIfMissing('notifications', [
+            'id', 'type', 'notifiable_type', 'notifiable_id', 'data', 'read_at', 'created_at', 'updated_at',
+        ], function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function down(): void
@@ -83,5 +94,25 @@ return new class extends Migration
         Schema::dropIfExists('ticket_attachments');
         Schema::dropIfExists('ticket_comments');
         Schema::dropIfExists('tickets');
+    }
+
+    /**
+     * Adopt an already-created table only when it has the columns this migration
+     * expects. This allows a deployment to recover from an earlier partial run
+     * without dropping ticket data or silently accepting an incompatible schema.
+     *
+     * @param  list<string>  $columns
+     */
+    private function createIfMissing(string $name, array $columns, Closure $definition): void
+    {
+        if (Schema::hasTable($name)) {
+            if (! Schema::hasColumns($name, $columns)) {
+                throw new RuntimeException("La table [{$name}] existe déjà mais son schéma est incomplet; vérifiez-la avant de relancer les migrations.");
+            }
+
+            return;
+        }
+
+        Schema::create($name, $definition);
     }
 };
