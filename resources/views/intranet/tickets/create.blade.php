@@ -24,8 +24,9 @@
                 <div>
                     <label for="category" class="mb-1 block text-sm font-medium text-graphite-800">Catégorie <span class="text-red-600">*</span></label>
                     <select id="category" name="category" required class="w-full rounded-lg border border-graphite-300 px-3 py-2">
+                        <option value="" disabled @selected(old('category', $selectedCategory) === null)>Choisir une catégorie</option>
                         @foreach($categories as $value => $label)
-                            <option value="{{ $value }}" @selected(old('category') === $value)>{{ $label }}</option>
+                            <option value="{{ $value }}" @selected(old('category', $selectedCategory) === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                     @error('category')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror

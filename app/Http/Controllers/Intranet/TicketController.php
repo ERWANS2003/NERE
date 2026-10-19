@@ -59,11 +59,16 @@ class TicketController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $category = $request->query('category');
+
         return view('intranet.tickets.create', [
             'categories' => TicketCategory::options(),
             'priorities' => TicketPriority::options(),
+            'selectedCategory' => is_string($category) && TicketCategory::tryFrom($category)
+                ? $category
+                : null,
         ]);
     }
 

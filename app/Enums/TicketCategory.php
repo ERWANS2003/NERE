@@ -8,6 +8,8 @@ enum TicketCategory: string
     case Software = 'software';
     case Access = 'access';
     case Network = 'network';
+    case Backup = 'backup';
+    case Security = 'security';
     case Email = 'email';
     case Other = 'other';
 
@@ -18,6 +20,8 @@ enum TicketCategory: string
             self::Software => 'Logiciel',
             self::Access => 'Accès et comptes',
             self::Network => 'Réseau',
+            self::Backup => 'Sauvegarde et restauration',
+            self::Security => 'Sécurité informatique',
             self::Email => 'Messagerie',
             self::Other => 'Autre',
         };

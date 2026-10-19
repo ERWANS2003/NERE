@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use Database\Seeders\DepartmentServiceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -42,6 +43,52 @@ it('shows ticket support as a service on the IT department page', function () {
         ->assertSee('Support IT')
         ->assertSee('href="/intranet/tickets"', false)
         ->assertDontSee('Mes tickets / file IT');
+});
+
+it('links every IT service to ticket creation with its matching category', function () {
+    $it = departementIt();
+    app(DepartmentServiceSeeder::class)->run();
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('intranet.departments.show', 'IT'))
+        ->assertOk()
+        ->assertSee('href="/intranet/tickets"', false)
+        ->assertSee('href="/intranet/tickets/create?category=hardware"', false)
+        ->assertSee('href="/intranet/tickets/create?category=access"', false)
+        ->assertSee('href="/intranet/tickets/create?category=network"', false)
+        ->assertSee('href="/intranet/tickets/create?category=backup"', false)
+        ->assertSee('href="/intranet/tickets/create?category=security"', false);
+
+    $this->get(route('intranet.tickets.create', ['category' => 'backup']))
+        ->assertOk()
+        ->assertSee('<option value="backup" selected>', false)
+        ->assertSee('Sauvegarde et restauration');
+});
+
+it('updates existing IT service links when the ticket service migration runs', function () {
+    $it = departementIt();
+    DepartmentService::create([
+        'department_id' => $it->id,
+        'name' => 'Sauvegarde et restauration',
+        'description' => 'Restaurer des fichiers.',
+        'link_type' => 'form',
+        'link_url' => null,
+        'order' => 5,
+        'is_active' => true,
+    ]);
+
+    $migration = require database_path('migrations/2026_10_19_140000_link_it_services_to_ticket_categories.php');
+    $migration->up();
+
+    expect(DepartmentService::where('department_id', $it->id)
+        ->where('name', 'Sauvegarde et restauration')
+        ->firstOrFail()
+        ->only(['link_type', 'link_url']))
+        ->toBe([
+            'link_type' => 'page',
+            'link_url' => '/intranet/tickets/create?category=backup',
+        ]);
 });
 
 it('recovers the ticket migration when the main table already exists', function () {

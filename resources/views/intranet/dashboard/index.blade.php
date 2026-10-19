@@ -15,7 +15,7 @@
         <div class="relative mx-auto max-w-screen-2xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
             <div class="max-w-4xl">
                 <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                    Bienvenue dans l’intranet
+                    Bienvenue dans l’intranet de
                     <span class="mt-1 block text-or-300">NÉRÉ MINING</span>
                 </h1>
                 <p class="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">

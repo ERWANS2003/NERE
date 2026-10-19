@@ -10,8 +10,8 @@ use Illuminate\Database\Seeder;
  * Services proposés par chaque département (onglet « Services » de la page
  * vitrine). Objectif : 5-6 services par département.
  *
- * Idempotent : chaque service est identifié par (département, nom). Support IT
- * est relié au module de tickets ; les autres destinations restent à configurer.
+ * Idempotent : chaque service est identifié par (département, nom). Les
+ * services IT renvoient au formulaire de tickets avec leur catégorie.
  */
 class DepartmentServiceSeeder extends Seeder
 {
@@ -88,6 +88,14 @@ class DepartmentServiceSeeder extends Seeder
             ],
         ];
 
+        $itTicketCategories = [
+            'Demande de matériel' => 'hardware',
+            'Création de compte' => 'access',
+            'Téléphonie et réseau' => 'network',
+            'Sauvegarde et restauration' => 'backup',
+            'Sécurité informatique' => 'security',
+        ];
+
         foreach ($services as $deptCode => $deptServices) {
             $dept = $departments->where('code', $deptCode)->first();
             if (! $dept) {
@@ -95,6 +103,9 @@ class DepartmentServiceSeeder extends Seeder
             }
 
             foreach ($deptServices as $index => $service) {
+                $ticketCategory = $deptCode === 'IT'
+                    ? ($itTicketCategories[$service['name']] ?? null)
+                    : null;
                 $supportIt = $deptCode === 'IT' && $service['name'] === 'Support IT';
 
                 DepartmentService::updateOrCreate(
@@ -105,8 +116,10 @@ class DepartmentServiceSeeder extends Seeder
                     [
                         'description' => $service['description'],
                         'icon' => $service['icon'],
-                        'link_type' => $supportIt ? 'page' : 'form',
-                        'link_url' => $supportIt ? '/intranet/tickets' : null,
+                        'link_type' => $supportIt || $ticketCategory ? 'page' : 'form',
+                        'link_url' => $supportIt
+                            ? '/intranet/tickets'
+                            : ($ticketCategory ? '/intranet/tickets/create?category='.$ticketCategory : null),
                         'order' => $index + 1,
                         'is_active' => true,
                     ]
