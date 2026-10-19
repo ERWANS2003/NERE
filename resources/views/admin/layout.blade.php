@@ -47,6 +47,16 @@
                     <i class="fas fa-building mr-2"></i> Départements
                 </a>
 
+                <a href="{{ route('admin.announcements.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.announcements.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-bullhorn mr-2"></i> Annonces
+                </a>
+
+                <a href="{{ route('admin.calendar.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.calendar.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-calendar-days mr-2"></i> Calendrier
+                </a>
+
                 <a href="{{ route('admin.settings') }}"
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.settings*', 'admin.ldap.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                     <i class="fas fa-cog mr-2"></i> Paramètres
