@@ -1,0 +1,133 @@
+<?php
+
+use App\Enums\DepartmentRole;
+use App\Models\Department;
+use App\Models\KnowledgeArticle;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+function knowledgeArticle(array $attributes = []): KnowledgeArticle
+{
+    static $sequence = 0;
+    $sequence++;
+
+    return KnowledgeArticle::query()->create([
+        'title' => "Guide de test {$sequence}",
+        'slug' => "guide-de-test-{$sequence}",
+        'summary' => 'Résumé du guide.',
+        'content' => 'Étapes de dépannage.',
+        'category' => 'access',
+        'is_published' => true,
+        ...$attributes,
+    ]);
+}
+
+it('shows published knowledge articles to employees and keeps drafts private', function () {
+    $published = knowledgeArticle(['title' => 'Guide publié à rechercher']);
+    $draft = knowledgeArticle([
+        'title' => 'Brouillon confidentiel',
+        'slug' => 'brouillon-confidentiel',
+        'is_published' => false,
+    ]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('intranet.knowledge-base.index', ['search' => 'rechercher']))
+        ->assertOk()
+        ->assertSee($published->title)
+        ->assertDontSee($draft->title);
+
+    $this->get(route('intranet.knowledge-base.show', $published))
+        ->assertOk()
+        ->assertSee('Ce guide vous a-t-il aidé ?');
+
+    $this->get(route('intranet.knowledge-base.show', $draft))
+        ->assertNotFound();
+});
+
+it('allows only administrators and the IT team to manage knowledge articles', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('intranet.knowledge-base.create'))
+        ->assertForbidden();
+
+    $it = Department::factory()->create(['code' => 'IT', 'name' => 'Informatique']);
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+
+    $this->actingAs($technician)
+        ->get(route('intranet.knowledge-base.create'))
+        ->assertOk()
+        ->assertSee('Ajouter un guide de dépannage');
+
+    $article = knowledgeArticle();
+    $this->actingAs(User::factory()->superAdmin()->create())
+        ->get(route('intranet.knowledge-base.edit', $article))
+        ->assertOk()
+        ->assertSee($article->title);
+});
+
+it('suggests published guides before a user submits a ticket', function () {
+    $suggested = knowledgeArticle([
+        'title' => 'Guide pour les problèmes de compte',
+        'slug' => 'guide-problemes-compte',
+        'category' => 'access',
+    ]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('intranet.tickets.create', ['category' => 'access']))
+        ->assertOk()
+        ->assertSee('Avant d’envoyer votre demande')
+        ->assertSee($suggested->title)
+        ->assertSee(route('intranet.knowledge-base.show', $suggested));
+});
+
+it('lets a user update their feedback without creating duplicate votes', function () {
+    $article = knowledgeArticle();
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('intranet.knowledge-base.feedback', $article), ['helpful' => '1'])
+        ->assertRedirect();
+
+    $this->post(route('intranet.knowledge-base.feedback', $article), ['helpful' => '0'])
+        ->assertRedirect();
+
+    expect($article->feedback()->count())->toBe(1)
+        ->and((bool) $article->feedback()->first()->pivot->helpful)->toBeFalse();
+
+    $this->get(route('intranet.knowledge-base.show', $article))
+        ->assertOk()
+        ->assertSee('0 oui · 1 pas encore');
+});
+
+it('creates and updates a knowledge article through the IT management form', function () {
+    $it = Department::factory()->create(['code' => 'IT', 'name' => 'Informatique']);
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+
+    $this->actingAs($technician)
+        ->post(route('intranet.knowledge-base.store'), [
+            'title' => 'Résoudre un problème courant',
+            'summary' => 'Un guide de résolution simple.',
+            'content' => "Étape 1.\nÉtape 2.",
+            'category' => 'software',
+            'keywords' => 'application, dépannage',
+            'is_published' => '1',
+        ])
+        ->assertRedirect();
+
+    $article = KnowledgeArticle::query()->where('slug', 'resoudre-un-probleme-courant')->firstOrFail();
+    expect($article->is_published)->toBeTrue()
+        ->and($article->author_id)->toBe($technician->id);
+
+    $this->put(route('intranet.knowledge-base.update', $article), [
+        'title' => 'Résoudre un problème courant',
+        'summary' => 'Résumé mis à jour.',
+        'content' => 'Étapes mises à jour.',
+        'category' => 'software',
+    ])->assertRedirect();
+
+    expect($article->fresh()->summary)->toBe('Résumé mis à jour.')
+        ->and($article->fresh()->is_published)->toBeFalse();
+});

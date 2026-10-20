@@ -8,6 +8,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Models\KnowledgeArticle;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketAttachment;
@@ -62,13 +63,28 @@ class TicketController extends Controller
     public function create(Request $request): View
     {
         $category = $request->query('category');
+        $selectedCategory = is_string($category) && TicketCategory::tryFrom($category)
+            ? $category
+            : null;
+        $suggestedArticles = KnowledgeArticle::query()
+            ->published()
+            ->withCount([
+                'feedback as helpful_count' => fn ($feedback) => $feedback->where('knowledge_article_feedback.helpful', true),
+            ])
+            ->when(
+                $selectedCategory,
+                fn ($articles) => $articles->orderByRaw('CASE WHEN category = ? THEN 0 ELSE 1 END', [$selectedCategory])
+            )
+            ->orderByDesc('helpful_count')
+            ->orderBy('title')
+            ->limit(4)
+            ->get();
 
         return view('intranet.tickets.create', [
             'categories' => TicketCategory::options(),
             'priorities' => TicketPriority::options(),
-            'selectedCategory' => is_string($category) && TicketCategory::tryFrom($category)
-                ? $category
-                : null,
+            'selectedCategory' => $selectedCategory,
+            'suggestedArticles' => $suggestedArticles,
         ]);
     }
 

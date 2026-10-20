@@ -451,6 +451,13 @@ it('shows recent forms from handled departments and tickets the user may access'
         ->assertSee('Demande HSE visible')
         ->assertSee('Mon formulaire IT')
         ->assertSee('Mon ticket IT')
+        ->assertSee('Que souhaitez-vous faire ?')
+        ->assertSee('Faire une demande')
+        ->assertSee(route('intranet.forms.index'), false)
+        ->assertSee('Signaler un problème')
+        ->assertSee(route('intranet.tickets.create'), false)
+        ->assertSee('Traiter les demandes du département')
+        ->assertSee(route('intranet.submissions.queue'), false)
         ->assertDontSee('Demande confidentielle')
         ->assertSee(route('intranet.tickets.show', $ticket), false);
 });

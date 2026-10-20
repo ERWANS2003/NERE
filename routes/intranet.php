@@ -9,6 +9,7 @@ use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentCont
 use App\Http\Controllers\Intranet\DepartmentShowController;
 use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FormController;
+use App\Http\Controllers\Intranet\KnowledgeBaseController;
 use App\Http\Controllers\Intranet\NotificationController;
 use App\Http\Controllers\Intranet\ResourceController;
 use App\Http\Controllers\Intranet\SubmissionController;
@@ -79,6 +80,17 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     });
 
     // Support informatique
+    Route::prefix('base-de-connaissances')->name('knowledge-base.')->group(function () {
+        Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
+        Route::get('/create', [KnowledgeBaseController::class, 'create'])->name('create');
+        Route::post('/', [KnowledgeBaseController::class, 'store'])->name('store');
+        Route::get('/{article:slug}/edit', [KnowledgeBaseController::class, 'edit'])->name('edit');
+        Route::put('/{article:slug}', [KnowledgeBaseController::class, 'update'])->name('update');
+        Route::delete('/{article:slug}', [KnowledgeBaseController::class, 'destroy'])->name('destroy');
+        Route::post('/{article:slug}/feedback', [KnowledgeBaseController::class, 'feedback'])->name('feedback');
+        Route::get('/{article:slug}', [KnowledgeBaseController::class, 'show'])->name('show');
+    });
+
     Route::prefix('tickets')->name('tickets.')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->name('index');
         Route::get('/create', [TicketController::class, 'create'])->name('create');

@@ -20,6 +20,9 @@
     @stack('styles')
 </head>
 <body class="bg-graphite-50 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-semibold focus:text-nere-700 focus:shadow-lg">
+        Aller au contenu principal
+    </a>
     <div class="flex h-screen overflow-hidden">
         
         <!-- Sidebar -->
@@ -32,7 +35,7 @@
             @include('intranet.partials.header')
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto bg-graphite-50 p-6">
+            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto bg-graphite-50 p-4 sm:p-6">
                 @if (! empty($breadcrumbs))
                     <nav class="mb-6" aria-label="Breadcrumb">
                         <ol class="flex items-center space-x-2 text-sm text-graphite-600">

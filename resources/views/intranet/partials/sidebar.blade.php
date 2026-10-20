@@ -8,14 +8,24 @@
     aria-label="Navigation principale"
 >
     <!-- Logo -->
-    <div class="h-16 flex items-center justify-center border-b border-graphite-200 px-4">
-        <div class="flex w-full items-center justify-center rounded-lg bg-graphite-900 px-3 py-2">
+    <div class="flex h-16 items-center justify-between gap-3 border-b border-graphite-200 px-4">
+        <div class="flex min-w-0 flex-1 items-center justify-center rounded-lg bg-graphite-900 px-3 py-2">
             <img
                 src="{{ asset('images/logo-nere-mining.png') }}"
                 alt="NÉRÉ Mining"
                 class="h-10 w-auto"
             >
         </div>
+        <button
+            type="button"
+            @click="sidebarOpen = false"
+            class="rounded-lg p-2 text-graphite-600 hover:bg-graphite-100 lg:hidden"
+            aria-label="Fermer le menu"
+        >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
     </div>
 
     <!-- Navigation Menu -->
@@ -97,6 +107,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     <span>Mes Demandes</span>
+                </a>
+            </li>
+
+            <li>
+                <a
+                    href="{{ route('intranet.knowledge-base.index') }}"
+                    class="sidebar-link {{ request()->routeIs('intranet.knowledge-base.*') ? 'active' : '' }}"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 5.754 5 4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18c1.746 0 3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    <span>Base de connaissances</span>
+                </a>
+            </li>
+
+            <li>
+                <a
+                    href="{{ route('intranet.tickets.index') }}"
+                    class="sidebar-link {{ request()->routeIs('intranet.tickets.*') ? 'active' : '' }}"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m-3.182-3.182a4.5 4.5 0 000-6.364M9 12a3 3 0 106 0 3 3 0 00-6 0zm12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Support informatique</span>
                 </a>
             </li>
 

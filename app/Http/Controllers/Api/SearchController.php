@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\CalendarEvent;
 use App\Models\Department;
+use App\Models\KnowledgeArticle;
 use App\Models\Resource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -102,6 +103,18 @@ class SearchController extends Controller
                 'description' => Str::limit((string) $r->description, 80),
                 'url' => route('intranet.resources.show', $r->id),
                 'tags' => $r->file_type.' '.(is_array($r->tags) ? implode(' ', $r->tags) : (string) $r->tags),
+            ]);
+        });
+
+        // Articles publiés de la base de connaissances
+        KnowledgeArticle::published()->get()->each(function (KnowledgeArticle $article) use ($resultats) {
+            $resultats->push([
+                'id' => 'knowledge-article-'.$article->id,
+                'type' => 'page',
+                'title' => $article->title,
+                'description' => Str::limit($article->summary, 80),
+                'url' => route('intranet.knowledge-base.show', $article),
+                'tags' => $article->keywords.' '.$article->category,
             ]);
         });
 

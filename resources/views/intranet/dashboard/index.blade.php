@@ -27,6 +27,86 @@
         <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
     </section>
 
+    <section class="mb-8" aria-labelledby="quick-actions-heading">
+        <div class="mb-3">
+            <h2 id="quick-actions-heading" class="text-lg font-bold text-graphite-900">Que souhaitez-vous faire ?</h2>
+            <p class="mt-1 text-sm text-graphite-600">Accédez directement aux actions les plus utiles.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a href="{{ route('intranet.forms.index') }}"
+               class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Faire une demande : consulter les formulaires de service">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-nere-50 text-nere-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 5.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Faire une demande</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Choisir un formulaire de service</span>
+                </span>
+            </a>
+
+            <a href="{{ route('intranet.tickets.create') }}"
+               class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Signaler un problème informatique : créer un ticket">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-or-100 text-graphite-800">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Signaler un problème</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Contacter le support informatique</span>
+                </span>
+            </a>
+
+            <a href="{{ route('intranet.submissions.index') }}"
+               class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Suivre mes demandes : voir leur statut">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Suivre mes demandes</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Consulter l’avancement et les réponses</span>
+                </span>
+            </a>
+
+            <a href="{{ route('intranet.calendar') }}"
+               class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Consulter l’agenda : voir les événements et jours fériés">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Consulter l’agenda</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Événements et jours fériés</span>
+                </span>
+            </a>
+
+            @if(auth()->user()->hasDepartmentProcessingAccess())
+                <a href="{{ route('intranet.submissions.queue') }}"
+                   class="group flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-600 sm:col-span-2 xl:col-span-4"
+                   aria-label="Traiter les demandes de service de mes départements">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-800">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v4H4zM4 12h10v4H4zM18 12v8m-4-4h8"/>
+                        </svg>
+                    </span>
+                    <span>
+                        <span class="block font-semibold text-graphite-900 group-hover:text-amber-900">Traiter les demandes du département</span>
+                        <span class="mt-0.5 block text-xs text-graphite-700">Ouvrir la file de traitement des demandes de service</span>
+                    </span>
+                </a>
+            @endif
+        </div>
+    </section>
+
     {{-- ============================================================
          Statistiques rapides
     ============================================================ --}}

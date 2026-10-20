@@ -12,6 +12,27 @@
             <p class="mt-1 text-graphite-600">Décrivez le problème ou le besoin ; le support informatique vous répondra dans ce ticket.</p>
         </div>
 
+        @if($suggestedArticles->isNotEmpty())
+            <section class="mb-6 rounded-xl border border-or-200 bg-or-50 p-5" aria-labelledby="suggested-guides-title">
+                <div class="mb-4">
+                    <h2 id="suggested-guides-title" class="text-lg font-semibold text-graphite-900">Avant d’envoyer votre demande</h2>
+                    <p class="mt-1 text-sm text-graphite-700">Ces guides peuvent vous aider à résoudre le problème plus rapidement.</p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach($suggestedArticles as $article)
+                        <a href="{{ route('intranet.knowledge-base.show', $article) }}"
+                           class="rounded-lg border border-graphite-200 bg-white p-4 transition hover:border-nere-400 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nere-600">
+                            <span class="block font-semibold text-nere-800">{{ $article->title }}</span>
+                            <span class="mt-1 block text-sm leading-relaxed text-graphite-600">{{ $article->summary }}</span>
+                        </a>
+                    @endforeach
+                </div>
+                <a href="{{ route('intranet.knowledge-base.index') }}" class="mt-4 inline-flex text-sm font-semibold text-nere-700 hover:underline">
+                    Parcourir toute la base de connaissances <span class="ml-1" aria-hidden="true">→</span>
+                </a>
+            </section>
+        @endif
+
         <form method="POST" action="{{ route('intranet.tickets.store') }}" enctype="multipart/form-data" class="space-y-5 rounded-xl border border-graphite-200 bg-white p-6">
             @csrf
             <div>
