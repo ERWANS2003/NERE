@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\KnowledgeArticle;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -130,4 +131,16 @@ it('creates and updates a knowledge article through the IT management form', fun
 
     expect($article->fresh()->summary)->toBe('Résumé mis à jour.')
         ->and($article->fresh()->is_published)->toBeFalse();
+});
+
+it('can safely rerun the knowledge base migration when its tables already exist', function () {
+    $existingArticle = knowledgeArticle(['slug' => 'article-existant']);
+    $articlesBefore = KnowledgeArticle::query()->count();
+
+    $migration = require database_path('migrations/2026_10_20_151600_create_knowledge_base_tables.php');
+    $migration->up();
+
+    expect(KnowledgeArticle::query()->count())->toBe($articlesBefore)
+        ->and(KnowledgeArticle::query()->whereKey($existingArticle->id)->exists())->toBeTrue()
+        ->and(Schema::hasTable('knowledge_article_feedback'))->toBeTrue();
 });
