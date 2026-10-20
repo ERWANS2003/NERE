@@ -107,6 +107,17 @@ return new class extends Migration
 
     private function normalizeLegacyArticleFields(): void
     {
+        if (Schema::hasColumn('knowledge_articles', 'auteur_id')) {
+            DB::table('knowledge_articles')
+                ->whereNull('author_id')
+                ->whereNotNull('auteur_id')
+                ->update(['author_id' => DB::raw('auteur_id')]);
+
+            Schema::table('knowledge_articles', function (Blueprint $table): void {
+                $table->dropColumn('auteur_id');
+            });
+        }
+
         if (Schema::hasColumn('knowledge_articles', 'titre')) {
             DB::table('knowledge_articles')
                 ->where(function ($query): void {

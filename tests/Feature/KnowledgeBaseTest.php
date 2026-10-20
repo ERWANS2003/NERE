@@ -187,6 +187,7 @@ it('migrates legacy French article titles and removes the required legacy column
 
     Schema::create('knowledge_articles', function ($table): void {
         $table->id();
+        $table->unsignedBigInteger('auteur_id');
         $table->string('titre');
         $table->string('summary', 500);
         $table->text('contenu');
@@ -195,7 +196,9 @@ it('migrates legacy French article titles and removes the required legacy column
         $table->timestamps();
     });
 
+    $author = User::factory()->create();
     $legacyId = DB::table('knowledge_articles')->insertGetId([
+        'auteur_id' => $author->id,
         'titre' => 'Ancien guide de connexion',
         'summary' => 'Résumé historique.',
         'contenu' => 'Instructions historiques.',
@@ -213,7 +216,9 @@ it('migrates legacy French article titles and removes the required legacy column
         ->and($article->slug)->toBe('ancien-guide-de-connexion')
         ->and($article->summary)->toBe('Résumé historique.')
         ->and($article->content)->toBe('Instructions historiques.')
+        ->and($article->author_id)->toBe($author->id)
         ->and(Schema::hasColumn('knowledge_articles', 'titre'))->toBeFalse()
         ->and(Schema::hasColumn('knowledge_articles', 'contenu'))->toBeFalse()
+        ->and(Schema::hasColumn('knowledge_articles', 'auteur_id'))->toBeFalse()
         ->and(KnowledgeArticle::query()->count())->toBeGreaterThan(1);
 });
