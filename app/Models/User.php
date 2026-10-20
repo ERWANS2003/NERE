@@ -196,6 +196,14 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $ids->isEmpty() ? collect() : Department::whereKey($ids)->active()->get();
     }
 
+    public function isDepartmentHead(): bool
+    {
+        $this->loadAuthorisations();
+
+        return collect($this->memberships)
+            ->contains(fn (array $membership) => $membership['role'] === DepartmentRole::Director->value);
+    }
+
     /**
      * Les demandes (soumissions de formulaires) creees par l'utilisateur.
      */
@@ -376,4 +384,3 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $query->where('actif', true);
     }
 }
-

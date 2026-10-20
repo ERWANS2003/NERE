@@ -17,13 +17,18 @@ class DepartmentController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Department::class);
+
         $query = Department::with(['manager', 'parent'])
             ->withCount('users');
 
         // Filtres de recherche
         if ($request->filled('search')) {
-            $query->where('name', 'ILIKE', '%' . $request->search . '%')
-                  ->orWhere('description', 'ILIKE', '%' . $request->search . '%');
+            $search = $request->string('search')->toString();
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%");
+            });
         }
 
         if ($request->filled('status')) {
@@ -63,6 +68,8 @@ class DepartmentController extends Controller
      */
     public function create(): View
     {
+        $this->authorize('create', Department::class);
+
         $managers = User::where('actif', true)
             ->orderBy('name')
             ->get();
@@ -79,6 +86,8 @@ class DepartmentController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Department::class);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:departments,name'],
             'code' => ['nullable', 'string', 'max:10', 'unique:departments,code'],
@@ -109,6 +118,8 @@ class DepartmentController extends Controller
      */
     public function show(Department $department): View
     {
+        $this->authorize('view', $department);
+
         $department->load(['manager', 'parent', 'children.users', 'users.roles']);
         
         $users = $department->users()->with('roles')->get();
@@ -127,6 +138,8 @@ class DepartmentController extends Controller
      */
     public function edit(Department $department): View
     {
+        $this->authorize('update', $department);
+
         $managers = User::where('actif', true)
             ->orderBy('name')
             ->get();
@@ -144,6 +157,8 @@ class DepartmentController extends Controller
      */
     public function update(Request $request, Department $department): RedirectResponse
     {
+        $this->authorize('update', $department);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('departments')->ignore($department->id)],
             'code' => ['nullable', 'string', 'max:10', Rule::unique('departments')->ignore($department->id)],
@@ -174,6 +189,8 @@ class DepartmentController extends Controller
      */
     public function destroy(Department $department): RedirectResponse
     {
+        $this->authorize('delete', $department);
+
         // Vérifier qu'il n'y a pas de sous-départements
         if ($department->children()->count() > 0) {
             return redirect()

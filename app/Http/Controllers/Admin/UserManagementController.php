@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Enums\DepartmentRole;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
@@ -81,17 +82,18 @@ class UserManagementController extends Controller
         $validated['password'] = Hash::make($validated['password']);
         $validated['actif'] = $request->boolean('actif', true);
         $validated['is_super_admin'] = $request->boolean('is_super_admin', false);
+        $departmentIds = $validated['departments'] ?? [];
+        $roleIds = $validated['roles'] ?? [];
+        unset($validated['departments'], $validated['roles']);
 
         $user = User::create($validated);
 
-        // Attacher les départements
-        if ($request->filled('departments')) {
-            $user->departments()->attach($request->departments);
+        if ($request->has('departments_present') || $request->has('departments')) {
+            $this->syncDepartmentMemberships($user, $departmentIds);
         }
 
-        // Attacher les rôles
-        if ($request->filled('roles')) {
-            $user->roles()->attach($request->roles);
+        if ($request->has('roles_present') || $request->has('roles')) {
+            $user->roles()->sync($roleIds);
         }
 
         return redirect()
@@ -140,6 +142,9 @@ class UserManagementController extends Controller
             'roles' => 'array',
             'roles.*' => 'exists:roles,id',
         ]);
+        $departmentIds = $validated['departments'] ?? [];
+        $roleIds = $validated['roles'] ?? [];
+        unset($validated['departments'], $validated['roles']);
 
         $actif = $request->boolean('actif');
         $administrateur = $request->boolean('is_super_admin');
@@ -165,13 +170,12 @@ class UserManagementController extends Controller
         $user->update($validated);
 
         // Synchroniser les départements
-        if ($request->has('departments')) {
-            $user->departments()->sync($request->departments);
+        if ($request->has('departments_present') || $request->has('departments')) {
+            $this->syncDepartmentMemberships($user, $departmentIds);
         }
 
-        // Synchroniser les rôles
-        if ($request->has('roles')) {
-            $user->roles()->sync($request->roles);
+        if ($request->has('roles_present') || $request->has('roles')) {
+            $user->roles()->sync($roleIds);
         }
 
         return redirect()
@@ -217,5 +221,30 @@ class UserManagementController extends Controller
         return redirect()
             ->route('admin.users.show', $user)
             ->with('success', 'Mot de passe réinitialisé avec succès');
+    }
+
+    /**
+     * Synchronise les départements en conservant les rôles existants et en
+     * donnant le rôle de base aux nouveaux rattachements.
+     *
+     * @param array<int, int|string> $departmentIds
+     */
+    private function syncDepartmentMemberships(User $user, array $departmentIds): void
+    {
+        $existingMemberships = $user->departments()->get()->keyBy('id');
+        $memberships = [];
+
+        foreach ($departmentIds as $departmentId) {
+            $departmentId = (int) $departmentId;
+            $existingMembership = $existingMemberships->get($departmentId);
+
+            $memberships[$departmentId] = [
+                'role' => $existingMembership?->pivot->role ?? DepartmentRole::User->value,
+                'tech_level' => $existingMembership?->pivot->tech_level,
+            ];
+        }
+
+        $user->departments()->sync($memberships);
+        $user->refreshAuthorisations();
     }
 }

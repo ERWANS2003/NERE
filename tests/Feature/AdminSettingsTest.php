@@ -3,6 +3,8 @@
 use App\Enums\DepartmentRole;
 use App\Models\AppSetting;
 use App\Models\Department;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
@@ -24,6 +26,37 @@ it('reserves the system settings area for active system administrators', functio
         ->assertOk()
         ->assertSee('Paramètres de l’application')
         ->assertSee('Synchronisation Active Directory');
+});
+
+it('allows administrators to create and edit roles with permissions', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $permission = Permission::create([
+        'nom' => 'Gérer les utilisateurs',
+        'slug' => 'users.manage',
+        'description' => 'Créer et modifier les utilisateurs',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.roles.create'))
+        ->assertOk()
+        ->assertSee('Créer un nouveau rôle')
+        ->assertSee('Gérer les utilisateurs');
+
+    $this->post(route('admin.roles.store'), [
+        'nom' => 'Gestionnaire IT',
+        'slug' => 'gestionnaire-it',
+        'description' => 'Gestion des accès IT',
+        'permissions' => [$permission->id],
+    ])->assertRedirect();
+
+    $role = Role::query()->where('slug', 'gestionnaire-it')->firstOrFail();
+
+    expect($role->permissions()->pluck('permissions.id')->all())->toBe([$permission->id]);
+
+    $this->get(route('admin.roles.edit', $role))
+        ->assertOk()
+        ->assertSee('Modifier le rôle')
+        ->assertSee('Gérer les utilisateurs');
 });
 
 it('shows the latest AD synchronization failure details to administrators', function () {
@@ -99,7 +132,9 @@ it('does not grant system administration based on department membership', functi
 
     $this->actingAs($user)
         ->get(route('intranet.departments.manage.index'))
-        ->assertForbidden();
+        ->assertOk()
+        ->assertSee($department->name)
+        ->assertDontSee(route('admin.users.index'));
 });
 
 it('saves site details and an AD synchronization schedule', function () {

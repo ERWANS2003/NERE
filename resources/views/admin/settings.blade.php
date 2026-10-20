@@ -113,10 +113,6 @@
             @endif
         </section>
 
-        <section class="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            <h4 class="font-semibold"><i class="fas fa-clock mr-2"></i>Planification serveur requise</h4>
-            <p class="mt-1">La fréquence choisie s’exécute si le planificateur Laravel est lancé chaque minute par le serveur (`php artisan schedule:run`). Enregistrez les paramètres avant de modifier la planification.</p>
-        </section>
     </aside>
 </div>
 @endsection

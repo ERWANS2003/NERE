@@ -1,9 +1,9 @@
-@extends('intranet.layouts.app')
+@extends('admin.layout')
 
 @section('title', 'Modifier ' . $department->name)
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-5xl">
     <!-- Header -->
     <div class="mb-8">
         <nav class="flex" aria-label="Breadcrumb">
@@ -278,7 +278,7 @@
                     </div>
 
                     <!-- Danger Zone -->
-                    @can('delete_departments')
+                    @can('delete', $department)
                     <div class="pt-6 border-t border-red-200">
                         <h3 class="text-lg font-medium text-red-900 mb-4">Zone de danger</h3>
                         <div class="bg-red-50 border border-red-200 rounded-md p-4">
@@ -326,7 +326,7 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-@can('delete_departments')
+@can('delete', $department)
 <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
@@ -398,7 +398,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
 });
 
-@can('delete_departments')
+@can('delete', $department)
 function confirmDelete() {
     const modal = document.getElementById('deleteModal');
     modal.classList.remove('hidden');

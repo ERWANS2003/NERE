@@ -1,9 +1,9 @@
-@extends('intranet.layouts.app')
+@extends('admin.layout')
 
 @section('title', $department->name)
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl">
     <!-- Header -->
     <div class="mb-8">
         <nav class="flex" aria-label="Breadcrumb">
@@ -47,7 +47,7 @@
                 @endif
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
-                @can('manage_departments')
+                @can('update', $department)
                 <a href="{{ route('intranet.departments.manage.edit', $department) }}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-edit mr-2"></i>
@@ -201,17 +201,10 @@
             @if($users && $users->count() > 0)
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="mb-6">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
                             Membres du département ({{ $users->count() }})
                         </h3>
-                        @can('manage_users')
-                        <button type="button" 
-                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <i class="fas fa-plus mr-1"></i>
-                            Ajouter un membre
-                        </button>
-                        @endcan
                     </div>
                     <div class="space-y-3">
                         @foreach($users as $user)
@@ -245,13 +238,13 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                     {{ $user->is_active ? 'Actif' : 'Inactif' }}
                                 </span>
-                                @can('manage_users')
+                                @if(auth()->user()->is_super_admin)
                                 <a href="{{ route('admin.users.show', $user) }}" 
                                    class="text-blue-600 hover:text-blue-800">
                                     <i class="fas fa-eye"></i>
                                     <span class="sr-only">Voir profil</span>
                                 </a>
-                                @endcan
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -293,33 +286,25 @@
             </div>
 
             <!-- Quick Actions -->
+            @can('create', App\Models\Department::class)
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                         Actions rapides
                     </h3>
                     <div class="space-y-3">
-                        @can('manage_departments')
                         <a href="{{ route('intranet.departments.manage.create') }}?parent={{ $department->id }}" 
                            class="flex items-center p-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50">
                             <i class="fas fa-plus text-green-500 mr-3"></i>
                             Ajouter sous-département
                         </a>
-                        @endcan
-
-                        @can('manage_users')
-                        <button type="button" 
-                                class="flex items-center p-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 w-full text-left">
-                            <i class="fas fa-user-plus text-purple-500 mr-3"></i>
-                            Ajouter un membre
-                        </button>
-                        @endcan
                     </div>
                 </div>
             </div>
+            @endcan
 
             <!-- Department Settings -->
-            @can('manage_departments')
+            @can('update', $department)
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">

@@ -84,6 +84,7 @@
             <!-- Départements -->
             <div class="mb-6 pb-6 border-b border-gray-200">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Départements</label>
+                <input type="hidden" name="departments_present" value="1">
                 <div class="grid grid-cols-2 gap-2">
                     @foreach($departments as $dept)
                     <label class="flex items-center">
@@ -99,6 +100,7 @@
             <!-- Rôles -->
             <div class="mb-6 pb-6 border-b border-gray-200">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Rôles système</label>
+                <input type="hidden" name="roles_present" value="1">
                 <div class="grid grid-cols-2 gap-2">
                     @foreach($roles as $role)
                     <label class="flex items-center">

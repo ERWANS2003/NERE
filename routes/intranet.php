@@ -39,8 +39,9 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
             return view('intranet.departments.index');
         })->name('index');
 
-        // CRUD administration des départements (contrôleur), sous /manage
-        Route::middleware('admin')->prefix('manage')->name('manage.')->group(function () {
+        // Gestion des départements : les chefs peuvent consulter l'ensemble et
+        // modifier le leur; les actions globales sont réservées aux admins.
+        Route::prefix('manage')->name('manage.')->group(function () {
             Route::get('/', [IntranetDepartmentController::class, 'index'])->name('index');
             Route::get('/create', [IntranetDepartmentController::class, 'create'])->name('create');
             Route::post('/', [IntranetDepartmentController::class, 'store'])->name('store');

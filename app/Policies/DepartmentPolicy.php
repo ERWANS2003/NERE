@@ -7,20 +7,15 @@ use App\Models\User;
 
 class DepartmentPolicy
 {
-    /**
-     * Tout utilisateur authentifie voit la page d'accueil. Les cartes qu'il a
-     * le droit de voir sont filtrees en base par Department::scopeVisibleTo(),
-     * pas ici : une policy repond a « cette carte est-elle accessible », pas
-     * « quelles cartes existe-t-il ».
-     */
+    /** Les chefs et les administrateurs systeme peuvent consulter le referentiel. */
     public function viewAny(User $user): bool
     {
-        return $user->is_active;
+        return $user->is_active && ($user->is_super_admin || $user->isDepartmentHead());
     }
 
     public function view(User $user, Department $department): bool
     {
-        return $user->is_active && $user->isMemberOf($department->getKey());
+        return $user->is_active && ($user->is_super_admin || $user->isDepartmentHead());
     }
 
     /** Seuls les administrateurs gerent le referentiel des departements. */
@@ -31,7 +26,8 @@ class DepartmentPolicy
 
     public function update(User $user, Department $department): bool
     {
-        return $user->is_super_admin;
+        return $user->is_active
+            && ($user->is_super_admin || $user->canManageDepartment($department->getKey()));
     }
 
     public function delete(User $user, Department $department): bool

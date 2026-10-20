@@ -1,9 +1,9 @@
-@extends('intranet.layouts.app')
+@extends('admin.layout')
 
 @section('title', 'Créer un département')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-5xl">
     <!-- Header -->
     <div class="mb-8">
         <nav class="flex" aria-label="Breadcrumb">
