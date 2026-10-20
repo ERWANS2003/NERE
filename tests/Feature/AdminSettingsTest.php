@@ -6,10 +6,10 @@ use App\Models\Department;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Contracts\Console\Kernel;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 it('reserves the system settings area for active system administrators', function () {
@@ -30,17 +30,15 @@ it('reserves the system settings area for active system administrators', functio
 
 it('allows administrators to create and edit roles with permissions', function () {
     $admin = User::factory()->superAdmin()->create();
-    $permission = Permission::create([
-        'nom' => 'Gérer les utilisateurs',
-        'slug' => 'users.manage',
-        'description' => 'Créer et modifier les utilisateurs',
-    ]);
+    $permission = Permission::query()->where('slug', 'users.manage')->firstOrFail();
 
     $this->actingAs($admin)
         ->get(route('admin.roles.create'))
         ->assertOk()
-        ->assertSee('Créer un nouveau rôle')
-        ->assertSee('Gérer les utilisateurs');
+        ->assertSee('Créer un rôle')
+        ->assertSee('Gérer les utilisateurs')
+        ->assertSee('Rechercher une permission')
+        ->assertSee('Tout sélectionner');
 
     $this->post(route('admin.roles.store'), [
         'nom' => 'Gestionnaire IT',
@@ -55,7 +53,7 @@ it('allows administrators to create and edit roles with permissions', function (
 
     $this->get(route('admin.roles.edit', $role))
         ->assertOk()
-        ->assertSee('Modifier le rôle')
+        ->assertSee('Modifier « Gestionnaire IT »')
         ->assertSee('Gérer les utilisateurs');
 });
 

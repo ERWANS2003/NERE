@@ -126,6 +126,7 @@ return [
             'meeting' => ['name' => 'Réunion', 'color' => '#C83530', 'text' => '#FFFFFF'],
             'training' => ['name' => 'Formation', 'color' => '#4F7F3A', 'text' => '#FFFFFF'],
             'event' => ['name' => 'Événement', 'color' => '#1A1A1A', 'text' => '#FFFFFF'],
+            'holiday' => ['name' => 'Jour férié', 'color' => '#8B5CF6', 'text' => '#FFFFFF'],
             'birthday' => ['name' => 'Anniversaire', 'color' => '#FFD25A', 'text' => '#1A1A1A'],
             'arrival' => ['name' => 'Arrivée', 'color' => '#F0B52B', 'text' => '#1A1A1A'],
             // Absences approuvées (congés) : bleu clair, non stocké dans calendar_events.

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
-use App\Models\Department;
+use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +34,7 @@ class AnnouncementController extends Controller
             $terme = trim($request->string('search'));
             $query->where(function ($q) use ($terme) {
                 $q->where('title', 'ILIKE', "%{$terme}%")
-                  ->orWhere('body', 'ILIKE', "%{$terme}%");
+                    ->orWhere('body', 'ILIKE', "%{$terme}%");
             });
         }
 
@@ -56,9 +56,7 @@ class AnnouncementController extends Controller
     {
         $this->authorize('create', Announcement::class);
 
-        $departments = $this->publishableDepartments($request->user());
-
-        return view('intranet.announcements.create', compact('departments'));
+        return view('intranet.announcements.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,6 +67,7 @@ class AnnouncementController extends Controller
 
         $announcement = Announcement::create([
             ...$validated,
+            'department_id' => null,
             'created_by' => $request->user()->id,
             'is_active' => true,
             'published_at' => now(),
@@ -85,16 +84,17 @@ class AnnouncementController extends Controller
     {
         $this->authorize('update', $announcement);
 
-        $departments = $this->publishableDepartments($request->user());
-
-        return view('intranet.announcements.edit', compact('announcement', 'departments'));
+        return view('intranet.announcements.edit', compact('announcement'));
     }
 
     public function update(Request $request, Announcement $announcement): RedirectResponse
     {
         $this->authorize('update', $announcement);
 
-        $announcement->update($this->validatedData($request));
+        $announcement->update([
+            ...$this->validatedData($request),
+            'department_id' => null,
+        ]);
 
         return redirect()
             ->route('intranet.announcements.show', $announcement)
@@ -132,66 +132,27 @@ class AnnouncementController extends Controller
     }
 
     /**
-     * @return array{title: string, body: string, priority: string, department_id: int|null}
+     * @return array{title: string, body: string, priority: string}
      */
     private function validatedData(Request $request): array
     {
-        $user = $request->user();
-
-        // Le middleware global ConvertEmptyStringsToNull transforme déjà "" en
-        // null sur une vraie requête HTTP ; cette ligne protège le même code
-        // appelé autrement (tests, requêtes construites à la main).
-        if ($request->input('department_id') === '') {
-            $request->merge(['department_id' => null]);
-        }
-
-        $validated = $request->validate([
+        return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:10000'],
-            'priority' => ['required', 'in:' . implode(',', self::PRIORITIES)],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'priority' => ['required', 'in:'.implode(',', self::PRIORITIES)],
         ]);
-
-        // Un directeur ne peut publier que pour un département qu'il dirige
-        // (jamais "toute l'entreprise" : null est réservé à l'admin général).
-        if (! $user->is_super_admin) {
-            $autorises = $this->publishableDepartments($user)->pluck('id');
-
-            abort_unless(
-                $validated['department_id'] !== null && $autorises->contains((int) $validated['department_id']),
-                403,
-                "Vous ne pouvez publier que pour un département que vous dirigez."
-            );
-        }
-
-        return $validated;
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Department>
-     */
-    private function publishableDepartments($user): \Illuminate\Support\Collection
-    {
-        return $user->is_super_admin
-            ? Department::active()->orderBy('name')->get()
-            : $user->directedDepartments()->sortBy('name')->values();
-    }
-
-    /**
-     * Notifie le public de l'annonce : tout le monde si department_id est
-     * null, sinon seulement les membres de ce département. L'auteur est
-     * toujours exclu : il vient de la publier, pas besoin de le lui notifier.
+     * Les annonces sont des communications globales. L'auteur est exclu de la
+     * notification : il vient de publier l'annonce.
      */
     private function notifyAudience(Announcement $announcement): void
     {
-        $destinataires = $announcement->department_id === null
-            ? \App\Models\User::where('actif', true)->get()
-            : \App\Models\User::where('actif', true)
-                ->whereHas('departments', fn ($q) => $q->where('departments.id', $announcement->department_id))
-                ->get();
+        $destinataires = User::where('actif', true)->get();
 
         $destinataires = $destinataires->reject(
-            fn (\App\Models\User $u) => $u->id === $announcement->created_by
+            fn (User $u) => $u->id === $announcement->created_by
         );
 
         if ($destinataires->isNotEmpty()) {

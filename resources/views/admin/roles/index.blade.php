@@ -3,12 +3,12 @@
 @section('title', 'Gestion des rôles')
 
 @section('content')
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-2xl font-bold text-gray-900">Gestion des rôles</h2>
-        <p class="mt-1 text-sm text-gray-600">Gérez les rôles et leurs permissions</p>
+        <p class="mt-1 text-sm text-gray-600">Organisez les responsabilités et les permissions des utilisateurs.</p>
     </div>
-    <a href="{{ route('admin.roles.create') }}" class="px-4 py-2 bg-nere-600 text-white rounded hover:bg-nere-700">
+    <a href="{{ route('admin.roles.create') }}" class="inline-flex items-center justify-center rounded-md bg-nere-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
         <i class="fas fa-plus mr-2"></i>Nouveau rôle
     </a>
 </div>
@@ -26,20 +26,22 @@
 @endif
 
 <!-- Filtres -->
-<div class="mb-6 bg-white rounded-lg shadow p-4">
-    <form method="GET" action="{{ route('admin.roles.index') }}" class="flex gap-4">
+<div class="mb-6 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
+    <form method="GET" action="{{ route('admin.roles.index') }}" class="flex flex-col gap-3 sm:flex-row">
         <div class="flex-1">
+            <label for="role-search" class="sr-only">Rechercher un rôle</label>
             <input type="text" 
+                   id="role-search"
                    name="search" 
                    value="{{ request('search') }}"
                    placeholder="Rechercher par nom ou slug..."
-                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-nere-500 focus:border-nere-500">
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-nere-500 focus:outline-none focus:ring-2 focus:ring-nere-500">
         </div>
-        <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+        <button type="submit" class="inline-flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
             <i class="fas fa-search mr-2"></i>Rechercher
         </button>
         @if(request()->hasAny(['search']))
-        <a href="{{ route('admin.roles.index') }}" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">
+        <a href="{{ route('admin.roles.index') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             <i class="fas fa-times mr-2"></i>Réinitialiser
         </a>
         @endif
@@ -47,7 +49,8 @@
 </div>
 
 <!-- Liste des rôles -->
-<div class="bg-white rounded-lg shadow overflow-hidden">
+<div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
+    <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
@@ -84,18 +87,20 @@
                     {{ $role->permissions->count() }} permission(s)
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {{ $role->users()->count() }} utilisateur(s)
+                    {{ $role->users_count }} utilisateur(s)
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <a href="{{ route('admin.roles.show', $role) }}" 
-                       class="text-blue-600 hover:text-blue-900"
-                       title="Voir">
+                       class="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900"
+                       aria-label="Voir le rôle {{ $role->nom }}">
                         <i class="fas fa-eye"></i>
+                        <span class="sr-only">Voir</span>
                     </a>
                     <a href="{{ route('admin.roles.edit', $role) }}" 
-                       class="text-yellow-600 hover:text-yellow-900"
-                       title="Modifier">
+                       class="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900"
+                       aria-label="Modifier le rôle {{ $role->nom }}">
                         <i class="fas fa-edit"></i>
+                        <span class="sr-only">Modifier</span>
                     </a>
                 </td>
             </tr>
@@ -103,12 +108,18 @@
             <tr>
                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                     <i class="fas fa-user-tag text-4xl mb-2 text-gray-300"></i>
-                    <p>Aucun rôle trouvé.</p>
+                    <p class="font-medium text-gray-700">{{ request('search') ? 'Aucun rôle ne correspond à votre recherche.' : 'Aucun rôle n’a encore été créé.' }}</p>
+                    @unless(request('search'))
+                        <a href="{{ route('admin.roles.create') }}" class="mt-4 inline-flex items-center rounded-md bg-nere-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-700">
+                            <i class="fas fa-plus mr-2"></i>Créer le premier rôle
+                        </a>
+                    @endunless
                 </td>
             </tr>
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 
 @if($roles->hasPages())

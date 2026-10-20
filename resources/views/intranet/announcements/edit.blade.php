@@ -4,7 +4,6 @@
         ['label' => $announcement->title, 'url' => route('intranet.announcements.show', $announcement)],
         ['label' => 'Modifier'],
     ];
-    $peutPublierPourTous = auth()->user()->is_super_admin;
 @endphp
 
 <x-intranet-layout title="Modifier l'annonce" :breadcrumbs="$breadcrumbs">

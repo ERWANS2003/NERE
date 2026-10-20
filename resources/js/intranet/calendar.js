@@ -2,8 +2,8 @@
  * Calendrier intranet (FullCalendar, lecture seule).
  *
  * Les événements viennent de GET /intranet/calendar/events (voir CalendarFeed) :
- * événements saisis, anniversaires et arrivées. La création/modification depuis
- * l'interface n'est pas prévue à ce stade.
+ * événements saisis, jours fériés, anniversaires et arrivées. La
+ * création/modification des événements globaux depuis cette page n'est pas prévue.
  */
 import { Calendar } from '@fullcalendar/core';
 import frLocale from '@fullcalendar/core/locales/fr';

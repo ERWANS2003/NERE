@@ -8,8 +8,8 @@
         <a href="{{ route('admin.roles.index') }}" class="text-gray-600 hover:text-gray-900">
             <i class="fas fa-arrow-left mr-2"></i>Retour à la liste
         </a>
-        <div class="space-x-2">
-            <a href="{{ route('admin.roles.edit', $role) }}" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.roles.edit', $role) }}" class="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
                 <i class="fas fa-edit mr-2"></i>Modifier
             </a>
             <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" class="inline">
@@ -86,7 +86,12 @@
             @foreach($role->permissions as $permission)
             <div class="flex items-center text-sm text-gray-700">
                 <i class="fas fa-check text-green-500 mr-2"></i>
-                {{ $permission->nom }}
+                <span>
+                    <span class="block font-medium">{{ $permission->nom }}</span>
+                    @if($permission->description)
+                        <span class="mt-0.5 block text-xs text-gray-500">{{ $permission->description }}</span>
+                    @endif
+                </span>
             </div>
             @endforeach
         </div>

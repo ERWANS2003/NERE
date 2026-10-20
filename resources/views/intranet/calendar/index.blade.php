@@ -15,9 +15,18 @@
 >
 
     {{-- En-tête --}}
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-graphite-900 mb-2">Calendrier</h1>
-        <p class="text-graphite-600">Réunions, formations, anniversaires et arrivées</p>
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-graphite-900 mb-2">Calendrier</h1>
+            <p class="text-graphite-600">Jours fériés du Burkina Faso, événements globaux et événements de vos départements.</p>
+        </div>
+        @if($canManageDepartmentEvents)
+            <a href="{{ route('intranet.calendar.department-events.index') }}"
+               class="inline-flex items-center justify-center gap-2 rounded-lg bg-nere-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-700">
+                <i class="fas fa-calendar-plus" aria-hidden="true"></i>
+                Gérer mes événements départementaux
+            </a>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -63,12 +72,19 @@
                             <div class="text-xs text-graphite-500">
                                 {{ $date->isoFormat('dddd') }}@if($props['time']) · {{ $props['time'] }}@endif
                             </div>
+                            <div class="text-xs text-graphite-500">
+                                {{ $props['scope'] === 'department' ? 'Agenda départemental' . ($props['department'] ? ' · ' . $props['department'] : '') : 'Agenda global' }}
+                            </div>
                         </div>
                     </a>
                 @empty
                     <p class="text-sm text-graphite-500 text-center py-4">Aucun événement à venir</p>
                 @endforelse
             </div>
+
+            <p class="text-xs text-graphite-500">
+                Les fêtes liées au calendrier lunaire ne sont pas calculées automatiquement ; leurs dates peuvent être ajoutées après l’annonce officielle.
+            </p>
 
             {{-- Légende --}}
             <div class="bg-white rounded-lg border border-graphite-200 p-6">
@@ -124,9 +140,9 @@
                                 <dt class="text-graphite-500 w-24 shrink-0">Heure</dt>
                                 <dd class="text-graphite-900" x-text="selected.time"></dd>
                             </div>
-                            <div class="flex gap-2" x-show="selected.department">
-                                <dt class="text-graphite-500 w-24 shrink-0">Département</dt>
-                                <dd class="text-graphite-900" x-text="selected.department"></dd>
+                            <div class="flex gap-2">
+                                <dt class="text-graphite-500 w-24 shrink-0">Agenda</dt>
+                                <dd class="text-graphite-900" x-text="selected.scope === 'department' ? `Département · ${selected.department ?? ''}` : 'Global'"></dd>
                             </div>
                         </dl>
 

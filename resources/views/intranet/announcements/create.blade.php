@@ -3,7 +3,6 @@
         ['label' => 'Annonces', 'url' => route('intranet.announcements.index')],
         ['label' => 'Nouvelle annonce'],
     ];
-    $peutPublierPourTous = auth()->user()->is_super_admin;
 @endphp
 
 <x-intranet-layout title="Nouvelle annonce" :breadcrumbs="$breadcrumbs">

@@ -127,6 +127,16 @@
                     Mes demandes
                 </a>
 
+                @if(auth()->user()->hasDepartmentProcessingAccess())
+                    <a href="{{ route('intranet.submissions.queue') }}"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-graphite-700 hover:bg-graphite-50 transition">
+                        <svg class="h-5 w-5 text-graphite-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v4H4zM4 12h10v4H4zM18 12v8m-4-4h8"/>
+                        </svg>
+                        Demandes à traiter
+                    </a>
+                @endif
+
                 <div class="border-t border-graphite-200 my-1"></div>
 
                 <!-- Logout -->

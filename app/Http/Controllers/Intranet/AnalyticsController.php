@@ -6,89 +6,94 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-/**
- * Tableau de bord analytique de l'intranet.
- *
- * Les métriques portent sur les demandes (soumissions de formulaires), les
- * départements et les effectifs : ce projet n'a pas de système de tickets, les
- * KPI « tickets » de la maquette initiale sont donc remplacés par des
- * équivalents fondés sur les données réellement présentes.
- */
 class AnalyticsController extends Controller
 {
-    /** Périodes proposées au filtre, en jours. */
     private const PERIODES = [7 => '7 jours', 30 => '30 jours', 90 => '3 mois', 365 => '1 an'];
 
     public function index(Request $request): View
     {
-        $jours = (int) $request->integer('periode', 30);
-        if (! array_key_exists($jours, self::PERIODES)) {
-            $jours = 30;
+        $user = $request->user();
+        $isAdmin = $user->is_super_admin;
+        $departments = $isAdmin ? collect() : $user->directedDepartments()->sortBy('name')->values();
+
+        abort_unless($isAdmin || $departments->isNotEmpty(), 403);
+
+        $departmentIds = $isAdmin ? null : $departments->modelKeys();
+        $days = $request->integer('periode', 30);
+        if (! array_key_exists($days, self::PERIODES)) {
+            $days = 30;
         }
 
-        $debut = Carbon::now()->subDays($jours)->startOfDay();
-        $debutPrecedent = (clone $debut)->subDays($jours);
+        $start = Carbon::now()->subDays($days)->startOfDay();
+        $previousStart = (clone $start)->subDays($days);
 
         return view('intranet.analytics.index', [
-            'jours' => $jours,
+            'jours' => $days,
             'periodes' => self::PERIODES,
-            'kpis' => $this->kpis($debut, $debutPrecedent),
-            'charts' => $this->charts($debut, $jours),
+            'isAdmin' => $isAdmin,
+            'scopeLabel' => $isAdmin
+                ? 'Vue globale de l’entreprise'
+                : 'Statistiques de : '.$departments->pluck('name')->join(', '),
+            'overview' => $isAdmin ? [
+                'departements' => Department::active()->count(),
+                'effectif' => User::where('actif', true)->count(),
+                'demandes' => FormSubmission::count(),
+            ] : null,
+            'kpis' => $this->kpis($start, $previousStart, $departmentIds),
+            'charts' => $this->charts($start, $days, $departmentIds),
         ]);
     }
 
     /**
-     * Quatre indicateurs avec variation par rapport à la période précédente.
-     *
+     * @param  list<int>|null  $departmentIds  Null means all departments (admin only).
      * @return array<string, array<string, mixed>>
      */
-    private function kpis(Carbon $debut, Carbon $debutPrecedent): array
+    private function kpis(Carbon $start, Carbon $previousStart, ?array $departmentIds): array
     {
-        $periode = FormSubmission::where('created_at', '>=', $debut);
-        $precedente = FormSubmission::whereBetween('created_at', [$debutPrecedent, $debut]);
+        $period = $this->submissions($departmentIds)->where('created_at', '>=', $start);
+        $previous = $this->submissions($departmentIds)
+            ->where('created_at', '>=', $previousStart)
+            ->where('created_at', '<', $start);
 
-        $nbPeriode = (clone $periode)->count();
-        $nbPrecedent = (clone $precedente)->count();
+        $periodCount = (clone $period)->count();
+        $previousCount = (clone $previous)->count();
+        $processedCount = (clone $period)->whereIn('status', ['approved', 'rejected'])->count();
+        $processingRate = $periodCount > 0 ? round($processedCount / $periodCount * 100) : 0;
+        $pendingCount = $this->submissions($departmentIds)->where('status', 'pending')->count();
 
-        $traitees = (clone $periode)->whereIn('status', ['approved', 'rejected'])->count();
-        $tauxTraitement = $nbPeriode > 0 ? round($traitees / $nbPeriode * 100) : 0;
-
-        $enAttente = FormSubmission::where('status', 'pending')->count();
-
-        // Délai moyen de traitement (heures) sur les demandes traitées de la période.
-        $delaiMoyen = (clone $periode)
+        $averageHours = (clone $period)
             ->whereNotNull('reviewed_at')
             ->get()
-            ->map(fn ($s) => $s->created_at->diffInHours($s->reviewed_at))
+            ->map(fn (FormSubmission $submission) => $submission->created_at->diffInHours($submission->reviewed_at))
             ->avg();
 
         return [
             'demandes' => [
                 'label' => 'Demandes reçues',
-                'valeur' => $nbPeriode,
-                'variation' => $this->variation($nbPeriode, $nbPrecedent),
+                'valeur' => $periodCount,
+                'variation' => $this->variation($periodCount, $previousCount),
                 'icon' => 'inbox',
             ],
             'traitement' => [
                 'label' => 'Taux de traitement',
-                'valeur' => $tauxTraitement . ' %',
+                'valeur' => $processingRate.' %',
                 'variation' => null,
                 'icon' => 'check',
             ],
             'delai' => [
                 'label' => 'Délai moyen de traitement',
-                'valeur' => $delaiMoyen ? round($delaiMoyen) . ' h' : '—',
+                'valeur' => $averageHours ? round($averageHours).' h' : '—',
                 'variation' => null,
                 'icon' => 'clock',
             ],
             'attente' => [
                 'label' => 'Demandes en attente',
-                'valeur' => $enAttente,
+                'valeur' => $pendingCount,
                 'variation' => null,
                 'icon' => 'hourglass',
             ],
@@ -96,61 +101,57 @@ class AnalyticsController extends Controller
     }
 
     /**
-     * Variation en pourcentage entre deux valeurs (null si base nulle).
-     *
      * @return array{sens: string, pourcentage: int}|null
      */
-    private function variation(int $actuel, int $precedent): ?array
+    private function variation(int $current, int $previous): ?array
     {
-        if ($precedent === 0) {
+        if ($previous === 0) {
             return null;
         }
 
-        $pct = (int) round(($actuel - $precedent) / $precedent * 100);
+        $percentage = (int) round(($current - $previous) / $previous * 100);
 
         return [
-            'sens' => $pct >= 0 ? 'hausse' : 'baisse',
-            'pourcentage' => abs($pct),
+            'sens' => $percentage >= 0 ? 'hausse' : 'baisse',
+            'pourcentage' => abs($percentage),
         ];
     }
 
     /**
-     * Jeux de données prêts pour Chart.js.
-     *
+     * @param  list<int>|null  $departmentIds
      * @return array<string, mixed>
      */
-    private function charts(Carbon $debut, int $jours): array
+    private function charts(Carbon $start, int $days, ?array $departmentIds): array
     {
         return [
-            'parSemaine' => $this->demandesParSemaine($debut, $jours),
-            'parDepartement' => $this->demandesParDepartement($debut),
-            'parStatut' => $this->repartitionStatuts($debut),
-            'effectifs' => $this->effectifsParDepartement(),
+            'parSemaine' => $this->demandesParSemaine($start, $days, $departmentIds),
+            'parDepartement' => $this->demandesParDepartement($start, $departmentIds),
+            'parStatut' => $this->repartitionStatuts($start, $departmentIds),
+            'effectifs' => $this->effectifsParDepartement($departmentIds),
         ];
     }
 
     /**
-     * Volume de demandes agrégé par semaine ISO sur la période.
-     *
+     * @param  list<int>|null  $departmentIds
      * @return array{labels: list<string>, data: list<int>}
      */
-    private function demandesParSemaine(Carbon $debut, int $jours): array
+    private function demandesParSemaine(Carbon $start, int $days, ?array $departmentIds): array
     {
-        $soumissions = FormSubmission::where('created_at', '>=', $debut)
+        $submissions = $this->submissions($departmentIds)
+            ->where('created_at', '>=', $start)
             ->orderBy('created_at')
             ->get(['created_at']);
 
-        // Nombre de tranches hebdomadaires à afficher (au moins 1).
-        $nbSemaines = max(1, (int) ceil($jours / 7));
+        $weekCount = max(1, (int) ceil($days / 7));
         $labels = [];
-        $data = array_fill(0, $nbSemaines, 0);
+        $data = array_fill(0, $weekCount, 0);
 
-        for ($i = 0; $i < $nbSemaines; $i++) {
-            $labels[] = 'S-' . ($nbSemaines - 1 - $i);
+        for ($index = 0; $index < $weekCount; $index++) {
+            $labels[] = 'S-'.($weekCount - 1 - $index);
         }
 
-        foreach ($soumissions as $s) {
-            $index = min($nbSemaines - 1, (int) floor($debut->diffInDays($s->created_at) / 7));
+        foreach ($submissions as $submission) {
+            $index = min($weekCount - 1, (int) floor($start->diffInDays($submission->created_at) / 7));
             $data[$index]++;
         }
 
@@ -158,59 +159,87 @@ class AnalyticsController extends Controller
     }
 
     /**
+     * @param  list<int>|null  $departmentIds
      * @return array{labels: list<string>, data: list<int>}
      */
-    private function demandesParDepartement(Carbon $debut): array
+    private function demandesParDepartement(Carbon $start, ?array $departmentIds): array
     {
-        $parDept = FormSubmission::where('form_submissions.created_at', '>=', $debut)
+        $query = FormSubmission::query()
+            ->where('form_submissions.created_at', '>=', $start)
             ->join('department_forms', 'form_submissions.form_id', '=', 'department_forms.id')
-            ->join('departments', 'department_forms.department_id', '=', 'departments.id')
+            ->join('departments', 'department_forms.department_id', '=', 'departments.id');
+
+        if ($departmentIds !== null) {
+            $query->whereIn('departments.id', $departmentIds);
+        }
+
+        $byDepartment = $query
             ->selectRaw('departments.name, count(*) as total')
             ->groupBy('departments.name')
             ->orderByDesc('total')
             ->pluck('total', 'name');
 
         return [
-            'labels' => $parDept->keys()->all(),
-            'data' => $parDept->values()->map(fn ($v) => (int) $v)->all(),
+            'labels' => $byDepartment->keys()->all(),
+            'data' => $byDepartment->values()->map(fn ($value) => (int) $value)->all(),
         ];
     }
 
     /**
+     * @param  list<int>|null  $departmentIds
      * @return array{labels: list<string>, data: list<int>}
      */
-    private function repartitionStatuts(Carbon $debut): array
+    private function repartitionStatuts(Carbon $start, ?array $departmentIds): array
     {
-        $libelles = ['approved' => 'Approuvées', 'rejected' => 'Rejetées', 'pending' => 'En attente'];
-
-        $comptes = FormSubmission::where('created_at', '>=', $debut)
+        $labelsByStatus = ['approved' => 'Approuvées', 'rejected' => 'Rejetées', 'pending' => 'En attente'];
+        $counts = $this->submissions($departmentIds)
+            ->where('created_at', '>=', $start)
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
         $labels = [];
         $data = [];
-        foreach ($libelles as $cle => $libelle) {
-            $labels[] = $libelle;
-            $data[] = (int) ($comptes[$cle] ?? 0);
+        foreach ($labelsByStatus as $status => $label) {
+            $labels[] = $label;
+            $data[] = (int) ($counts[$status] ?? 0);
         }
 
         return ['labels' => $labels, 'data' => $data];
     }
 
     /**
+     * @param  list<int>|null  $departmentIds
      * @return array{labels: list<string>, data: list<int>}
      */
-    private function effectifsParDepartement(): array
+    private function effectifsParDepartement(?array $departmentIds): array
     {
-        $effectifs = Department::active()
-            ->withCount(['users' => fn ($q) => $q->where('actif', true)])
+        $departments = Department::active()
+            ->when($departmentIds !== null, fn ($query) => $query->whereKey($departmentIds))
+            ->withCount(['users' => fn ($query) => $query->where('actif', true)])
             ->orderBy('position')
+            ->orderBy('name')
             ->get();
 
         return [
-            'labels' => $effectifs->pluck('name')->all(),
-            'data' => $effectifs->pluck('users_count')->map(fn ($v) => (int) $v)->all(),
+            'labels' => $departments->pluck('name')->all(),
+            'data' => $departments->pluck('users_count')->map(fn ($value) => (int) $value)->all(),
         ];
+    }
+
+    /**
+     * @param  list<int>|null  $departmentIds  Null means all departments.
+     * @return Builder<FormSubmission>
+     */
+    private function submissions(?array $departmentIds): Builder
+    {
+        return FormSubmission::query()
+            ->when(
+                $departmentIds !== null,
+                fn (Builder $query) => $query->whereHas(
+                    'form',
+                    fn (Builder $forms) => $forms->whereIn('department_id', $departmentIds)
+                )
+            );
     }
 }

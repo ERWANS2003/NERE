@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use LdapRecord\Laravel\Auth\AuthenticatesWithLdap;
 use LdapRecord\Laravel\Auth\LdapAuthenticatable;
@@ -18,7 +19,7 @@ use LdapRecord\Laravel\Auth\LdapAuthenticatable;
 class User extends Authenticatable implements LdapAuthenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, AuthenticatesWithLdap;
+    use AuthenticatesWithLdap, HasFactory, Notifiable;
 
     /** Nombre d'echecs de connexion consecutifs avant verrouillage (EF1). */
     public const MAX_LOGIN_ATTEMPTS = 5;
@@ -179,9 +180,9 @@ class User extends Authenticatable implements LdapAuthenticatable
      * de gérer services/formulaires...). L'admin général est traité à part
      * par les appelants (canManageDepartment() le court-circuite déjà).
      *
-     * @return \Illuminate\Support\Collection<int, Department>
+     * @return Collection<int, Department>
      */
-    public function directedDepartments(): \Illuminate\Support\Collection
+    public function directedDepartments(): Collection
     {
         if ($this->is_super_admin) {
             return Department::active()->get();
@@ -202,6 +203,22 @@ class User extends Authenticatable implements LdapAuthenticatable
 
         return collect($this->memberships)
             ->contains(fn (array $membership) => $membership['role'] === DepartmentRole::Director->value);
+    }
+
+    public function hasDepartmentProcessingAccess(): bool
+    {
+        if ($this->is_super_admin) {
+            return true;
+        }
+
+        $this->loadAuthorisations();
+
+        return collect($this->memberships)->contains(
+            fn (array $membership) => in_array($membership['role'], [
+                DepartmentRole::Technician->value,
+                DepartmentRole::Director->value,
+            ], true)
+        );
     }
 
     /**

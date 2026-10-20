@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\DepartmentForm;
 use App\Models\FormSubmission;
 use App\Notifications\SubmissionReviewed;
@@ -28,6 +29,54 @@ class SubmissionController extends Controller
         $submissions = $query->latest()->paginate(15)->withQueryString();
 
         return view('intranet.submissions.index', compact('submissions'));
+    }
+
+    /**
+     * File de traitement des demandes des départements de l'utilisateur.
+     */
+    public function queue(Request $request): View
+    {
+        $user = $request->user();
+        abort_unless($user->hasDepartmentProcessingAccess(), 403);
+
+        $departmentIds = $user->is_super_admin
+            ? Department::query()->pluck('id')
+            : $user->departments()
+                ->wherePivotIn('role', ['technician', 'director'])
+                ->pluck('departments.id');
+
+        $query = FormSubmission::with(['form.department', 'user', 'assignee'])
+            ->whereHas('form', fn ($forms) => $forms->whereIn('department_id', $departmentIds));
+
+        $pendingCount = (clone $query)->where('status', 'pending')->count();
+        $assignedToMeCount = (clone $query)
+            ->where('status', 'pending')
+            ->where('assigned_to', $user->id)
+            ->count();
+
+        if ($request->filled('status') && in_array($request->status, ['pending', 'approved', 'rejected'], true)) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->input('assignment') === 'mine') {
+            $query->where('assigned_to', $user->id);
+        } elseif ($request->input('assignment') === 'unassigned') {
+            $query->whereNull('assigned_to');
+        }
+
+        if ($request->filled('department') && $departmentIds->contains((int) $request->department)) {
+            $query->whereHas('form', fn ($forms) => $forms->where('department_id', $request->integer('department')));
+        }
+
+        $submissions = $query->latest()->paginate(20)->withQueryString();
+        $departments = Department::query()->whereKey($departmentIds)->orderBy('name')->get();
+
+        return view('intranet.submissions.queue', compact(
+            'submissions',
+            'pendingCount',
+            'assignedToMeCount',
+            'departments',
+        ));
     }
 
     /**
@@ -86,7 +135,7 @@ class SubmissionController extends Controller
      */
     public function show(Request $request, FormSubmission $submission): View
     {
-        $submission->load(['form.department', 'user', 'reviewer']);
+        $submission->load(['form.department', 'user', 'reviewer', 'assignee']);
 
         $user = $request->user();
         $departmentId = $submission->form?->department_id;
@@ -105,6 +154,7 @@ class SubmissionController extends Controller
      */
     public function update(Request $request, FormSubmission $submission): RedirectResponse
     {
+        $submission->loadMissing('form');
         $departmentId = $submission->form?->department_id;
 
         abort_unless(
@@ -112,6 +162,7 @@ class SubmissionController extends Controller
                 || ($departmentId !== null && $request->user()->canValidateIn($departmentId)),
             403
         );
+        abort_unless($submission->status === 'pending', 409);
 
         $validated = $request->validate([
             'status' => ['required', 'in:approved,rejected'],
@@ -134,6 +185,38 @@ class SubmissionController extends Controller
         return redirect()
             ->route('intranet.submissions.show', $submission)
             ->with('success', 'La demande a été mise à jour.');
+    }
+
+    /**
+     * Prend en charge une demande en attente pour un technicien ou un chef.
+     */
+    public function take(Request $request, FormSubmission $submission): RedirectResponse
+    {
+        $submission->loadMissing('form');
+        $departmentId = $submission->form?->department_id;
+        abort_unless($departmentId !== null && $request->user()->canHandleIn($departmentId), 403);
+        abort_unless($submission->status === 'pending', 409);
+
+        $updated = FormSubmission::query()
+            ->whereKey($submission->getKey())
+            ->where('status', 'pending')
+            ->where(function ($query) use ($request): void {
+                $query->whereNull('assigned_to')
+                    ->orWhere('assigned_to', $request->user()->id);
+            })
+            ->update([
+                'assigned_to' => $request->user()->id,
+                'assigned_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return back()->with('error', 'Cette demande est déjà prise en charge par un autre membre de l’équipe.');
+        }
+
+        return redirect()
+            ->route('intranet.submissions.show', $submission)
+            ->with('success', 'La demande vous a été attribuée.');
     }
 
     /**

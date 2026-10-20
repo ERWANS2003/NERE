@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\Resource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SearchController extends Controller
 {
@@ -22,7 +24,7 @@ class SearchController extends Controller
      *
      * @return JsonResponse<list<array{id:string,type:string,title:string,description:string,url:string,tags:string}>>
      */
-    public function data(): JsonResponse
+    public function data(Request $request): JsonResponse
     {
         $resultats = collect();
 
@@ -32,46 +34,60 @@ class SearchController extends Controller
             ->get()
             ->each(function (User $u) use ($resultats) {
                 $resultats->push([
-                    'id' => 'employee-' . $u->id,
+                    'id' => 'employee-'.$u->id,
                     'type' => 'employee',
                     'title' => $u->name,
-                    'description' => trim(($u->job_title ?? '') . ' · ' . $u->departments->pluck('name')->implode(', '), ' ·'),
+                    'description' => trim(($u->job_title ?? '').' · '.$u->departments->pluck('name')->implode(', '), ' ·'),
                     'url' => route('intranet.directory', ['search' => $u->name]),
-                    'tags' => $u->email . ' ' . $u->departments->pluck('code')->implode(' '),
+                    'tags' => $u->email.' '.$u->departments->pluck('code')->implode(' '),
                 ]);
             });
 
         // Départements
         Department::active()->get()->each(function (Department $d) use ($resultats) {
             $resultats->push([
-                'id' => 'department-' . $d->id,
+                'id' => 'department-'.$d->id,
                 'type' => 'department',
                 'title' => $d->name,
                 'description' => $d->tag ?? $d->code,
                 'url' => route('intranet.departments.show', strtolower($d->code)),
-                'tags' => $d->code . ' ' . ($d->description ?? ''),
+                'tags' => $d->code.' '.($d->description ?? ''),
             ]);
         });
 
         // Annonces actives
         Announcement::where('is_active', true)->get()->each(function (Announcement $a) use ($resultats) {
             $resultats->push([
-                'id' => 'announcement-' . $a->id,
+                'id' => 'announcement-'.$a->id,
                 'type' => 'announcement',
                 'title' => $a->title,
-                'description' => \Illuminate\Support\Str::limit((string) $a->body, 80),
+                'description' => Str::limit((string) $a->body, 80),
                 'url' => route('intranet.announcements.show', ['announcement' => $a->id]),
                 'tags' => $a->priority,
             ]);
         });
 
         // Événements à venir et récents
-        CalendarEvent::where('event_date', '>=', now()->subMonth())->get()->each(function (CalendarEvent $e) use ($resultats) {
+        $events = CalendarEvent::where('event_date', '>=', now()->subMonth());
+        $user = $request->user();
+
+        if (! $user->is_super_admin) {
+            $departmentIds = $user->departments()->pluck('departments.id');
+            $events->where(function ($query) use ($departmentIds): void {
+                $query->whereNull('department_id');
+
+                if ($departmentIds->isNotEmpty()) {
+                    $query->orWhereIn('department_id', $departmentIds);
+                }
+            });
+        }
+
+        $events->get()->each(function (CalendarEvent $e) use ($resultats) {
             $resultats->push([
-                'id' => 'event-' . $e->id,
+                'id' => 'event-'.$e->id,
                 'type' => 'event',
                 'title' => $e->title,
-                'description' => $e->event_date?->format('d/m/Y') . ' · ' . \Illuminate\Support\Str::limit((string) $e->description, 60),
+                'description' => $e->event_date?->format('d/m/Y').' · '.Str::limit((string) $e->description, 60),
                 'url' => route('intranet.calendar'),
                 'tags' => $e->type,
             ]);
@@ -80,12 +96,12 @@ class SearchController extends Controller
         // Ressources actives
         Resource::where('is_active', true)->get()->each(function (Resource $r) use ($resultats) {
             $resultats->push([
-                'id' => 'resource-' . $r->id,
+                'id' => 'resource-'.$r->id,
                 'type' => 'document',
                 'title' => $r->title,
-                'description' => \Illuminate\Support\Str::limit((string) $r->description, 80),
+                'description' => Str::limit((string) $r->description, 80),
                 'url' => route('intranet.resources.show', $r->id),
-                'tags' => $r->file_type . ' ' . (is_array($r->tags) ? implode(' ', $r->tags) : (string) $r->tags),
+                'tags' => $r->file_type.' '.(is_array($r->tags) ? implode(' ', $r->tags) : (string) $r->tags),
             ]);
         });
 

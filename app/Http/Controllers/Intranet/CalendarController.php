@@ -14,9 +14,7 @@ class CalendarController extends Controller
     /** Plage maximale demandée à l'API : une année et un peu de marge. */
     private const MAX_RANGE_DAYS = 400;
 
-    public function __construct(private readonly CalendarFeed $feed)
-    {
-    }
+    public function __construct(private readonly CalendarFeed $feed) {}
 
     /**
      * Page calendrier. ?date=AAAA-MM-JJ ouvre le calendrier sur ce jour
@@ -30,8 +28,10 @@ class CalendarController extends Controller
 
         return view('intranet.calendar.index', [
             'initialDate' => $validated['date'] ?? null,
-            'upcoming' => $this->feed->upcoming(4),
+            'upcoming' => $this->feed->upcoming($request->user(), 4),
             'types' => config('intranet.calendar.event_types', []),
+            'canManageDepartmentEvents' => ! $request->user()->is_super_admin
+                && $request->user()->directedDepartments()->isNotEmpty(),
         ]);
     }
 
@@ -53,6 +53,6 @@ class CalendarController extends Controller
             return response()->json(['message' => 'Plage de dates invalide.'], 422);
         }
 
-        return response()->json($this->feed->between($start, $end));
+        return response()->json($this->feed->between($start, $end, $request->user()));
     }
 }

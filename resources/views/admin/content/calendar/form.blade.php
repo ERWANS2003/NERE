@@ -1,10 +1,11 @@
 @extends('admin.layout')
 
-@section('title', $event->exists ? 'Modifier un événement' : 'Nouvel événement')
+@section('title', $event->exists ? 'Modifier un événement global' : 'Nouvel événement global')
 
 @section('content')
     <div class="mx-auto max-w-3xl">
-        <h1 class="mb-6 text-2xl font-bold text-gray-900">{{ $event->exists ? 'Modifier un événement' : 'Ajouter un événement' }}</h1>
+        <h1 class="mb-2 text-2xl font-bold text-gray-900">{{ $event->exists ? 'Modifier un événement global' : 'Ajouter un événement global' }}</h1>
+        <p class="mb-6 text-sm text-gray-600">Cet événement apparaîtra dans l’agenda global de tous les utilisateurs actifs.</p>
         <form method="POST" action="{{ $event->exists ? route('admin.calendar.update', $event) : route('admin.calendar.store') }}" class="space-y-5 rounded-lg border border-gray-200 bg-white p-6">
             @csrf
             @if($event->exists) @method('PUT') @endif
@@ -18,7 +19,7 @@
                 <textarea id="description" name="description" rows="4" maxlength="10000" class="w-full rounded border-gray-300">{{ old('description', $event->description) }}</textarea>
                 @error('description')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div>
                 <div>
                     <label for="type" class="mb-1 block text-sm font-medium text-gray-700">Type</label>
                     <select id="type" name="type" required class="w-full rounded border-gray-300">
@@ -27,16 +28,6 @@
                         @endforeach
                     </select>
                     @error('type')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="department_id" class="mb-1 block text-sm font-medium text-gray-700">Département concerné</label>
-                    <select id="department_id" name="department_id" class="w-full rounded border-gray-300">
-                        <option value="">Toute l’entreprise</option>
-                        @foreach($departments as $department)
-                            <option value="{{ $department->id }}" @selected((string) old('department_id', $event->department_id) === (string) $department->id)>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('department_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                 </div>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">

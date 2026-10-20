@@ -3,6 +3,7 @@
 use App\Http\Controllers\Intranet\AnalyticsController;
 use App\Http\Controllers\Intranet\AnnouncementController;
 use App\Http\Controllers\Intranet\CalendarController;
+use App\Http\Controllers\Intranet\DepartmentCalendarEventController;
 use App\Http\Controllers\Intranet\DashboardController;
 use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentController;
 use App\Http\Controllers\Intranet\DepartmentShowController;
@@ -68,9 +69,11 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
 
     // Gestion des soumissions de formulaires (= "Mes demandes")
     Route::prefix('submissions')->name('submissions.')->group(function () {
+        Route::get('/traitement', [SubmissionController::class, 'queue'])->name('queue');
         Route::get('/', [SubmissionController::class, 'index'])->name('index');
         Route::post('/forms/{form}', [SubmissionController::class, 'store'])->name('store');
         Route::get('/{submission}', [SubmissionController::class, 'show'])->name('show');
+        Route::post('/{submission}/take', [SubmissionController::class, 'take'])->name('take');
         Route::put('/{submission}', [SubmissionController::class, 'update'])->name('update');
         Route::delete('/{submission}', [SubmissionController::class, 'destroy'])->name('destroy');
     });
@@ -96,6 +99,14 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     // Calendrier
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
+    Route::prefix('calendar/department-events')->name('calendar.department-events.')->group(function () {
+        Route::get('/', [DepartmentCalendarEventController::class, 'index'])->name('index');
+        Route::get('/create', [DepartmentCalendarEventController::class, 'create'])->name('create');
+        Route::post('/', [DepartmentCalendarEventController::class, 'store'])->name('store');
+        Route::get('/{event}/edit', [DepartmentCalendarEventController::class, 'edit'])->name('edit');
+        Route::put('/{event}', [DepartmentCalendarEventController::class, 'update'])->name('update');
+        Route::delete('/{event}', [DepartmentCalendarEventController::class, 'destroy'])->name('destroy');
+    });
 
     // Annonces
     Route::prefix('announcements')->name('announcements.')->group(function () {

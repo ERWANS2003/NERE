@@ -12,6 +12,8 @@ class FormSubmission extends Model
         'user_id',
         'data',
         'status',
+        'assigned_to',
+        'assigned_at',
         'reviewed_by',
         'reviewed_at',
         'review_comment',
@@ -20,6 +22,7 @@ class FormSubmission extends Model
     protected $casts = [
         'data' => 'array',
         'reviewed_at' => 'datetime',
+        'assigned_at' => 'datetime',
     ];
 
     public function form(): BelongsTo
@@ -35,6 +38,11 @@ class FormSubmission extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function scopePending($query)

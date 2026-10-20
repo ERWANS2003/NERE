@@ -263,21 +263,25 @@
                 </div>
                 <div class="space-y-3">
                     @forelse($upcomingEvents as $event)
+                        @php
+                            $eventDate = \Illuminate\Support\Carbon::parse($event['extendedProps']['date'])->locale('fr');
+                            $eventProps = $event['extendedProps'];
+                        @endphp
                         <div class="flex gap-3">
                             <div class="flex-shrink-0 w-12 text-center bg-graphite-50 rounded-lg py-1">
-                                <div class="text-[10px] text-graphite-500 uppercase">{{ $event->event_date->locale('fr')->isoFormat('MMM') }}</div>
-                                <div class="text-xl font-bold text-graphite-900 leading-none">{{ $event->event_date->format('d') }}</div>
+                                <div class="text-[10px] text-graphite-500 uppercase">{{ $eventDate->isoFormat('MMM') }}</div>
+                                <div class="text-xl font-bold text-graphite-900 leading-none">{{ $eventDate->format('d') }}</div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="font-medium text-sm text-graphite-900 truncate">{{ $event->title }}</h4>
+                                <h4 class="font-medium text-sm text-graphite-900 truncate">{{ $event['title'] }}</h4>
                                 <p class="text-xs text-graphite-500 mt-0.5">
-                                    @if($event->all_day)
+                                    @if($event['allDay'])
                                         Toute la journée
-                                    @elseif($event->event_time)
-                                        {{ \Carbon\Carbon::parse($event->event_time)->format('H:i') }}
+                                    @elseif($eventProps['time'])
+                                        {{ $eventProps['time'] }}
                                     @endif
-                                    @if($event->department)
-                                        · {{ $event->department->name }}
+                                    @if($eventProps['department'])
+                                        · {{ $eventProps['department'] }}
                                     @endif
                                 </p>
                             </div>

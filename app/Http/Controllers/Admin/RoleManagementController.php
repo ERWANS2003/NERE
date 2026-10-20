@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\PermissionCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,12 +17,14 @@ class RoleManagementController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Role::query()->with('permissions');
+        $query = Role::query()->with('permissions')->withCount('users');
 
         // Recherche
         if ($search = $request->input('search')) {
-            $query->where('nom', 'ilike', "%{$search}%")
-                  ->orWhere('slug', 'ilike', "%{$search}%");
+            $query->where(function ($query) use ($search): void {
+                $query->where('nom', 'ilike', "%{$search}%")
+                    ->orWhere('slug', 'ilike', "%{$search}%");
+            });
         }
 
         $roles = $query->orderBy('nom')->paginate(20);
@@ -34,8 +37,9 @@ class RoleManagementController extends Controller
      */
     public function create(): View
     {
-        $permissions = Permission::orderBy('nom')->get();
-        return view('admin.roles.create', compact('permissions'));
+        $permissionGroups = PermissionCatalog::group(Permission::orderBy('nom')->get());
+
+        return view('admin.roles.create', compact('permissionGroups'));
     }
 
     /**
@@ -45,7 +49,7 @@ class RoleManagementController extends Controller
     {
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:roles,slug',
+            'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:roles,slug'],
             'description' => 'nullable|string',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
@@ -58,7 +62,7 @@ class RoleManagementController extends Controller
         ]);
 
         // Attacher les permissions
-        if (!empty($validated['permissions'])) {
+        if (! empty($validated['permissions'])) {
             $role->permissions()->sync($validated['permissions']);
         }
 
@@ -73,6 +77,7 @@ class RoleManagementController extends Controller
     public function show(Role $role): View
     {
         $role->load(['permissions', 'users']);
+
         return view('admin.roles.show', compact('role'));
     }
 
@@ -81,9 +86,10 @@ class RoleManagementController extends Controller
      */
     public function edit(Role $role): View
     {
-        $permissions = Permission::orderBy('nom')->get();
+        $permissionGroups = PermissionCatalog::group(Permission::orderBy('nom')->get());
         $role->load('permissions');
-        return view('admin.roles.edit', compact('role', 'permissions'));
+
+        return view('admin.roles.edit', compact('role', 'permissionGroups'));
     }
 
     /**
@@ -93,7 +99,7 @@ class RoleManagementController extends Controller
     {
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:roles,slug,' . $role->id,
+            'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:roles,slug,'.$role->id],
             'description' => 'nullable|string',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',

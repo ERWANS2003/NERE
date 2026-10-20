@@ -22,10 +22,11 @@ it('restricts announcement and calendar management to system administrators', fu
         ->assertForbidden();
 });
 
-it('allows administrators to publish, target, edit and archive announcements', function () {
+it('allows administrators to publish global announcements, edit and archive them', function () {
     Notification::fake();
     $admin = User::factory()->superAdmin()->create();
     $recipient = User::factory()->create();
+    $globalRecipient = User::factory()->create();
     $department = Department::factory()->create();
     $recipient->departments()->attach($department, ['role' => 'user']);
 
@@ -42,8 +43,9 @@ it('allows administrators to publish, target, edit and archive announcements', f
     $announcement = Announcement::firstOrFail();
     expect($announcement->is_active)->toBeTrue()
         ->and($announcement->published_at)->not->toBeNull()
-        ->and($announcement->department_id)->toBe($department->id);
+        ->and($announcement->department_id)->toBeNull();
     Notification::assertSentTo($recipient, AnnouncementPublished::class);
+    Notification::assertSentTo($globalRecipient, AnnouncementPublished::class);
 
     $this->get(route('admin.announcements.index'))
         ->assertOk()
@@ -87,6 +89,7 @@ it('allows administrators to create, update and delete calendar events', functio
     $event = CalendarEvent::firstOrFail();
     expect($event->title)->toBe('Réunion sécurité')
         ->and($event->all_day)->toBeFalse()
+        ->and($event->department_id)->toBeNull()
         ->and($event->event_time)->toStartWith('09:30');
 
     $this->get(route('admin.calendar.index'))
@@ -94,7 +97,8 @@ it('allows administrators to create, update and delete calendar events', functio
         ->assertSee('Réunion sécurité');
     $this->get(route('admin.calendar.create'))
         ->assertOk()
-        ->assertSee('Toute la journée');
+        ->assertSee('Toute la journée')
+        ->assertDontSee('Département concerné');
 
     $this->put(route('admin.calendar.update', $event), [
         'title' => 'Réunion sécurité déplacée',

@@ -83,12 +83,7 @@
                                     {{ ucfirst($announcement->priority) }}
                                 </x-badge>
 
-                                <!-- Department -->
-                                @if($announcement->department)
-                                    <span class="text-xs text-graphite-500">
-                                        {{ $announcement->department->name }}
-                                    </span>
-                                @endif
+                                <span class="text-xs text-graphite-500">Toute l'entreprise</span>
 
                                 <!-- Date -->
                                 <span class="text-xs text-graphite-500">

@@ -16,7 +16,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
             <h1 class="text-3xl font-bold text-graphite-900 mb-2">Tableau de bord analytique</h1>
-            <p class="text-graphite-600">Suivi des demandes, des départements et des effectifs</p>
+            <p class="text-graphite-600">{{ $scopeLabel }} · Suivi des demandes et des effectifs</p>
         </div>
 
         <form method="GET" class="flex items-center gap-2">
@@ -29,7 +29,26 @@
         </form>
     </div>
 
+    @if($isAdmin)
+        <section class="mb-8" aria-labelledby="analytics-overview-heading">
+            <h2 id="analytics-overview-heading" class="mb-3 text-lg font-bold text-graphite-900">Vue d’ensemble de l’entreprise</h2>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                @foreach([
+                    ['label' => 'Départements actifs', 'value' => $overview['departements']],
+                    ['label' => 'Employés actifs', 'value' => $overview['effectif']],
+                    ['label' => 'Demandes enregistrées', 'value' => $overview['demandes']],
+                ] as $item)
+                    <div class="rounded-xl border border-graphite-200 bg-white p-5">
+                        <p class="text-sm font-medium text-graphite-500">{{ $item['label'] }}</p>
+                        <p class="mt-2 text-3xl font-bold text-graphite-900">{{ number_format($item['value'], 0, ',', ' ') }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     {{-- KPI cards --}}
+    <h2 class="mb-3 text-lg font-bold text-graphite-900">Activité sur les {{ $periodes[$jours] }}</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach($kpis as $kpi)
             <div class="bg-white rounded-lg border border-graphite-200 p-5">
@@ -55,7 +74,6 @@
     <div
         class="grid grid-cols-1 lg:grid-cols-2 gap-6"
         x-data="analyticsCharts(@js($charts))"
-        x-init="init()"
     >
         <div class="bg-white rounded-lg border border-graphite-200 p-6">
             <h2 class="font-bold text-graphite-900 mb-4">Demandes par semaine</h2>
@@ -68,12 +86,12 @@
         </div>
 
         <div class="bg-white rounded-lg border border-graphite-200 p-6">
-            <h2 class="font-bold text-graphite-900 mb-4">Demandes par département</h2>
+            <h2 class="font-bold text-graphite-900 mb-4">{{ $isAdmin ? 'Demandes par département' : 'Demandes dans vos départements' }}</h2>
             <div class="h-64"><canvas x-ref="parDepartement"></canvas></div>
         </div>
 
         <div class="bg-white rounded-lg border border-graphite-200 p-6">
-            <h2 class="font-bold text-graphite-900 mb-4">Effectifs par département</h2>
+            <h2 class="font-bold text-graphite-900 mb-4">{{ $isAdmin ? 'Effectifs par département' : 'Effectifs de vos départements' }}</h2>
             <div class="h-64"><canvas x-ref="effectifs"></canvas></div>
         </div>
     </div>

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\CalendarEvent;
-use App\Models\Department;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Http\RedirectResponse;
@@ -31,7 +30,6 @@ class ContentManagementController extends Controller
     {
         return view('admin.content.announcements.form', [
             'announcement' => new Announcement(['priority' => 'info', 'is_active' => true]),
-            'departments' => Department::active()->orderBy('name')->get(),
         ]);
     }
 
@@ -41,6 +39,7 @@ class ContentManagementController extends Controller
         $active = $request->boolean('is_active');
         $announcement = Announcement::create([
             ...$validated,
+            'department_id' => null,
             'created_by' => $request->user()->id,
             'is_active' => $active,
             'published_at' => $active ? now() : null,
@@ -57,7 +56,6 @@ class ContentManagementController extends Controller
     {
         return view('admin.content.announcements.form', [
             'announcement' => $announcement,
-            'departments' => Department::active()->orderBy('name')->get(),
         ]);
     }
 
@@ -68,6 +66,7 @@ class ContentManagementController extends Controller
         $active = $request->boolean('is_active');
         $announcement->update([
             ...$validated,
+            'department_id' => null,
             'is_active' => $active,
             'published_at' => $active ? ($announcement->published_at ?? now()) : null,
         ]);
@@ -132,15 +131,10 @@ class ContentManagementController extends Controller
 
     private function validateAnnouncement(Request $request): array
     {
-        if ($request->input('department_id') === '') {
-            $request->merge(['department_id' => null]);
-        }
-
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:10000'],
             'priority' => ['required', Rule::in(self::ANNOUNCEMENT_PRIORITIES)],
-            'department_id' => ['nullable', 'exists:departments,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);
     }
@@ -156,12 +150,12 @@ class ContentManagementController extends Controller
             'type' => ['required', Rule::in(self::EVENT_TYPES)],
             'event_date' => ['required', 'date'],
             'event_time' => ['required_unless:all_day,1', 'nullable', 'date_format:H:i'],
-            'department_id' => ['nullable', 'exists:departments,id'],
             'all_day' => ['nullable', 'boolean'],
         ]);
 
         $validated['all_day'] = $allDay;
         $validated['event_time'] = $allDay ? null : ($validated['event_time'] ?? null);
+        $validated['department_id'] = null;
         $validated['user_id'] = null;
 
         return $validated;
@@ -171,7 +165,6 @@ class ContentManagementController extends Controller
     {
         return view('admin.content.calendar.form', [
             'event' => $event,
-            'departments' => Department::active()->orderBy('name')->get(),
             'types' => $this->eventTypes(),
         ]);
     }
@@ -188,11 +181,6 @@ class ContentManagementController extends Controller
     {
         $recipients = User::query()
             ->where('actif', true)
-            ->when(
-                $announcement->department_id !== null,
-                fn ($query) => $query->whereHas('departments', fn ($departments) => $departments
-                    ->where('departments.id', $announcement->department_id))
-            )
             ->get()
             ->reject(fn (User $user) => $user->is($announcement->creator));
 

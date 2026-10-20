@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
-use App\Models\CalendarEvent;
 use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\Intranet\CalendarFeed;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -17,16 +17,21 @@ class DashboardController extends Controller
     /**
      * Affiche le tableau de bord intranet (page d'accueil).
      */
-    public function index(Request $request): View
+    public function index(Request $request, CalendarFeed $calendarFeed): View
     {
         $user = $request->user();
+        $upcomingCalendarEvents = $calendarFeed->between(
+            today(),
+            today()->copy()->addYear(),
+            $user
+        );
 
         // Statistiques générales affichées en haut du tableau de bord.
         $stats = [
             'departments' => Department::active()->count(),
             'users' => User::where('actif', true)->count(),
             'announcements' => Announcement::where('is_active', true)->count(),
-            'events' => CalendarEvent::where('event_date', '>=', today())->count(),
+            'events' => count($upcomingCalendarEvents),
             'submissions' => FormSubmission::where('user_id', $user->id)->count(),
         ];
 
@@ -43,13 +48,8 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        // Widget : 4 prochains événements de l'agenda.
-        $upcomingEvents = CalendarEvent::with('department')
-            ->where('event_date', '>=', today())
-            ->orderBy('event_date')
-            ->orderBy('event_time')
-            ->limit(4)
-            ->get();
+        // Widget : 4 prochains événements de l'agenda, jours fériés compris.
+        $upcomingEvents = array_slice($upcomingCalendarEvents, 0, 4);
 
         // Les équipes voient aussi les demandes de leur département qu'elles peuvent traiter.
         $departmentIds = Department::query()
