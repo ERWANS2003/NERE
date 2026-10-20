@@ -15,7 +15,7 @@
 
 <!-- Filtres -->
 <div class="bg-white rounded-lg shadow p-4 mb-6">
-    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <form method="GET" data-live-search class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
             <input type="text" name="search" value="{{ request('search') }}" 
                    placeholder="Rechercher..." 

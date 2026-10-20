@@ -106,7 +106,7 @@
         <div class="lg:col-span-3 space-y-6">
 
             <!-- Barre de recherche + filtres -->
-            <form method="GET" action="{{ route('intranet.resources') }}" class="bg-white rounded-xl border border-graphite-200 p-4">
+            <form method="GET" action="{{ route('intranet.resources') }}" data-live-search class="bg-white rounded-xl border border-graphite-200 p-4">
                 @if($filters['favorites'])
                     <input type="hidden" name="favorites" value="1">
                 @endif

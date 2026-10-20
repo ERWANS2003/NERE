@@ -27,7 +27,7 @@
 
 <!-- Filtres -->
 <div class="mb-6 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-200">
-    <form method="GET" action="{{ route('admin.roles.index') }}" class="flex flex-col gap-3 sm:flex-row">
+    <form method="GET" action="{{ route('admin.roles.index') }}" data-live-search class="flex flex-col gap-3 sm:flex-row">
         <div class="flex-1">
             <label for="role-search" class="sr-only">Rechercher un rôle</label>
             <input type="text" 

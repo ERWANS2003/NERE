@@ -23,7 +23,7 @@
 
     <!-- Filters -->
     <div class="rounded-lg bg-white p-5 shadow-sm">
-        <form method="GET" action="{{ route('intranet.departments.manage.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" action="{{ route('intranet.departments.manage.index') }}" data-live-search class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Rechercher</label>
                 <input type="text" 

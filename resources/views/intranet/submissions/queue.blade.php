@@ -34,7 +34,7 @@
         </a>
     </div>
 
-    <form method="GET" action="{{ route('intranet.submissions.queue') }}"
+    <form method="GET" action="{{ route('intranet.submissions.queue') }}" data-live-search
           class="mb-6 grid gap-4 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-3">
         <div>
             <label for="status" class="mb-1 block text-sm font-medium text-graphite-700">Statut</label>

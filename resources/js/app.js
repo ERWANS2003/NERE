@@ -16,6 +16,7 @@ import Sortable from 'sortablejs';
 
 // Import des modules intranet
 import './intranet/index.js';
+import './intranet/live-search.js';
 
 // Configuration Day.js
 dayjs.locale('fr');

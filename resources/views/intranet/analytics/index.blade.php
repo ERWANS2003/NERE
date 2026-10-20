@@ -19,9 +19,9 @@
             <p class="text-graphite-600">{{ $scopeLabel }} · Suivi des demandes et des effectifs</p>
         </div>
 
-        <form method="GET" class="flex items-center gap-2">
+        <form method="GET" data-live-search class="flex items-center gap-2">
             <label for="periode" class="text-sm text-graphite-600">Période</label>
-            <select id="periode" name="periode" onchange="this.form.submit()" class="champ py-2">
+            <select id="periode" name="periode" class="champ py-2">
                 @foreach($periodes as $valeur => $libelle)
                     <option value="{{ $valeur }}" @selected($jours === $valeur)>{{ $libelle }}</option>
                 @endforeach

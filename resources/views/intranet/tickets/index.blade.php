@@ -28,7 +28,7 @@
         <a href="{{ route('intranet.tickets.create') }}" class="bouton-primaire">Créer un ticket</a>
     </div>
 
-    <form method="GET" class="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-[1fr_220px_auto]">
+    <form method="GET" data-live-search class="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-[1fr_220px_auto]">
         <input
             type="search"
             name="search"

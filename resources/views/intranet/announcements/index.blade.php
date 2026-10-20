@@ -29,7 +29,7 @@
 
     <!-- Recherche + Filtres -->
     <div class="flex flex-col gap-4 mb-8">
-        <form method="GET" class="flex gap-2">
+        <form method="GET" data-live-search class="flex gap-2">
             @if(request('priority'))
                 <input type="hidden" name="priority" value="{{ request('priority') }}">
             @endif

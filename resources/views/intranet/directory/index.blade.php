@@ -17,7 +17,7 @@
     </div>
 
     {{-- Barre de recherche --}}
-    <form method="GET" class="bg-white rounded-lg border border-graphite-200 p-4 mb-4">
+    <form method="GET" data-live-search class="bg-white rounded-lg border border-graphite-200 p-4 mb-4">
         <div class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-graphite-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
