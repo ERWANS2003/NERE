@@ -137,6 +137,7 @@ class KnowledgeBaseController extends Controller
             ...$validated,
             'slug' => $this->uniqueSlug($validated['title'], $article),
             'is_published' => $request->boolean('is_published'),
+            'author_id' => $request->user()->id,
         ]);
 
         return redirect()

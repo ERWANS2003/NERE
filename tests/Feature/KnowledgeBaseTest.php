@@ -4,6 +4,7 @@ use App\Enums\DepartmentRole;
 use App\Models\Department;
 use App\Models\KnowledgeArticle;
 use App\Models\User;
+use Database\Seeders\KnowledgeBaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -221,4 +222,41 @@ it('migrates legacy French article titles and removes the required legacy column
         ->and(Schema::hasColumn('knowledge_articles', 'contenu'))->toBeFalse()
         ->and(Schema::hasColumn('knowledge_articles', 'auteur_id'))->toBeFalse()
         ->and(KnowledgeArticle::query()->count())->toBeGreaterThan(1);
+});
+
+it('refreshes starter guides without overwriting articles maintained by IT', function () {
+    $starter = KnowledgeArticle::query()->where('slug', 'probleme-connexion-compte')->firstOrFail();
+    $starter->update([
+        'summary' => 'Ancien résumé de démarrage.',
+        'content' => 'Anciennes étapes de démarrage.',
+    ]);
+
+    $maintained = KnowledgeArticle::query()->where('slug', 'depanner-vpn-teletravail')->firstOrFail();
+    $author = User::factory()->create();
+    $maintained->update([
+        'summary' => 'Procédure vérifiée par le support local.',
+        'content' => 'Étapes propres au site.',
+        'author_id' => $author->id,
+    ]);
+
+    $countBefore = KnowledgeArticle::query()->count();
+    app(KnowledgeBaseSeeder::class)->run();
+
+    expect($starter->fresh()->content)->toContain('Après plusieurs échecs')
+        ->and($starter->fresh()->summary)->not->toBe('Ancien résumé de démarrage.')
+        ->and($maintained->fresh()->content)->toBe('Étapes propres au site.')
+        ->and($maintained->fresh()->author_id)->toBe($author->id)
+        ->and(KnowledgeArticle::query()->count())->toBe($countBefore);
+
+    app(KnowledgeBaseSeeder::class)->run();
+
+    expect(KnowledgeArticle::query()->count())->toBe($countBefore);
+});
+
+it('seeds twenty-six published guides with unique slugs', function () {
+    $articles = KnowledgeArticle::query()->published()->get();
+
+    expect($articles)->toHaveCount(26)
+        ->and($articles->pluck('slug')->unique())->toHaveCount(26)
+        ->and($articles->every(fn (KnowledgeArticle $article) => filled($article->content)))->toBeTrue();
 });
