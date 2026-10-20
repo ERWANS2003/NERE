@@ -4,6 +4,8 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 it('provides a categorized permission catalogue on role forms', function () {
     $admin = User::factory()->superAdmin()->create();
@@ -28,6 +30,18 @@ it('keeps the permission catalogue idempotent', function () {
     $this->seed(PermissionSeeder::class);
 
     expect(Permission::query()->count())->toBe($permissionCount);
+});
+
+it('adds the missing permission description column before populating the catalogue', function () {
+    Schema::table('permissions', function (Blueprint $table): void {
+        $table->dropColumn('description');
+    });
+
+    $migration = require database_path('migrations/2026_10_20_101500_populate_permission_catalog.php');
+    $migration->up();
+
+    expect(Schema::hasColumn('permissions', 'description'))->toBeTrue()
+        ->and(Permission::query()->count())->toBeGreaterThanOrEqual(20);
 });
 
 it('updates a role with no selected permissions', function () {
