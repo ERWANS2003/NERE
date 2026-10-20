@@ -107,7 +107,12 @@
                         <input type="checkbox" name="roles[]" value="{{ $role->id }}" 
                                {{ in_array($role->id, old('roles', $user->roles->pluck('id')->toArray())) ? 'checked' : '' }}
                                class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
-                        <span class="ml-2 text-sm text-gray-700">{{ $role->nom }}</span>
+                        <span class="ml-2 text-sm text-gray-700">
+                            <span class="font-medium">{{ $role->nom }}</span>
+                            <span class="block text-xs text-gray-500">
+                                {{ $role->description ?: 'Rôle personnalisé' }} · {{ $role->permissions_count }} permission(s)
+                            </span>
+                        </span>
                     </label>
                     @endforeach
                 </div>

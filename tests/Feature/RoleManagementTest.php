@@ -4,6 +4,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleProfileSeeder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -31,6 +32,32 @@ it('keeps the permission catalogue idempotent', function () {
     $this->seed(PermissionSeeder::class);
 
     expect(Permission::query()->count())->toBe($permissionCount);
+});
+
+it('creates reusable role profiles with permissions matched to their responsibilities', function () {
+    $this->seed(RoleProfileSeeder::class);
+
+    $employee = Role::query()->where('slug', 'employe')->firstOrFail();
+    $technician = Role::query()->where('slug', 'technicien-departement')->firstOrFail();
+    $departmentHead = Role::query()->where('slug', 'chef-departement')->firstOrFail();
+    $systemAdmin = Role::query()->where('slug', 'administrateur-systeme')->firstOrFail();
+
+    expect($employee->permissions->pluck('slug')->all())
+        ->toContain('tickets.create', 'submissions.view')
+        ->not->toContain('users.manage', 'submissions.review')
+        ->and($technician->permissions->pluck('slug')->all())
+        ->toContain('tickets.update')
+        ->not->toContain('submissions.review', 'roles.manage')
+        ->and($departmentHead->permissions->pluck('slug')->all())
+        ->toContain('analytics.view', 'submissions.review', 'calendar.manage')
+        ->not->toContain('users.manage', 'roles.manage')
+        ->and($systemAdmin->permissions->count())
+        ->toBe(Permission::query()->count());
+
+    $employee->permissions()->attach(Permission::query()->where('slug', 'users.manage')->firstOrFail());
+    $this->seed(RoleProfileSeeder::class);
+
+    expect($employee->fresh()->permissions->pluck('slug')->all())->toContain('users.manage');
 });
 
 it('adds the missing permission description column before populating the catalogue', function () {

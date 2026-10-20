@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Enums\DepartmentRole;
+use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
@@ -54,7 +54,7 @@ class UserManagementController extends Controller
     public function create()
     {
         $departments = Department::active()->orderBy('name')->get();
-        $roles = Role::orderBy('nom')->get();
+        $roles = Role::withCount('permissions')->orderBy('nom')->get();
 
         return view('admin.users.create', compact('departments', 'roles'));
     }
@@ -118,7 +118,7 @@ class UserManagementController extends Controller
     {
         $user->load(['departments', 'roles']);
         $departments = Department::active()->orderBy('name')->get();
-        $roles = Role::orderBy('nom')->get();
+        $roles = Role::withCount('permissions')->orderBy('nom')->get();
 
         return view('admin.users.edit', compact('user', 'departments', 'roles'));
     }
@@ -227,7 +227,7 @@ class UserManagementController extends Controller
      * Synchronise les départements en conservant les rôles existants et en
      * donnant le rôle de base aux nouveaux rattachements.
      *
-     * @param array<int, int|string> $departmentIds
+     * @param  array<int, int|string>  $departmentIds
      */
     private function syncDepartmentMemberships(User $user, array $departmentIds): void
     {
