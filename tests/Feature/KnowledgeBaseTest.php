@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\KnowledgeArticle;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
@@ -142,5 +143,40 @@ it('can safely rerun the knowledge base migration when its tables already exist'
 
     expect(KnowledgeArticle::query()->count())->toBe($articlesBefore)
         ->and(KnowledgeArticle::query()->whereKey($existingArticle->id)->exists())->toBeTrue()
+        ->and(Schema::hasTable('knowledge_article_feedback'))->toBeTrue();
+});
+
+it('repairs an older knowledge articles table before seeding guides', function () {
+    Schema::dropIfExists('knowledge_article_feedback');
+    Schema::dropIfExists('knowledge_articles');
+
+    Schema::create('knowledge_articles', function ($table): void {
+        $table->id();
+        $table->string('title');
+        $table->string('summary', 500);
+        $table->text('content');
+        $table->string('category', 40)->nullable();
+        $table->string('keywords')->nullable();
+        $table->timestamps();
+    });
+
+    $legacyId = DB::table('knowledge_articles')->insertGetId([
+        'title' => 'Guide historique existant',
+        'summary' => 'Résumé conservé.',
+        'content' => 'Instructions conservées.',
+        'category' => 'access',
+        'keywords' => 'compte',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $migration = require database_path('migrations/2026_10_20_151600_create_knowledge_base_tables.php');
+    $migration->up();
+
+    $legacyArticle = KnowledgeArticle::query()->findOrFail($legacyId);
+    expect($legacyArticle->slug)->toBe('guide-historique-existant')
+        ->and($legacyArticle->is_published)->toBeTrue()
+        ->and($legacyArticle->summary)->toBe('Résumé conservé.')
+        ->and(Schema::hasColumn('knowledge_articles', 'author_id'))->toBeTrue()
         ->and(Schema::hasTable('knowledge_article_feedback'))->toBeTrue();
 });

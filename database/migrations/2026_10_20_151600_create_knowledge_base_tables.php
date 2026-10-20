@@ -3,7 +3,9 @@
 use Database\Seeders\KnowledgeBaseSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -24,6 +26,8 @@ return new class extends Migration
 
                 $table->index(['is_published', 'category']);
             });
+        } else {
+            $this->completeExistingArticlesTable();
         }
 
         if (! Schema::hasTable('knowledge_article_feedback')) {
@@ -39,6 +43,96 @@ return new class extends Migration
         }
 
         app(KnowledgeBaseSeeder::class)->run();
+    }
+
+    private function completeExistingArticlesTable(): void
+    {
+        Schema::table('knowledge_articles', function (Blueprint $table): void {
+            if (! Schema::hasColumn('knowledge_articles', 'title')) {
+                $table->string('title')->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'slug')) {
+                $table->string('slug')->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'summary')) {
+                $table->string('summary', 500)->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'content')) {
+                $table->text('content')->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'category')) {
+                $table->string('category', 40)->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'keywords')) {
+                $table->string('keywords')->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'is_published')) {
+                $table->boolean('is_published')->default(true);
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'author_id')) {
+                $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'created_at')) {
+                $table->timestamp('created_at')->nullable();
+            }
+
+            if (! Schema::hasColumn('knowledge_articles', 'updated_at')) {
+                $table->timestamp('updated_at')->nullable();
+            }
+        });
+
+        $this->ensureArticleSlugs();
+
+        if (! Schema::hasIndex('knowledge_articles', 'knowledge_articles_slug_unique', 'unique')) {
+            Schema::table('knowledge_articles', function (Blueprint $table): void {
+                $table->unique('slug');
+            });
+        }
+
+        if (! Schema::hasIndex('knowledge_articles', ['is_published', 'category'])) {
+            Schema::table('knowledge_articles', function (Blueprint $table): void {
+                $table->index(['is_published', 'category']);
+            });
+        }
+    }
+
+    private function ensureArticleSlugs(): void
+    {
+        $usedSlugs = [];
+
+        DB::table('knowledge_articles')
+            ->orderBy('id')
+            ->get(['id', 'title', 'slug'])
+            ->each(function (object $article) use (&$usedSlugs): void {
+                $slug = is_string($article->slug) ? trim($article->slug) : '';
+
+                if ($slug === '' || isset($usedSlugs[$slug])) {
+                    $base = Str::slug($slug !== '' ? $slug : (string) $article->title) ?: 'article';
+                    $slug = $base;
+                    $suffix = 2;
+
+                    while (isset($usedSlugs[$slug]) || DB::table('knowledge_articles')
+                        ->where('slug', $slug)
+                        ->where('id', '<>', $article->id)
+                        ->exists()) {
+                        $slug = $base.'-'.$suffix++;
+                    }
+
+                    DB::table('knowledge_articles')
+                        ->where('id', $article->id)
+                        ->update(['slug' => $slug]);
+                }
+
+                $usedSlugs[$slug] = true;
+            });
     }
 
     public function down(): void
