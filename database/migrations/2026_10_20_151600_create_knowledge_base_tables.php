@@ -89,6 +89,7 @@ return new class extends Migration
             }
         });
 
+        $this->normalizeLegacyArticleTitles();
         $this->ensureArticleSlugs();
 
         if (! Schema::hasIndex('knowledge_articles', 'knowledge_articles_slug_unique', 'unique')) {
@@ -102,6 +103,34 @@ return new class extends Migration
                 $table->index(['is_published', 'category']);
             });
         }
+    }
+
+    private function normalizeLegacyArticleTitles(): void
+    {
+        if (Schema::hasColumn('knowledge_articles', 'titre')) {
+            DB::table('knowledge_articles')
+                ->where(function ($query): void {
+                    $query->whereNull('title')->orWhere('title', '');
+                })
+                ->whereNotNull('titre')
+                ->update(['title' => DB::raw('titre')]);
+
+            Schema::table('knowledge_articles', function (Blueprint $table): void {
+                $table->dropColumn('titre');
+            });
+        }
+
+        DB::table('knowledge_articles')
+            ->where(function ($query): void {
+                $query->whereNull('title')->orWhere('title', '');
+            })
+            ->orderBy('id')
+            ->get(['id'])
+            ->each(function (object $article): void {
+                DB::table('knowledge_articles')
+                    ->where('id', $article->id)
+                    ->update(['title' => 'Article existant '.$article->id]);
+            });
     }
 
     private function ensureArticleSlugs(): void
