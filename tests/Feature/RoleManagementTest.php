@@ -5,6 +5,7 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 it('provides a categorized permission catalogue on role forms', function () {
@@ -42,6 +43,36 @@ it('adds the missing permission description column before populating the catalog
 
     expect(Schema::hasColumn('permissions', 'description'))->toBeTrue()
         ->and(Permission::query()->count())->toBeGreaterThanOrEqual(20);
+});
+
+it('adds missing permission pivot timestamps required by the role list', function () {
+    Schema::table('permission_role', function (Blueprint $table): void {
+        $table->dropColumn(['created_at', 'updated_at']);
+    });
+
+    $admin = User::factory()->superAdmin()->create();
+    $role = Role::create([
+        'nom' => 'Gestionnaire sans timestamps',
+        'slug' => 'gestionnaire-sans-timestamps',
+    ]);
+    $permission = Permission::query()->firstOrFail();
+
+    DB::table('permission_role')->insert([
+        'permission_id' => $permission->id,
+        'role_id' => $role->id,
+    ]);
+
+    $migration = require database_path('migrations/2026_10_20_115500_add_missing_timestamps_to_permission_role_table.php');
+    $migration->up();
+
+    expect(Schema::hasColumn('permission_role', 'created_at'))->toBeTrue()
+        ->and(Schema::hasColumn('permission_role', 'updated_at'))->toBeTrue();
+
+    $this->actingAs($admin)
+        ->get(route('admin.roles.index'))
+        ->assertOk()
+        ->assertSee('Gestionnaire sans timestamps')
+        ->assertSee('1 permission(s)');
 });
 
 it('updates a role with no selected permissions', function () {
