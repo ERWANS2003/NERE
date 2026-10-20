@@ -4,8 +4,11 @@ use App\Enums\DepartmentRole;
 use App\Models\AppSetting;
 use App\Models\Department;
 use App\Models\User;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 it('reserves the system settings area for active system administrators', function () {
     $user = User::factory()->create();
@@ -35,6 +38,55 @@ it('shows the latest AD synchronization failure details to administrators', func
         ->assertSee('Détail de la dernière erreur')
         ->assertSee('AD injoignable : timeout connexion.')
         ->assertSee('Dernière tentative');
+});
+
+it('runs the AD sync command inside the web request and records success', function () {
+    config(['ldap_integration.enabled' => true]);
+    AppSetting::saveValues(['ldap_last_sync_error' => 'ancienne erreur']);
+
+    $kernel = Mockery::mock(Kernel::class);
+    $kernel->shouldReceive('call')
+        ->once()
+        ->with('ldap:sync', [], Mockery::type(BufferedOutput::class))
+        ->andReturnUsing(function ($command, $parameters, BufferedOutput $output): int {
+            $output->writeln('Mis à jour : 302');
+
+            return 0;
+        });
+    Artisan::swap($kernel);
+
+    $this->from(route('admin.settings'))
+        ->actingAs(User::factory()->superAdmin()->create())
+        ->post(route('admin.settings.ldap.sync'))
+        ->assertRedirect(route('admin.settings'))
+        ->assertSessionHas('success', 'Synchronisation AD terminée. Mis à jour : 302');
+
+    expect(AppSetting::value('ldap_last_sync_attempt_at'))->not->toBeNull()
+        ->and(AppSetting::value('ldap_last_sync_error'))->toBeNull();
+});
+
+it('records an AD sync failure returned by the command', function () {
+    config(['ldap_integration.enabled' => true]);
+
+    $kernel = Mockery::mock(Kernel::class);
+    $kernel->shouldReceive('call')
+        ->once()
+        ->with('ldap:sync', [], Mockery::type(BufferedOutput::class))
+        ->andReturnUsing(function ($command, $parameters, BufferedOutput $output): int {
+            $output->writeln('AD injoignable : timeout connexion.');
+
+            return 1;
+        });
+    Artisan::swap($kernel);
+
+    $this->from(route('admin.settings'))
+        ->actingAs(User::factory()->superAdmin()->create())
+        ->post(route('admin.settings.ldap.sync'))
+        ->assertRedirect(route('admin.settings'))
+        ->assertSessionHas('error', 'La synchronisation AD a échoué : AD injoignable : timeout connexion.');
+
+    expect(AppSetting::value('ldap_last_sync_attempt_at'))->not->toBeNull()
+        ->and(AppSetting::value('ldap_last_sync_error'))->toBe('AD injoignable : timeout connexion.');
 });
 
 it('does not grant system administration based on department membership', function () {

@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Symfony\Component\Process\PhpExecutableFinder;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Throwable;
 
 class AdminSettingsController extends Controller
@@ -60,20 +60,14 @@ class AdminSettingsController extends Controller
             return back()->with('error', 'La connexion Active Directory est désactivée dans la configuration du serveur.');
         }
 
-        $process = null;
+        $output = '';
+        $buffer = new BufferedOutput;
 
         try {
-            $php = (new PhpExecutableFinder)->find();
-            if ($php === false) {
-                throw new \RuntimeException('Aucun exécutable PHP CLI n’a été trouvé sur le serveur.');
-            }
+            $exitCode = Artisan::call('ldap:sync', [], $buffer);
+            $output = trim($buffer->fetch());
 
-            $process = new Process([$php, base_path('artisan'), 'ldap:sync', '--no-interaction'], base_path());
-            $process->setTimeout(600);
-            $process->run();
-            $output = trim($process->getOutput().$process->getErrorOutput());
-
-            if (! $process->isSuccessful()) {
+            if ($exitCode !== 0) {
                 $diagnostic = $this->syncDiagnostic($output, 'La commande ldap:sync a échoué sans fournir de diagnostic.');
                 AppSetting::saveValues([
                     'ldap_last_sync_attempt_at' => now()->toIso8601String(),
@@ -84,9 +78,7 @@ class AdminSettingsController extends Controller
                 return back()->with('error', 'La synchronisation AD a échoué : '.$diagnostic);
             }
         } catch (Throwable $exception) {
-            $output = $process
-                ? trim($process->getOutput().$process->getErrorOutput()."\n".$exception->getMessage())
-                : $exception->getMessage();
+            $output = trim($buffer->fetch()."\n".$output."\n".$exception->getMessage());
             $diagnostic = $this->syncDiagnostic($output, 'Impossible de démarrer la commande ldap:sync.');
             AppSetting::saveValues([
                 'ldap_last_sync_attempt_at' => now()->toIso8601String(),
