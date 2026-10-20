@@ -189,7 +189,7 @@ it('migrates legacy French article titles and removes the required legacy column
         $table->id();
         $table->string('titre');
         $table->string('summary', 500);
-        $table->text('content');
+        $table->text('contenu');
         $table->string('category', 40)->nullable();
         $table->string('keywords')->nullable();
         $table->timestamps();
@@ -198,7 +198,7 @@ it('migrates legacy French article titles and removes the required legacy column
     $legacyId = DB::table('knowledge_articles')->insertGetId([
         'titre' => 'Ancien guide de connexion',
         'summary' => 'Résumé historique.',
-        'content' => 'Instructions historiques.',
+        'contenu' => 'Instructions historiques.',
         'category' => 'access',
         'keywords' => 'connexion',
         'created_at' => now(),
@@ -212,6 +212,8 @@ it('migrates legacy French article titles and removes the required legacy column
     expect($article->title)->toBe('Ancien guide de connexion')
         ->and($article->slug)->toBe('ancien-guide-de-connexion')
         ->and($article->summary)->toBe('Résumé historique.')
+        ->and($article->content)->toBe('Instructions historiques.')
         ->and(Schema::hasColumn('knowledge_articles', 'titre'))->toBeFalse()
+        ->and(Schema::hasColumn('knowledge_articles', 'contenu'))->toBeFalse()
         ->and(KnowledgeArticle::query()->count())->toBeGreaterThan(1);
 });

@@ -89,7 +89,7 @@ return new class extends Migration
             }
         });
 
-        $this->normalizeLegacyArticleTitles();
+        $this->normalizeLegacyArticleFields();
         $this->ensureArticleSlugs();
 
         if (! Schema::hasIndex('knowledge_articles', 'knowledge_articles_slug_unique', 'unique')) {
@@ -105,7 +105,7 @@ return new class extends Migration
         }
     }
 
-    private function normalizeLegacyArticleTitles(): void
+    private function normalizeLegacyArticleFields(): void
     {
         if (Schema::hasColumn('knowledge_articles', 'titre')) {
             DB::table('knowledge_articles')
@@ -117,6 +117,19 @@ return new class extends Migration
 
             Schema::table('knowledge_articles', function (Blueprint $table): void {
                 $table->dropColumn('titre');
+            });
+        }
+
+        if (Schema::hasColumn('knowledge_articles', 'contenu')) {
+            DB::table('knowledge_articles')
+                ->where(function ($query): void {
+                    $query->whereNull('content')->orWhere('content', '');
+                })
+                ->whereNotNull('contenu')
+                ->update(['content' => DB::raw('contenu')]);
+
+            Schema::table('knowledge_articles', function (Blueprint $table): void {
+                $table->dropColumn('contenu');
             });
         }
 
