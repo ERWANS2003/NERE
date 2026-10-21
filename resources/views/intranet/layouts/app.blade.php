@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#b91c1c">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/pwa-icon-192.png') }}">
 
     {{-- Compatible avec les deux styles : <x-intranet-layout title="…"> et @extends + @section('title'). --}}
     <title>{{ $title ?? (trim($__env->yieldContent('title')) ?: 'Intranet') }} - NÉRÉ Mining</title>

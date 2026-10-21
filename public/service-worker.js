@@ -1,3 +1,12 @@
+self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
+    // Never cache authenticated pages or responses containing personal data.
+    event.respondWith(fetch(event.request));
+});
+
 self.addEventListener('push', (event) => {
     if (!event.data) {
         return;

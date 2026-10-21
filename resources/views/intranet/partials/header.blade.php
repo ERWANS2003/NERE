@@ -35,6 +35,19 @@
 
         <div class="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
 
+        <button
+            type="button"
+            data-pwa-install
+            hidden
+            class="items-center gap-2 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-nere-800 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2"
+        >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4m-2 8h12"/>
+            </svg>
+            <span class="hidden sm:inline">Installer l’application</span>
+            <span class="sm:hidden">Installer</span>
+        </button>
+
         <!-- Notifications -->
         <x-notification-dropdown />
 
