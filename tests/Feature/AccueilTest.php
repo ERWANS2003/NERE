@@ -70,6 +70,16 @@ it('montre tous les services a l administrateur general', function () {
         ->assertSee('HSE');
 });
 
+it('uses the Surete and Process department names and refreshes existing records', function () {
+    Department::factory()->create(['code' => 'SEC', 'name' => 'Département Sécurité']);
+    Department::factory()->create(['code' => 'PROC', 'name' => 'Département Processing']);
+
+    $this->seed(DepartmentsSeeder::class);
+
+    expect(Department::query()->where('code', 'SEC')->value('name'))->toBe('Département Sûreté')
+        ->and(Department::query()->where('code', 'PROC')->value('name'))->toBe('Département Process');
+});
+
 it('explique l attente quand aucun service n est affecte', function () {
     $this->actingAs(User::factory()->create())
         ->get('/accueil')

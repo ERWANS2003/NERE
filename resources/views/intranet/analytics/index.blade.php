@@ -30,7 +30,16 @@
             </form>
             <div class="flex flex-wrap items-center gap-2" data-auto-refresh data-interval="60000">
                 <a href="{{ route('intranet.analytics.export.pdf', ['periode' => $jours]) }}" class="bouton-secondaire">
-                    Exporter en PDF
+                    PDF
+                </a>
+                <a href="{{ route('intranet.analytics.export.xlsx', ['periode' => $jours]) }}" class="bouton-secondaire">
+                    Excel
+                </a>
+                <a href="{{ route('intranet.analytics.export.csv', ['periode' => $jours]) }}" class="bouton-secondaire">
+                    CSV
+                </a>
+                <a href="{{ route('intranet.analytics.export.json', ['periode' => $jours]) }}" class="bouton-secondaire">
+                    JSON
                 </a>
                 <a href="{{ route('intranet.analytics', ['periode' => $jours]) }}" class="bouton-secondaire">
                     Actualiser

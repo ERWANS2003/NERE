@@ -395,6 +395,33 @@ it('lets the IT director take a ticket or assign it to an active technician', fu
     Notification::assertSentTo($requester, TicketNotification::class);
 });
 
+it('lets a system administrator take an IT ticket without a department membership', function () {
+    Notification::fake();
+    $it = departementIt();
+    $admin = User::factory()->superAdmin()->create();
+    $requester = User::factory()->create();
+    $ticket = Ticket::create([
+        'number' => 'IT-000106',
+        'department_id' => $it->id,
+        'requester_id' => $requester->id,
+        'subject' => 'Accès à un outil',
+        'description' => 'La connexion à l’outil est impossible.',
+        'category' => 'access',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('intranet.tickets.take', $ticket))
+        ->assertRedirect(route('intranet.tickets.show', $ticket));
+
+    expect($ticket->fresh()->assignee_id)->toBe($admin->id)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::InProgress)
+        ->and($ticket->activities()->where('event', 'taken')->exists())->toBeTrue();
+
+    Notification::assertSentTo($requester, TicketNotification::class);
+});
+
 it('shows recent forms from handled departments and tickets the user may access', function () {
     $it = departementIt();
     $hse = Department::factory()->create(['code' => 'HSE', 'name' => 'Santé et sécurité']);

@@ -107,8 +107,45 @@ class UserManagementController extends Controller
     public function show(User $user)
     {
         $user->load(['departments', 'roles']);
+        $availableDepartments = Department::active()
+            ->whereDoesntHave('users', fn ($query) => $query->whereKey($user->id))
+            ->orderBy('name')
+            ->get();
+        $departmentRoles = DepartmentRole::options();
 
-        return view('admin.users.show', compact('user'));
+        return view('admin.users.show', compact('user', 'availableDepartments', 'departmentRoles'));
+    }
+
+    /**
+     * Affecte un utilisateur à un département sans modifier ses affectations existantes.
+     */
+    public function assignDepartment(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'department_id' => [
+                'required',
+                Rule::exists('departments', 'id')->where('is_active', true),
+            ],
+            'role' => ['required', Rule::enum(DepartmentRole::class)],
+        ], [
+            'department_id.exists' => 'Sélectionnez un département actif.',
+        ]);
+
+        if ($user->departments()->whereKey($validated['department_id'])->exists()) {
+            return back()
+                ->withErrors(['department_id' => 'Cet employé est déjà affecté à ce département.'])
+                ->withInput();
+        }
+
+        $user->departments()->attach($validated['department_id'], [
+            'role' => $validated['role'],
+            'tech_level' => null,
+        ]);
+        $user->refreshAuthorisations();
+
+        return redirect()
+            ->route('admin.users.show', $user)
+            ->with('success', 'Département affecté à l’employé.');
     }
 
     /**

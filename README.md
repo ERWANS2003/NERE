@@ -75,7 +75,7 @@ Après déploiement, exécuter les migrations Laravel (`php artisan migrate --fo
 
 ### 📈 Rapports & Analytics
 - Dashboard analytique avec métriques
-- Export PDF respectant le périmètre d’accès de l’utilisateur
+- Exports PDF, Excel (XLSX), CSV et JSON respectant le périmètre d’accès de l’utilisateur
 - Actualisation automatique toutes les 60 secondes, suspendue lorsque l’onglet est masqué
 - Métriques de performance (SLA, temps de résolution, satisfaction)
 - Graphiques et visualisations

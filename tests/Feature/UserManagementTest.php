@@ -100,3 +100,77 @@ it('creates department memberships with the default user role', function () {
     expect($user->departments()->findOrFail($department->id)->pivot->role)
         ->toBe(DepartmentRole::User->value);
 });
+
+it('quickly assigns an employee to another department without removing existing memberships', function () {
+    $existingDepartment = Department::factory()->create();
+    $newDepartment = Department::factory()->create();
+    $inactiveDepartment = Department::factory()->inactive()->create();
+    $employee = User::factory()->create();
+    $employee->departments()->attach($existingDepartment, [
+        'role' => DepartmentRole::Technician->value,
+        'tech_level' => 2,
+    ]);
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.show', $employee))
+        ->assertOk()
+        ->assertSee('Affecter à un département')
+        ->assertSee($newDepartment->name)
+        ->assertDontSee($inactiveDepartment->name);
+
+    $this->post(route('admin.users.departments.assign', $employee), [
+        'department_id' => $newDepartment->id,
+        'role' => DepartmentRole::Director->value,
+    ])
+        ->assertRedirect(route('admin.users.show', $employee))
+        ->assertSessionHas('success');
+
+    expect($employee->fresh()->departments()->findOrFail($existingDepartment->id)->pivot->role)
+        ->toBe(DepartmentRole::Technician->value)
+        ->and($employee->fresh()->departments()->findOrFail($existingDepartment->id)->pivot->tech_level)
+        ->toBe(2)
+        ->and($employee->fresh()->departments()->findOrFail($newDepartment->id)->pivot->role)
+        ->toBe(DepartmentRole::Director->value);
+});
+
+it('validates quick department assignments and prevents duplicate memberships', function () {
+    $department = Department::factory()->create();
+    $inactiveDepartment = Department::factory()->inactive()->create();
+    $employee = User::factory()->create();
+    $employee->departments()->attach($department, ['role' => DepartmentRole::User->value]);
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->from(route('admin.users.show', $employee))
+        ->post(route('admin.users.departments.assign', $employee), [
+            'department_id' => $department->id,
+            'role' => DepartmentRole::Technician->value,
+        ])
+        ->assertRedirect(route('admin.users.show', $employee))
+        ->assertSessionHasErrors('department_id');
+
+    $this->post(route('admin.users.departments.assign', $employee), [
+        'department_id' => $inactiveDepartment->id,
+        'role' => DepartmentRole::User->value,
+    ])->assertSessionHasErrors('department_id');
+
+    $this->post(route('admin.users.departments.assign', $employee), [
+        'department_id' => $inactiveDepartment->id,
+        'role' => 'admin',
+    ])->assertSessionHasErrors('role');
+});
+
+it('keeps department assignments restricted to system administrators', function () {
+    $employee = User::factory()->create();
+    $department = Department::factory()->create();
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('admin.users.departments.assign', $employee), [
+            'department_id' => $department->id,
+            'role' => DepartmentRole::User->value,
+        ])
+        ->assertForbidden();
+
+    expect($employee->fresh()->departments)->toBeEmpty();
+});

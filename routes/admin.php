@@ -25,6 +25,8 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
         ->name('settings.ldap.sync');
 
     // Gestion des utilisateurs
+    Route::post('users/{user}/departments', [UserManagementController::class, 'assignDepartment'])
+        ->name('users.departments.assign');
     Route::resource('users', UserManagementController::class);
     Route::post('users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])
         ->name('users.reset-password');

@@ -71,7 +71,7 @@ class DepartmentsSeeder extends Seeder
             ],
             [
                 'code' => 'SEC',
-                'name' => 'Département Sécurité',
+                'name' => 'Département Sûreté',
                 'tag' => 'Sûreté',
                 'description' => 'Contrôle des accès, gardiennage, badges et sûreté des sites.',
                 'icon' => 'bouclier',
@@ -95,7 +95,7 @@ class DepartmentsSeeder extends Seeder
             ],
             [
                 'code' => 'PROC',
-                'name' => 'Département Processing',
+                'name' => 'Département Process',
                 'tag' => 'Traitement',
                 'description' => 'Usine de traitement, suivi de production et analyses de laboratoire.',
                 'icon' => 'usine',

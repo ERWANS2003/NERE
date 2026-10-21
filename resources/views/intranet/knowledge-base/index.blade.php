@@ -19,7 +19,7 @@
     </x-intranet.page-header>
 
     <x-intranet.filters as-form action="{{ route('intranet.knowledge-base.index') }}" label="Rechercher et filtrer les guides" data-live-search
-          class="mb-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
+          class="mb-6 grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px_auto]">
         <div>
             <label for="knowledge-search" class="sr-only">Rechercher un guide</label>
             <input id="knowledge-search" type="search" name="search" value="{{ request('search') }}"
@@ -43,7 +43,7 @@
     </p>
 
     @if($articles->isNotEmpty())
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid gap-4 lg:grid-cols-2">
             @foreach($articles as $article)
                 <x-card as="article" class="flex flex-col">
                     <div class="mb-3 flex flex-wrap items-center gap-2">

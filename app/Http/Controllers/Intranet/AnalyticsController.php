@@ -9,10 +9,17 @@ use App\Models\User;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnalyticsController extends Controller
 {
@@ -38,6 +45,189 @@ class AnalyticsController extends Controller
             'Content-Disposition' => 'attachment; filename="analytics-'.$data['jours'].'-jours-'.now()->format('Ymd-His').'.pdf"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    public function exportCsv(Request $request): Response
+    {
+        $data = $this->analyticsData($request);
+        $stream = fopen('php://temp', 'r+');
+
+        if ($stream === false) {
+            throw new RuntimeException('Impossible de préparer l’export CSV.');
+        }
+
+        if (fwrite($stream, "\xEF\xBB\xBF") === false) {
+            fclose($stream);
+            throw new RuntimeException('Impossible de préparer l’export CSV.');
+        }
+
+        foreach ($this->exportRows($data) as $row) {
+            if (fputcsv($stream, array_map($this->csvSafeValue(...), $row), ';', '"', '') === false) {
+                fclose($stream);
+                throw new RuntimeException('Impossible de générer l’export CSV.');
+            }
+        }
+
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        if ($csv === false) {
+            throw new RuntimeException('Impossible de lire l’export CSV généré.');
+        }
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$this->exportFilename($data, 'csv').'"',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function exportJson(Request $request): JsonResponse
+    {
+        $data = $this->analyticsData($request);
+
+        return response()->json([
+            'generated_at' => now()->toIso8601String(),
+            'scope' => $data['scopeLabel'],
+            'period_days' => $data['jours'],
+            'period_label' => $data['periodes'][$data['jours']],
+            'overview' => $data['overview'],
+            'kpis' => $data['kpis'],
+            'charts' => $data['charts'],
+        ], 200, [
+            'Content-Disposition' => 'attachment; filename="'.$this->exportFilename($data, 'json').'"',
+            'Cache-Control' => 'private, no-store',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    }
+
+    public function exportXlsx(Request $request): StreamedResponse
+    {
+        $data = $this->analyticsData($request);
+        $spreadsheet = new Spreadsheet;
+        $summary = $spreadsheet->getActiveSheet();
+        $summary->setTitle('Indicateurs');
+        $this->writeWorksheetRows($summary, $this->exportRows($data));
+        $summary->getStyle('A1:D1')->getFont()->setBold(true);
+
+        $charts = $spreadsheet->createSheet();
+        $charts->setTitle('Graphiques');
+        $this->writeWorksheetRows($charts, $this->chartRows($data));
+        $charts->getStyle('A1:C1')->getFont()->setBold(true);
+
+        foreach ([[$summary, 4], [$charts, 3]] as [$worksheet, $columnCount]) {
+            for ($column = 1; $column <= $columnCount; $column++) {
+                $worksheet->getColumnDimensionByColumn($column)->setAutoSize(true);
+            }
+        }
+
+        $spreadsheet->getProperties()
+            ->setTitle('Rapport analytique')
+            ->setSubject($data['scopeLabel']);
+
+        return response()->streamDownload(
+            static function () use ($spreadsheet): void {
+                (new Xlsx($spreadsheet))->save('php://output');
+                $spreadsheet->disconnectWorksheets();
+            },
+            $this->exportFilename($data, 'xlsx'),
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'private, no-store',
+            ],
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<list<string|int>>
+     */
+    private function exportRows(array $data): array
+    {
+        $rows = [['Type', 'Indicateur', 'Valeur', 'Variation']];
+
+        if ($data['overview'] !== null) {
+            foreach ([
+                'Départements actifs' => $data['overview']['departements'],
+                'Employés actifs' => $data['overview']['effectif'],
+                'Demandes enregistrées' => $data['overview']['demandes'],
+            ] as $label => $value) {
+                $rows[] = ['Vue d’ensemble', $label, $value, ''];
+            }
+        }
+
+        foreach ($data['kpis'] as $kpi) {
+            $variation = $kpi['variation'] === null
+                ? ''
+                : ucfirst($kpi['variation']['sens']).' de '.$kpi['variation']['pourcentage'].' %';
+            $rows[] = ['Indicateur', $kpi['label'], $kpi['valeur'], $variation];
+        }
+
+        foreach ($this->chartRows($data) as [$chart, $label, $value]) {
+            if ($chart !== 'Graphique') {
+                $rows[] = ['Donnée graphique', $chart.' - '.$label, $value, ''];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<list<string|int>>
+     */
+    private function chartRows(array $data): array
+    {
+        $titles = [
+            'parSemaine' => 'Demandes par semaine',
+            'parStatut' => 'Répartition par statut',
+            'parDepartement' => 'Demandes par département',
+            'effectifs' => 'Effectifs par département',
+        ];
+        $rows = [['Graphique', 'Élément', 'Valeur']];
+
+        foreach ($titles as $key => $title) {
+            foreach ($data['charts'][$key]['labels'] as $index => $label) {
+                $rows[] = [$title, $label, $data['charts'][$key]['data'][$index]];
+            }
+        }
+
+        return $rows;
+    }
+
+    private function csvSafeValue(string|int $value): string|int
+    {
+        if (is_string($value) && preg_match('/^[\t\r ]*[=+\-@]/', $value) === 1) {
+            return "'".$value;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function exportFilename(array $data, string $extension): string
+    {
+        return 'analytics-'.$data['jours'].'-jours-'.now()->format('Ymd-His').'.'.$extension;
+    }
+
+    /**
+     * @param  list<list<string|int>>  $rows
+     */
+    private function writeWorksheetRows(Worksheet $worksheet, array $rows): void
+    {
+        foreach ($rows as $rowIndex => $row) {
+            foreach ($row as $columnIndex => $value) {
+                $cell = $worksheet->getCell([$columnIndex + 1, $rowIndex + 1]);
+
+                if (is_int($value)) {
+                    $cell->setValue($value);
+                } else {
+                    $cell->setValueExplicit($value, DataType::TYPE_STRING);
+                }
+            }
+        }
     }
 
     /**

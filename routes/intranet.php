@@ -113,6 +113,9 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
 
     // Analytics
     Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('analytics.export.pdf');
+    Route::get('/analytics/export/csv', [AnalyticsController::class, 'exportCsv'])->name('analytics.export.csv');
+    Route::get('/analytics/export/json', [AnalyticsController::class, 'exportJson'])->name('analytics.export.json');
+    Route::get('/analytics/export/xlsx', [AnalyticsController::class, 'exportXlsx'])->name('analytics.export.xlsx');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
     // Calendrier

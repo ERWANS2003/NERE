@@ -5,6 +5,7 @@ use App\Models\Department;
 use App\Models\DepartmentForm;
 use App\Models\FormSubmission;
 use App\Models\User;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 function createAnalyticsSubmission(Department $department, string $status = 'pending'): FormSubmission
 {
@@ -30,8 +31,10 @@ it('restricts analytics access to system administrators and department heads', f
         ->get(route('intranet.analytics'))
         ->assertForbidden();
 
-    $this->get(route('intranet.analytics.export.pdf'))
-        ->assertForbidden();
+    foreach (['pdf', 'xlsx', 'csv', 'json'] as $format) {
+        $this->get(route('intranet.analytics.export.'.$format))
+            ->assertForbidden();
+    }
 
     $this->get(route('intranet.dashboard'))->assertDontSee(route('intranet.analytics'));
 
@@ -64,7 +67,10 @@ it('scopes every department head metric and chart to departments they lead', fun
         ->assertViewHas('isAdmin', false)
         ->assertViewHas('overview', null)
         ->assertSee('Statistiques de : '.$managedDepartment->name)
-        ->assertDontSee($otherDepartment->name);
+        ->assertDontSee($otherDepartment->name)
+        ->assertSee(route('intranet.analytics.export.xlsx', ['periode' => 30]))
+        ->assertSee(route('intranet.analytics.export.csv', ['periode' => 30]))
+        ->assertSee(route('intranet.analytics.export.json', ['periode' => 30]));
 
     $kpis = $response->viewData('kpis');
     $charts = $response->viewData('charts');
@@ -76,6 +82,15 @@ it('scopes every department head metric and chart to departments they lead', fun
         ->and($charts['parStatut']['data'])->toBe([1, 0, 1])
         ->and($charts['effectifs']['labels'])->toBe([$managedDepartment->name])
         ->and($charts['effectifs']['data'])->toBe([2]);
+
+    $this->get(route('intranet.analytics.export.csv', ['periode' => 30]))
+        ->assertOk()
+        ->assertSee($managedDepartment->name)
+        ->assertDontSee($otherDepartment->name);
+
+    $this->get(route('intranet.analytics.export.json', ['periode' => 30]))
+        ->assertOk()
+        ->assertJsonPath('charts.parDepartement.labels', [$managedDepartment->name]);
 });
 
 it('shows company-wide summaries and all department analytics to system administrators', function () {
@@ -93,6 +108,9 @@ it('shows company-wide summaries and all department analytics to system administ
         ->assertSee('Vue d’ensemble de l’entreprise')
         ->assertSee('data-auto-refresh', false)
         ->assertSee(route('intranet.analytics.export.pdf', ['periode' => 30]))
+        ->assertSee(route('intranet.analytics.export.xlsx', ['periode' => 30]))
+        ->assertSee(route('intranet.analytics.export.csv', ['periode' => 30]))
+        ->assertSee(route('intranet.analytics.export.json', ['periode' => 30]))
         ->assertSee($firstDepartment->name)
         ->assertSee($secondDepartment->name);
 
@@ -117,4 +135,53 @@ it('exports analytics as a PDF for authorized users', function () {
         ->assertHeader('content-disposition');
 
     expect(substr($response->getContent(), 0, 5))->toBe('%PDF-');
+});
+
+it('exports scoped analytics as CSV, JSON, and Excel', function () {
+    $department = Department::factory()->create(['name' => 'Département Alpha']);
+    $admin = User::factory()->superAdmin()->create();
+    createAnalyticsSubmission($department);
+
+    $this->actingAs($admin)
+        ->get(route('intranet.analytics.export.csv', ['periode' => 30]))
+        ->assertOk()
+        ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+        ->assertHeader('content-disposition')
+        ->assertSee('Demandes reçues')
+        ->assertSee('Département Alpha');
+
+    $this->get(route('intranet.analytics.export.json', ['periode' => 30]))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/json')
+        ->assertHeader('content-disposition')
+        ->assertJsonPath('period_days', 30)
+        ->assertJsonPath('kpis.demandes.valeur', 1)
+        ->assertJsonPath('charts.parDepartement.labels.0', 'Département Alpha');
+
+    $response = $this->get(route('intranet.analytics.export.xlsx', ['periode' => 30]))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        ->assertHeader('content-disposition');
+
+    $xlsx = $response->streamedContent();
+    expect(substr($xlsx, 0, 2))->toBe('PK');
+
+    $path = tempnam(sys_get_temp_dir(), 'analytics-xlsx-');
+    expect($path)->not->toBeFalse();
+
+    try {
+        expect(file_put_contents($path, $xlsx))->toBe(strlen($xlsx));
+        $workbook = IOFactory::load($path);
+        $chartSheet = $workbook->getSheetByName('Graphiques');
+
+        expect($workbook->getSheetNames())->toBe(['Indicateurs', 'Graphiques'])
+            ->and($workbook->getSheetByName('Indicateurs')->getCell('C5')->getValue())->toBe(1)
+            ->and($chartSheet->getCell('A10')->getValue())->toBe('Demandes par département')
+            ->and($chartSheet->getCell('B10')->getValue())->toBe('Département Alpha')
+            ->and($chartSheet->getCell('C10')->getValue())->toBe(1);
+
+        $workbook->disconnectWorksheets();
+    } finally {
+        unlink($path);
+    }
 });
