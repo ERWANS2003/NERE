@@ -3,8 +3,8 @@
 use App\Http\Controllers\Intranet\AnalyticsController;
 use App\Http\Controllers\Intranet\AnnouncementController;
 use App\Http\Controllers\Intranet\CalendarController;
-use App\Http\Controllers\Intranet\DepartmentCalendarEventController;
 use App\Http\Controllers\Intranet\DashboardController;
+use App\Http\Controllers\Intranet\DepartmentCalendarEventController;
 use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentController;
 use App\Http\Controllers\Intranet\DepartmentServiceController;
 use App\Http\Controllers\Intranet\DepartmentShowController;
@@ -12,11 +12,12 @@ use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FormController;
 use App\Http\Controllers\Intranet\KnowledgeBaseController;
 use App\Http\Controllers\Intranet\NotificationController;
+use App\Http\Controllers\Intranet\PushSubscriptionController;
 use App\Http\Controllers\Intranet\ResourceController;
 use App\Http\Controllers\Intranet\SubmissionController;
+use App\Http\Controllers\Intranet\TicketController;
 use App\Http\Controllers\Intranet\TimeOffApprovalController;
 use App\Http\Controllers\Intranet\TimeOffController;
-use App\Http\Controllers\Intranet\TicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -111,6 +112,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     Route::get('/directory', [DirectoryController::class, 'index'])->name('directory');
 
     // Analytics
+    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('analytics.export.pdf');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
     // Calendrier
@@ -151,6 +153,9 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::post('/tout-lu', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
         Route::post('/{notification}/lu', [NotificationController::class, 'markRead'])->name('mark-read');
+        Route::get('/push/vapid-public-key', [PushSubscriptionController::class, 'publicKey'])->name('push.public-key');
+        Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])->name('push.subscriptions.store');
+        Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push.subscriptions.destroy');
     });
 
     // Congés (Time Off)

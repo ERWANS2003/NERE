@@ -15,6 +15,7 @@ use App\Models\TicketAttachment;
 use App\Models\TicketComment;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use App\Services\TicketSlaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -88,7 +89,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TicketSlaService $ticketSlaService): RedirectResponse
     {
         $department = $this->itDepartment();
 
@@ -101,7 +102,7 @@ class TicketController extends Controller
             'attachments.*' => ['file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
         ]);
 
-        $ticket = DB::transaction(function () use ($request, $department, $validated) {
+        $ticket = DB::transaction(function () use ($request, $department, $validated, $ticketSlaService) {
             $ticket = Ticket::create([
                 'number' => 'pending',
                 'department_id' => $department->id,
@@ -114,6 +115,7 @@ class TicketController extends Controller
             ]);
 
             $ticket->update(['number' => 'IT-'.str_pad((string) $ticket->id, 6, '0', STR_PAD_LEFT)]);
+            $ticketSlaService->setDeadlines($ticket);
 
             TicketActivity::create([
                 'ticket_id' => $ticket->id,
@@ -169,7 +171,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function update(Request $request, Ticket $ticket): RedirectResponse
+    public function update(Request $request, Ticket $ticket, TicketSlaService $ticketSlaService): RedirectResponse
     {
         $this->authorizeAgent($request->user(), $ticket);
         $department = $this->itDepartment();
@@ -197,6 +199,9 @@ class TicketController extends Controller
             'assignee_id' => $ticket->assignee_id,
         ];
         $status = TicketStatus::from($validated['status']);
+        $priorityChanged = $before['priority'] !== $validated['priority'];
+        $reopened = in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)
+            && ! in_array($status, [TicketStatus::Resolved, TicketStatus::Closed], true);
 
         $ticket->update([
             'status' => $status,
@@ -205,6 +210,12 @@ class TicketController extends Controller
             'resolved_at' => $status === TicketStatus::Resolved ? ($ticket->resolved_at ?? now()) : null,
             'closed_at' => $status === TicketStatus::Closed ? ($ticket->closed_at ?? now()) : null,
         ]);
+
+        if ($priorityChanged) {
+            $ticketSlaService->setDeadlines($ticket, resetAlerts: true);
+        } elseif ($reopened) {
+            $ticketSlaService->restartResolutionDeadline($ticket);
+        }
 
         $after = [
             'status' => $ticket->status->value,
@@ -322,6 +333,10 @@ class TicketController extends Controller
             'is_internal' => $internal,
         ]);
         $this->saveAttachments($request, $ticket, $comment);
+
+        if ($isAgent && ! $internal && ! $ticket->first_responded_at) {
+            $ticket->update(['first_responded_at' => now()]);
+        }
 
         $recipients = collect();
         if ($ticket->requester && ! $ticket->requester->is($user) && ! $internal && $ticket->requester->actif) {

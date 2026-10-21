@@ -565,7 +565,7 @@ Ajouter annonces, pages départements, analytics, et système de reconnaissance.
 **Canaux** :
 - [x] Database (toutes les notifications)
 - [x] Email (annonces urgentes + demandes traitées)
-- [~] Browser push : non implémenté (optionnel)
+- [x] Browser push : consentement par appareil, abonnements chiffrés, VAPID et envoi via le worker de queue
 
 **Types notifications** (format `data` normalisé : category/title/message/url/icon) :
 - [x] Nouvelle annonce (`AnnouncementPublished`)
@@ -685,8 +685,8 @@ La « réplication » consiste donc à enrichir les données de chaque départem
 
 #### Jour 5 : Filtres & Export
 - [x] Filtres période (7j / 30j / 3m / 1an) — rechargement serveur, repli sur 30j si valeur invalide
-- [~] Export PDF : non implémenté (optionnel)
-- [~] Bouton refresh : non implémenté (le changement de période recharge déjà les données)
+- [x] Export PDF serveur, avec contrôle d’accès et même périmètre que le tableau
+- [x] Actualisation automatique toutes les 60 s, suspendue si l’onglet est masqué, avec pause manuelle
 
 **Données de démo** : `DemoSubmissionsSeeder` (70 demandes réparties sur ~8 semaines, statuts variés)
 **Vérifs** : 14 tests contrôleur OK ; JSON injecté validé ; page chargée en navigateur (KPI affichés, 4 canvas, Chart.js sans erreur)
@@ -767,7 +767,7 @@ Ajouter gestion congés, bibliothèque ressources, et optimiser performance.
 **Notification** : `app/Notifications/TimeOffReviewed.php` (database + mail)
 - [x] Email/notif décision → employé (approuvé ou refusé, format normalisé category/icon/title/message/url)
 - [x] Entrée dans le dropdown de notifications intranet
-- [ ] Rappel manager 48h (non implémenté — hors périmètre, à planifier si besoin)
+- [x] Rappel manager après 48 h : notification e-mail et intranet, une seule fois ; administrateurs actifs en repli si aucun manager actif n’est affecté
 
 > ⚠️ `MAIL_MAILER=log` en dev : les emails sont écrits dans les logs, pas réellement envoyés.
 
@@ -928,8 +928,8 @@ vues index + fiche. Données inchangées (9 ressources, 0 favori résiduel).
       messages flash de session (`success`/`error`/`warning`/`status`) en toasts
       toastr. Jusqu'ici les `->with('success', …)` des contrôleurs n'étaient
       jamais affichés. Encodage JSON (anti-XSS) vérifié.
-- [ ] Service Worker / offline, loading skeletons, animations : non traités
-      (améliorations cosmétiques, hors périmètre immédiat).
+- [x] Service Worker pour les notifications push ; mode offline, loading skeletons et animations
+      restent non traités (améliorations hors périmètre immédiat).
 
 > **Piste perf JS** (à planifier) : code-splitting des libs lourdes
 > (FullCalendar, Chart.js, Fuse, Sortable) via `import()` dynamique par page,

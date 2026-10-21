@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TimeOffBalance;
 use App\Models\TimeOffPolicy;
 use App\Models\TimeOffRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,9 +16,6 @@ use Illuminate\View\View;
 /**
  * Gestion des congés côté employé : consultation des soldes, historique,
  * et soumission d'une demande.
- *
- * L'approbation (décrément du solde, validation manager) relève de la
- * Semaine 15 et sera ajoutée dans un contrôleur dédié.
  */
 class TimeOffController extends Controller
 {
@@ -40,7 +38,7 @@ class TimeOffController extends Controller
 
         // Un manager (collaborateurs directs) ou un admin accède à l'écran d'approbation.
         $estApprobateur = $user->is_super_admin
-            || \App\Models\User::where('manager_id', $user->id)->exists();
+            || User::where('manager_id', $user->id)->exists();
 
         // Nombre de demandes en attente dans son périmètre (badge sur le lien).
         $enAttente = 0;

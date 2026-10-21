@@ -20,6 +20,7 @@ class TimeOffRequest extends Model
         'approval_comment',
         'is_half_day',
         'emergency_contact',
+        'manager_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class TimeOffRequest extends Model
         'total_days' => 'decimal:1',
         'is_half_day' => 'boolean',
         'approved_at' => 'datetime',
+        'manager_reminder_sent_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -58,8 +60,8 @@ class TimeOffRequest extends Model
     public function scopeForApproval($query, $managerId)
     {
         return $query->where('status', 'pending')
-                     ->whereHas('user', function($q) use ($managerId) {
-                         $q->where('manager_id', $managerId);
-                     });
+            ->whereHas('user', function ($q) use ($managerId) {
+                $q->where('manager_id', $managerId);
+            });
     }
 }

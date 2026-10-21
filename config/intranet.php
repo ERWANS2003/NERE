@@ -180,6 +180,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SLA des tickets IT
+    |--------------------------------------------------------------------------
+    | Une journée SLA vaut 8 heures ouvrées. Les délais sont exprimés en
+    | minutes ouvrées et le calendrier suit le fuseau horaire du Burkina Faso.
+    */
+    'sla' => [
+        'timezone' => 'Africa/Ouagadougou',
+        'warning_percent' => 75,
+        'business_day_minutes' => 480,
+        'schedule' => [
+            1 => ['start' => '08:00', 'end' => '17:00'],
+            2 => ['start' => '08:00', 'end' => '17:00'],
+            3 => ['start' => '08:00', 'end' => '17:00'],
+            4 => ['start' => '08:00', 'end' => '17:00'],
+            5 => ['start' => '08:00', 'end' => '17:00'],
+            6 => ['start' => '08:00', 'end' => '14:00'],
+        ],
+        'targets' => [
+            'urgent' => ['response_minutes' => 15, 'resolution_minutes' => 240],
+            'high' => ['response_minutes' => 60, 'resolution_minutes' => 480],
+            'normal' => ['response_minutes' => 240, 'resolution_minutes' => 2 * 480],
+            'low' => ['response_minutes' => 480, 'resolution_minutes' => 5 * 480],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Paramètres de pagination
     |--------------------------------------------------------------------------
     */

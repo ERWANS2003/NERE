@@ -17,6 +17,8 @@ import Sortable from 'sortablejs';
 // Import des modules intranet
 import './intranet/index.js';
 import './intranet/live-search.js';
+import './intranet/auto-refresh.js';
+import './intranet/push-notifications.js';
 
 // Configuration Day.js
 dayjs.locale('fr');

@@ -33,6 +33,34 @@
         </div>
     @endif
 
+    @if(config('webpush.enabled'))
+        <section
+            class="mb-6 rounded-lg border border-graphite-200 bg-white p-5"
+            aria-labelledby="push-notifications-heading"
+            data-web-push
+            data-public-key-url="{{ route('intranet.notifications.push.public-key') }}"
+            data-subscribe-url="{{ route('intranet.notifications.push.subscriptions.store') }}"
+            data-unsubscribe-url="{{ route('intranet.notifications.push.subscriptions.destroy') }}"
+        >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 id="push-notifications-heading" class="font-semibold text-graphite-900">Notifications navigateur</h2>
+                    <p class="mt-1 text-sm text-graphite-600">Recevez les alertes de l’intranet sur cet appareil, même lorsque l’onglet est fermé.</p>
+                </div>
+                <button type="button" class="bouton-secondaire" data-web-push-toggle disabled aria-pressed="false">
+                    Activer les notifications push
+                </button>
+            </div>
+            <p class="mt-3 text-sm text-graphite-500" role="status" aria-live="polite" data-web-push-status>
+                Préparation des notifications push…
+            </p>
+        </section>
+    @else
+        <p class="mb-6 rounded-lg border border-graphite-200 bg-graphite-50 px-4 py-3 text-sm text-graphite-600">
+            Les notifications navigateur ne sont pas encore configurées par l’administrateur.
+        </p>
+    @endif
+
     <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden">
         @forelse($notifications as $notification)
             @php $d = $notification->data; $nonLue = is_null($notification->read_at); @endphp

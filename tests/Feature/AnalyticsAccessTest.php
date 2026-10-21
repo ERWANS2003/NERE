@@ -30,6 +30,9 @@ it('restricts analytics access to system administrators and department heads', f
         ->get(route('intranet.analytics'))
         ->assertForbidden();
 
+    $this->get(route('intranet.analytics.export.pdf'))
+        ->assertForbidden();
+
     $this->get(route('intranet.dashboard'))->assertDontSee(route('intranet.analytics'));
 
     $this->actingAs(User::factory()->withRole(
@@ -88,6 +91,8 @@ it('shows company-wide summaries and all department analytics to system administ
         ->assertOk()
         ->assertViewHas('isAdmin', true)
         ->assertSee('Vue d’ensemble de l’entreprise')
+        ->assertSee('data-auto-refresh', false)
+        ->assertSee(route('intranet.analytics.export.pdf', ['periode' => 30]))
         ->assertSee($firstDepartment->name)
         ->assertSee($secondDepartment->name);
 
@@ -98,4 +103,18 @@ it('shows company-wide summaries and all department analytics to system administ
         ->and($charts['effectifs']['labels'])->toContain($firstDepartment->name, $secondDepartment->name)
         ->and($overview['demandes'])->toBe(2)
         ->and($overview['departements'])->toBe(2);
+});
+
+it('exports analytics as a PDF for authorized users', function () {
+    $department = Department::factory()->create();
+    $admin = User::factory()->superAdmin()->create();
+    createAnalyticsSubmission($department);
+
+    $response = $this->actingAs($admin)
+        ->get(route('intranet.analytics.export.pdf', ['periode' => 30]))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf')
+        ->assertHeader('content-disposition');
+
+    expect(substr($response->getContent(), 0, 5))->toBe('%PDF-');
 });

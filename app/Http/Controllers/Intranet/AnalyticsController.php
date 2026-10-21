@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -16,6 +19,31 @@ class AnalyticsController extends Controller
     private const PERIODES = [7 => '7 jours', 30 => '30 jours', 90 => '3 mois', 365 => '1 an'];
 
     public function index(Request $request): View
+    {
+        return view('intranet.analytics.index', $this->analyticsData($request));
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        $data = $this->analyticsData($request);
+        $options = new Options;
+        $options->set('isRemoteEnabled', false);
+        $pdf = new Dompdf($options);
+        $pdf->loadHtml(view('intranet.analytics.pdf', $data)->render(), 'UTF-8');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->render();
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="analytics-'.$data['jours'].'-jours-'.now()->format('Ymd-His').'.pdf"',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function analyticsData(Request $request): array
     {
         $user = $request->user();
         $isAdmin = $user->is_super_admin;
@@ -32,7 +60,7 @@ class AnalyticsController extends Controller
         $start = Carbon::now()->subDays($days)->startOfDay();
         $previousStart = (clone $start)->subDays($days);
 
-        return view('intranet.analytics.index', [
+        return [
             'jours' => $days,
             'periodes' => self::PERIODES,
             'isAdmin' => $isAdmin,
@@ -46,7 +74,7 @@ class AnalyticsController extends Controller
             ] : null,
             'kpis' => $this->kpis($start, $previousStart, $departmentIds),
             'charts' => $this->charts($start, $days, $departmentIds),
-        ]);
+        ];
     }
 
     /**

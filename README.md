@@ -38,8 +38,12 @@
 - Attribution à un technicien, commentaires publics et notes internes IT
 - Pièces jointes privées (5 fichiers maximum, 10 Mo chacun) et historique des changements
 - Notifications dans l’intranet et par e-mail ; configurer le transport `MAIL_*` en production
+- SLA de première réponse et de résolution calculés en heures ouvrées : lundi–vendredi 08:00–17:00, samedi 08:00–14:00 ; alertes dans l’intranet à 75 % du délai puis au dépassement
+- Objectifs (réponse / résolution) : urgente 15 min / 4 h, haute 1 h / 8 h, normale 4 h / 2 jours ouvrés, basse 1 jour ouvré / 5 jours ouvrés. Une journée ouvrée vaut 8 heures SLA.
+- La première réponse est enregistrée au premier commentaire public d’un agent IT. Le contrôle des alertes s’exécute chaque minute par le scheduler Laravel.
+- Rappels uniques aux managers (ou administrateurs actifs en repli) pour les demandes de congé en attente depuis 48 h.
+- Notifications navigateur activables par appareil depuis le centre de notifications ; VAPID, HTTPS, migrations et worker de queue sont requis.
 - Les rôles et départements restent gérés localement et ne sont pas modifiés par la synchronisation LDAP
-- Les SLA et alertes de délai ne sont pas encore activés
 
 Après déploiement, exécuter les migrations Laravel (`php artisan migrate --force`) pour créer les tables des tickets et pièces jointes. Les fichiers sont stockés sur le disque privé local de Laravel et ne sont pas servis directement depuis `public/`.
 
@@ -71,7 +75,8 @@ Après déploiement, exécuter les migrations Laravel (`php artisan migrate --fo
 
 ### 📈 Rapports & Analytics
 - Dashboard analytique avec métriques
-- Exports PDF/Excel/CSV
+- Export PDF respectant le périmètre d’accès de l’utilisateur
+- Actualisation automatique toutes les 60 secondes, suspendue lorsque l’onglet est masqué
 - Métriques de performance (SLA, temps de résolution, satisfaction)
 - Graphiques et visualisations
 

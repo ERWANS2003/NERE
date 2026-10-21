@@ -270,6 +270,40 @@ npm run build
 
 > En production, le build frontend est obligatoire. Le projet utilise Vite / build assets compilés.
 
+### 7.6 Activer les notifications push navigateur (optionnel)
+
+Les notifications push exigent HTTPS (sauf `localhost`), le worker de queue Laravel,
+une sortie réseau vers les fournisseurs push et des clés VAPID conservées hors du dépôt.
+Après `composer install`, générer une paire de clés :
+
+```powershell
+php artisan webpush:generate-vapid-keys
+```
+
+Renseigner les valeurs affichées dans le `.env` du serveur, sans publier la clé privée :
+
+```env
+WEB_PUSH_ENABLED=true
+WEB_PUSH_VAPID_PUBLIC_KEY=...
+WEB_PUSH_VAPID_PRIVATE_KEY=...
+WEB_PUSH_VAPID_SUBJECT=mailto:intranet@nere.local
+```
+
+`WEB_PUSH_ALLOWED_HOSTS` peut être défini pour adapter la liste des fournisseurs
+autorisés. Après tout changement de configuration, reconstruire le cache et redémarrer
+le worker :
+
+```powershell
+php artisan config:cache
+php artisan queue:restart
+```
+
+Les utilisateurs activent ensuite les notifications depuis **Intranet > Notifications**.
+Les abonnements sont stockés avec leurs clés chiffrées en base et peuvent être supprimés
+depuis ce même appareil/navigateur. La page Analytics propose un export PDF avec le même
+périmètre de données que le tableau et se réactualise toutes les 60 secondes lorsque
+l’onglet reste visible.
+
 ---
 
 ## 8) Créer la base de données et exécuter les migrations
@@ -556,7 +590,18 @@ C:\PHP83\php.exe E:\web\itsm-nere-mining\artisan schedule:run >> "E:\web\itsm-ne
 Le scheduler doit exécuter les tâches planifiées comme :
 - nettoyage des jobs
 - rappel de notifications
-- maintenance ou contrôles automatiques
+- contrôle des SLA des tickets IT (`intranet:check-ticket-slas`) chaque minute
+- rappel des demandes de congé en attente (`intranet:remind-pending-time-off`) toutes les 15 minutes
+
+Pour vérifier manuellement le contrôle des SLA après avoir appliqué les migrations :
+
+```powershell
+php artisan intranet:check-ticket-slas
+php artisan intranet:remind-pending-time-off
+php artisan schedule:list
+```
+
+Les alertes de risque (75 %) et de dépassement sont enregistrées dans le centre de notifications des agents IT actifs. Le rappel de congé est envoyé au manager direct actif, ou aux administrateurs actifs s’il n’y en a pas. Chaque type de notification n’est émis qu’une fois par ticket ou demande.
 
 ---
 

@@ -229,6 +229,11 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $this->hasMany(FormSubmission::class);
     }
 
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
     // ── Droits par departement ───────────────────────────────────────────
 
     /**

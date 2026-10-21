@@ -2,14 +2,18 @@
 
 namespace App\Providers;
 
+use App\Jobs\SendWebPushNotification;
 use App\Models\Announcement;
 use App\Models\AppSetting;
 use App\Models\Department;
 use App\Models\Resource;
+use App\Models\User;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\DepartmentPolicy;
 use App\Policies\ResourcePolicy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -21,6 +25,38 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+    }
+
+    private function notificationPath(mixed $url): string
+    {
+        if (! is_string($url)) {
+            return '/';
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts)
+            || isset($parts['user'])
+            || isset($parts['pass'])) {
+            return '/';
+        }
+
+        if (isset($parts['host'])) {
+            $applicationHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+            if (! is_string($applicationHost)
+                || strtolower($parts['host']) !== strtolower($applicationHost)
+                || (isset($parts['scheme']) && ! in_array(strtolower($parts['scheme']), ['http', 'https'], true))) {
+                return '/';
+            }
+
+            return ($parts['path'] ?? '/')
+                .(isset($parts['query']) ? '?'.$parts['query'] : '');
+        }
+
+        if (isset($parts['scheme']) || ! str_starts_with($url, '/') || str_starts_with($url, '//')) {
+            return '/';
+        }
+
+        return $url;
     }
 
     public function boot(): void
@@ -38,6 +74,31 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Department::class, DepartmentPolicy::class);
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
         Gate::policy(Resource::class, ResourcePolicy::class);
+
+        Event::listen(NotificationSent::class, function (NotificationSent $event): void {
+            if (! config('webpush.enabled')
+                || $event->channel !== 'database'
+                || ! ($event->notifiable instanceof User)) {
+                return;
+            }
+
+            $data = is_object($event->response) ? ($event->response->data ?? null) : null;
+
+            if (! is_array($data)) {
+                throw new \UnexpectedValueException('Les données de notification enregistrée doivent être un tableau.');
+            }
+
+            $payload = [
+                'title' => is_string($data['title'] ?? null) ? $data['title'] : config('app.name'),
+                'body' => is_string($data['message'] ?? null) ? $data['message'] : '',
+                'url' => $this->notificationPath($data['url'] ?? null),
+                'tag' => (string) ($event->notification->id ?? ''),
+            ];
+
+            foreach ($event->notifiable->pushSubscriptions()->pluck('id') as $subscriptionId) {
+                SendWebPushNotification::dispatch((int) $subscriptionId, $payload);
+            }
+        });
 
         View::composer('*', static function ($view): void {
             $settings = AppSetting::query()

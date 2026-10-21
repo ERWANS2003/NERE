@@ -9,6 +9,20 @@
         'high' => 'text-amber-700',
         'urgent' => 'text-red-700 font-semibold',
     ];
+    $responseAtRisk = ! $ticket->first_responded_at
+        && $ticket->response_warning_at
+        && now()->greaterThanOrEqualTo($ticket->response_warning_at);
+    $responseExpired = ! $ticket->first_responded_at
+        && $ticket->first_response_due_at
+        && now()->greaterThanOrEqualTo($ticket->first_response_due_at);
+    $resolutionAtRisk = ! $ticket->resolved_at
+        && ! $ticket->closed_at
+        && $ticket->resolution_warning_at
+        && now()->greaterThanOrEqualTo($ticket->resolution_warning_at);
+    $resolutionExpired = ! $ticket->resolved_at
+        && ! $ticket->closed_at
+        && $ticket->resolution_due_at
+        && now()->greaterThanOrEqualTo($ticket->resolution_due_at);
 @endphp
 
 <x-intranet-layout :title="$ticket->number" :breadcrumbs="$breadcrumbs">
@@ -50,6 +64,38 @@
                     @if($ticket->resolved_at)<div><dt class="text-graphite-500">Résolu le</dt><dd class="mt-1 font-medium text-graphite-800">{{ $ticket->resolved_at->format('d/m/Y à H:i') }}</dd></div>@endif
                     @if($ticket->closed_at)<div><dt class="text-graphite-500">Fermé le</dt><dd class="mt-1 font-medium text-graphite-800">{{ $ticket->closed_at->format('d/m/Y à H:i') }}</dd></div>@endif
                 </dl>
+
+                <dl class="grid gap-4 border-t border-graphite-100 pt-4 text-sm sm:grid-cols-2">
+                    <div>
+                        <dt class="text-graphite-500">Première réponse</dt>
+                        <dd class="mt-1 font-medium {{ $responseExpired ? 'text-red-700' : ($responseAtRisk ? 'text-amber-700' : 'text-graphite-800') }}">
+                            @if($ticket->first_responded_at)
+                                Répondue le {{ $ticket->first_responded_at->format('d/m/Y à H:i') }}
+                            @elseif($ticket->first_response_due_at)
+                                Échéance le {{ $ticket->first_response_due_at->format('d/m/Y à H:i') }}
+                                @if($responseExpired) · Délai dépassé @elseif($responseAtRisk) · À risque @endif
+                            @else
+                                Échéance en cours de calcul
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-graphite-500">Résolution</dt>
+                        <dd class="mt-1 font-medium {{ $resolutionExpired ? 'text-red-700' : ($resolutionAtRisk ? 'text-amber-700' : 'text-graphite-800') }}">
+                            @if($ticket->resolved_at || $ticket->closed_at)
+                                Résolu
+                            @elseif($ticket->resolution_due_at)
+                                Échéance le {{ $ticket->resolution_due_at->format('d/m/Y à H:i') }}
+                                @if($resolutionExpired) · Délai dépassé @elseif($resolutionAtRisk) · À risque @endif
+                            @else
+                                Échéance en cours de calcul
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+                <p class="text-xs text-graphite-500">
+                    Délais en heures ouvrées : lundi–vendredi 08:00–17:00, samedi 08:00–14:00.
+                </p>
             </div>
         </section>
 

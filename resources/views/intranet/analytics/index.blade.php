@@ -19,14 +19,28 @@
             <p class="text-graphite-600">{{ $scopeLabel }} · Suivi des demandes et des effectifs</p>
         </div>
 
-        <form method="GET" data-live-search class="flex items-center gap-2">
-            <label for="periode" class="text-sm text-graphite-600">Période</label>
-            <select id="periode" name="periode" class="champ py-2">
-                @foreach($periodes as $valeur => $libelle)
-                    <option value="{{ $valeur }}" @selected($jours === $valeur)>{{ $libelle }}</option>
-                @endforeach
-            </select>
-        </form>
+        <div class="flex flex-col items-start gap-3 sm:items-end">
+            <form method="GET" data-live-search class="flex items-center gap-2">
+                <label for="periode" class="text-sm text-graphite-600">Période</label>
+                <select id="periode" name="periode" class="champ py-2">
+                    @foreach($periodes as $valeur => $libelle)
+                        <option value="{{ $valeur }}" @selected($jours === $valeur)>{{ $libelle }}</option>
+                    @endforeach
+                </select>
+            </form>
+            <div class="flex flex-wrap items-center gap-2" data-auto-refresh data-interval="60000">
+                <a href="{{ route('intranet.analytics.export.pdf', ['periode' => $jours]) }}" class="bouton-secondaire">
+                    Exporter en PDF
+                </a>
+                <a href="{{ route('intranet.analytics', ['periode' => $jours]) }}" class="bouton-secondaire">
+                    Actualiser
+                </a>
+                <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">
+                    Suspendre l’actualisation
+                </button>
+                <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
+            </div>
+        </div>
     </div>
 
     @if($isAdmin)
