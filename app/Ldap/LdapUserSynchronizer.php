@@ -57,8 +57,8 @@ class LdapUserSynchronizer
         // L'annuaire utilise position_title en priorité à l'affichage
         // (job_title). Garder poste à jour pour les écrans et recherches qui
         // consomment encore l'ancien champ.
-        $this->copierSiPresent($attrs, $ldap, 'position_title', ['title']);
-        $this->copierSiPresent($attrs, $ldap, 'poste', ['title']);
+        $this->copierSiPresent($attrs, $ldap, 'position_title', ['title', 'description']);
+        $this->copierSiPresent($attrs, $ldap, 'poste', ['title', 'description']);
         $this->copierSiPresent($attrs, $ldap, 'telephone', ['telephonenumber', 'mobile']);
 
         // Matricule : seulement si l'AD le fournit ET que le compte local n'en a

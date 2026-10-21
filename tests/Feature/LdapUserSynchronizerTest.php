@@ -34,3 +34,14 @@ it('preserves the stored job title when Active Directory has no title', function
     expect($attributes)->not->toHaveKey('poste')
         ->and($attributes)->not->toHaveKey('position_title');
 });
+
+it('uses the Active Directory description as a fallback when title is not set', function () {
+    $localUser = User::factory()->make();
+    $ldapUser = new LdapUser;
+    $ldapUser->setAttribute('description', 'Directeur des Systèmes d’Information');
+
+    $attributes = app(LdapUserSynchronizer::class)($localUser, $ldapUser);
+
+    expect($attributes['position_title'])->toBe('Directeur des Systèmes d’Information')
+        ->and($attributes['poste'])->toBe('Directeur des Systèmes d’Information');
+});
