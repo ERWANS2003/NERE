@@ -6,6 +6,7 @@ use App\Http\Controllers\Intranet\CalendarController;
 use App\Http\Controllers\Intranet\DepartmentCalendarEventController;
 use App\Http\Controllers\Intranet\DashboardController;
 use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentController;
+use App\Http\Controllers\Intranet\DepartmentServiceController;
 use App\Http\Controllers\Intranet\DepartmentShowController;
 use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FormController;
@@ -47,6 +48,10 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
             Route::get('/', [IntranetDepartmentController::class, 'index'])->name('index');
             Route::get('/create', [IntranetDepartmentController::class, 'create'])->name('create');
             Route::post('/', [IntranetDepartmentController::class, 'store'])->name('store');
+            Route::get('/{department}/services', [DepartmentServiceController::class, 'index'])->name('services.index');
+            Route::post('/{department}/services', [DepartmentServiceController::class, 'store'])->name('services.store');
+            Route::put('/{department}/services/{service}', [DepartmentServiceController::class, 'update'])->name('services.update');
+            Route::delete('/{department}/services/{service}', [DepartmentServiceController::class, 'destroy'])->name('services.destroy');
             Route::get('/{department}', [IntranetDepartmentController::class, 'show'])->name('show');
             Route::get('/{department}/edit', [IntranetDepartmentController::class, 'edit'])->name('edit');
             Route::put('/{department}', [IntranetDepartmentController::class, 'update'])->name('update');

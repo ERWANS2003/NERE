@@ -9,13 +9,10 @@
 @php
     $classes = match($type) {
         'yellow' => 'nere-badge nere-badge-yellow',
-        'red' => 'nere-badge nere-badge-red',
-        'status-open' => 'nere-badge nere-badge-status-open',
-        'status-progress' => 'nere-badge nere-badge-status-progress',
-        'status-resolved', 'success' => 'nere-badge nere-badge-status-resolved',
-        'urgent', 'danger' => 'nere-badge nere-badge-urgent',
-        'important', 'warning' => 'nere-badge nere-badge-important',
-        'info' => 'nere-badge nere-badge-info',
+        'red', 'urgent', 'danger' => 'nere-badge nere-badge-danger',
+        'status-open', 'info' => 'nere-badge nere-badge-info',
+        'status-progress', 'important', 'warning' => 'nere-badge nere-badge-warning',
+        'status-resolved', 'success' => 'nere-badge nere-badge-success',
         default => 'nere-badge',
     };
 @endphp

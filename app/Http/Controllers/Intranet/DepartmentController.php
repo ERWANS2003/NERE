@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
@@ -57,8 +58,8 @@ class DepartmentController extends Controller
         $totalUsers = User::where('actif', true)->count();
 
         return view('intranet.departments.manage.index', compact(
-            'departments', 
-            'activeDepartments', 
+            'departments',
+            'activeDepartments',
             'totalUsers'
         ));
     }
@@ -121,13 +122,18 @@ class DepartmentController extends Controller
         $this->authorize('view', $department);
 
         $department->load(['manager', 'parent', 'children.users', 'users.roles']);
-        
+
         $users = $department->users()->with('roles')->get();
 
-        // Statistiques des tickets (à implémenter plus tard)
         $ticketStats = [
-            'open' => 0,
-            'this_month' => 0,
+            'open' => Ticket::query()
+                ->where('department_id', $department->id)
+                ->whereNotIn('status', ['resolved', 'closed'])
+                ->count(),
+            'this_month' => Ticket::query()
+                ->where('department_id', $department->id)
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+                ->count(),
         ];
 
         return view('intranet.departments.manage.show', compact('department', 'users', 'ticketStats'));
@@ -164,7 +170,7 @@ class DepartmentController extends Controller
             'code' => ['nullable', 'string', 'max:10', Rule::unique('departments')->ignore($department->id)],
             'description' => ['nullable', 'string'],
             'manager_id' => ['nullable', 'exists:users,id'],
-            'parent_id' => ['nullable', 'exists:departments,id', 'not_in:' . $department->id],
+            'parent_id' => ['nullable', 'exists:departments,id', 'not_in:'.$department->id],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'location' => ['nullable', 'string', 'max:255'],

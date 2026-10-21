@@ -119,26 +119,30 @@ class DepartmentServiceSeeder extends Seeder
                     : null;
                 $isTimeOff = $deptCode === 'RH' && $service['name'] === 'Demande de congé';
 
-                DepartmentService::updateOrCreate(
-                    [
-                        'department_id' => $dept->id,
-                        'name' => $service['name'],
-                    ],
-                    [
-                        'description' => $service['description'],
-                        'icon' => $service['icon'],
-                        'link_type' => $supportIt || $ticketCategory || $form || $isTimeOff ? 'page' : 'form',
-                        'link_url' => $supportIt
-                            ? '/intranet/tickets'
-                            : ($ticketCategory
-                                ? '/intranet/tickets/create?category='.$ticketCategory
-                                : ($form
-                                    ? '/intranet/forms/'.$form->id
-                                    : ($isTimeOff ? '/intranet/time-off/demande' : null))),
-                        'order' => $index + 1,
-                        'is_active' => true,
-                    ]
-                );
+                $departmentService = DepartmentService::firstOrNew([
+                    'department_id' => $dept->id,
+                    'name' => $service['name'],
+                ]);
+                $initialDestination = $supportIt
+                    ? '/intranet/tickets'
+                    : ($ticketCategory
+                        ? '/intranet/tickets/create?category='.$ticketCategory
+                        : ($form
+                            ? '/intranet/forms/'.$form->id
+                            : ($isTimeOff ? '/intranet/time-off/demande' : null)));
+
+                if (! $departmentService->exists) {
+                    $departmentService->description = $service['description'];
+                    $departmentService->icon = $service['icon'];
+                    $departmentService->order = $index + 1;
+                    $departmentService->link_type = $supportIt || $ticketCategory || $form || $isTimeOff
+                        ? 'page'
+                        : 'form';
+                    $departmentService->link_url = $initialDestination;
+                    $departmentService->is_active = true;
+                }
+
+                $departmentService->save();
             }
         }
     }

@@ -142,7 +142,7 @@ it('deconnecte un compte desactive qui avait deja une session ouverte', function
 
     $this->actingAs($utilisateur)->get('/mon-compte')->assertOk();
 
-    $utilisateur->update(['is_active' => false]);
+    User::whereKey($utilisateur->getKey())->update(['actif' => false]);
 
     $this->actingAs($utilisateur)
         ->get('/mon-compte')

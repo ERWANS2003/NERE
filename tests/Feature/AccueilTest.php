@@ -154,12 +154,12 @@ it('reprend le code metier dans l url du service', function () {
  * Referentiel
  */
 
-it('installe les six services du portail', function () {
+it('installe les neuf departements du portail', function () {
     $this->seed(DepartmentsSeeder::class);
 
-    expect(Department::count())->toBe(6)
+    expect(Department::count())->toBe(9)
         ->and(Department::pluck('code')->all())
-        ->toContain('IT', 'RH', 'HSE', 'MNT', 'FIN', 'LOG');
+        ->toContain('IT', 'ADMIN', 'RH', 'SEC', 'MINING', 'HSE', 'PROC', 'SCM', 'RELCOM');
 });
 
 it('donne a chaque service une description accentuee exploitable', function () {
@@ -200,7 +200,7 @@ it('ne republie pas un service desactive par l administration', function () {
 
     // Le libelle suit le referentiel, mais le service reste coupe.
     expect($service->is_active)->toBeFalse()
-        ->and($service->name)->toBe('Informatique');
+        ->and($service->name)->toBe('Département IT');
 });
 
 it('conserve un accent de couleur choisi par l administration', function () {

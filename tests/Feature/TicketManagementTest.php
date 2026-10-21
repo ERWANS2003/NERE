@@ -451,7 +451,13 @@ it('shows recent forms from handled departments and tickets the user may access'
         ->assertSee('Demande HSE visible')
         ->assertSee('Mon formulaire IT')
         ->assertSee('Mon ticket IT')
-        ->assertSee('Que souhaitez-vous faire ?')
+        ->assertSee('Bienvenue dans l’intranet de')
+        ->assertSee('NÉRÉ MINING')
+        ->assertSee('Accès rapides')
+        ->assertSee('Mon espace')
+        ->assertSee('Services')
+        ->assertSee('Vie de l’entreprise')
+        ->assertDontSee('Pilotage')
         ->assertSee('Faire une demande')
         ->assertSee(route('intranet.forms.index'), false)
         ->assertSee('Signaler un problème')
@@ -460,6 +466,20 @@ it('shows recent forms from handled departments and tickets the user may access'
         ->assertSee(route('intranet.submissions.queue'), false)
         ->assertDontSee('Demande confidentielle')
         ->assertSee(route('intranet.tickets.show', $ticket), false);
+});
+
+it('shows employees personal navigation without request-processing tools', function () {
+    $department = departementIt();
+    $employee = User::factory()->withRole($department, DepartmentRole::User)->create();
+
+    $this->actingAs($employee)
+        ->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Accès rapides')
+        ->assertSee('Mon espace')
+        ->assertSee('Services')
+        ->assertDontSee('Pilotage')
+        ->assertDontSee('Demandes à traiter');
 });
 
 it('prevents non-IT users from updating tickets or adding internal comments', function () {

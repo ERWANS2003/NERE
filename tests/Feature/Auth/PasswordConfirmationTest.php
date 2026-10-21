@@ -45,7 +45,7 @@ it('confirme aussi pour un utilisateur connecte avec son matricule', function ()
     $this->post('/connexion', [
         'identifiant' => (string) $utilisateur->matricule,
         'password' => UserFactory::PASSWORD,
-    ])->assertRedirect('/accueil');
+    ])->assertRedirect('/intranet/dashboard');
 
     $this->post('/mot-de-passe/confirmation', ['password' => UserFactory::PASSWORD])
         ->assertSessionHasNoErrors();

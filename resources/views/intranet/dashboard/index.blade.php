@@ -27,10 +27,10 @@
         <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
     </section>
 
-    <section class="mb-8" aria-labelledby="quick-actions-heading">
+    <section class="mb-7" aria-labelledby="quick-actions-heading">
         <div class="mb-3">
-            <h2 id="quick-actions-heading" class="text-lg font-bold text-graphite-900">Que souhaitez-vous faire ?</h2>
-            <p class="mt-1 text-sm text-graphite-600">Accédez directement aux actions les plus utiles.</p>
+            <h2 id="quick-actions-heading" class="text-lg font-bold text-graphite-900">Accès rapides</h2>
+            <p class="mt-1 text-sm text-graphite-600">Les actions utiles à portée de main.</p>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="{{ route('intranet.forms.index') }}"
@@ -42,8 +42,8 @@
                     </svg>
                 </span>
                 <span>
-                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Faire une demande</span>
-                    <span class="mt-0.5 block text-xs text-graphite-600">Choisir un formulaire de service</span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Nouvelle demande</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Choisir un service de l’entreprise</span>
                 </span>
             </a>
 
@@ -72,6 +72,20 @@
                 <span>
                     <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Suivre mes demandes</span>
                     <span class="mt-0.5 block text-xs text-graphite-600">Consulter l’avancement et les réponses</span>
+                </span>
+            </a>
+
+            <a href="{{ route('intranet.knowledge-base.index') }}"
+               class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Trouver une solution dans la base de connaissances">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-nere-50 text-nere-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 5.754 5 4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18c1.746 0 3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Trouver une solution</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Guides et réponses pratiques</span>
                 </span>
             </a>
 
@@ -110,7 +124,8 @@
     {{-- ============================================================
          Statistiques rapides
     ============================================================ --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        @if($isSystemAdmin)
         <div class="bg-white rounded-lg border border-graphite-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-nere-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -138,6 +153,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <div class="bg-white rounded-lg border border-graphite-200 p-5">
             <div class="flex items-center gap-3">
@@ -162,10 +178,24 @@
                 </div>
                 <div>
                     <div class="text-2xl font-bold text-graphite-900">{{ $stats['submissions'] }}</div>
-                    <div class="text-xs text-graphite-500">Mes demandes</div>
+                    <div class="text-xs text-graphite-500">{{ $isSystemAdmin ? 'Demandes reçues' : 'Mes demandes' }}</div>
                 </div>
             </div>
         </div>
+
+        @if($canProcessRequests)
+            <a href="{{ route('intranet.submissions.queue') }}" class="rounded-lg border border-amber-200 bg-amber-50 p-5 transition hover:border-amber-400 hover:shadow-sm">
+                <div class="text-2xl font-bold text-graphite-900">{{ $stats['pending_department_submissions'] }}</div>
+                <div class="mt-1 text-sm font-semibold text-graphite-800">Demandes à traiter</div>
+                <div class="mt-1 text-xs text-graphite-600">Dans vos départements</div>
+            </a>
+        @else
+            <div class="bg-white rounded-lg border border-graphite-200 p-5">
+                <div class="text-2xl font-bold text-graphite-900">{{ $stats['open_submissions'] + $stats['open_tickets'] }}</div>
+                <div class="mt-1 text-sm font-semibold text-graphite-800">En cours</div>
+                <div class="mt-1 text-xs text-graphite-500">Demandes et tickets ouverts</div>
+            </div>
+        @endif
     </div>
 
     {{-- ============================================================
@@ -174,10 +204,10 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         {{-- Colonne principale (2/3) --}}
-        <div class="xl:col-span-2 space-y-8">
+        <div class="xl:col-span-2 flex flex-col gap-8">
 
             {{-- JOUR 2-3 — Grid des départements --}}
-            <section>
+            <section class="order-2">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-graphite-900">Départements</h2>
                     <a href="{{ route('intranet.departments.index') }}" class="text-sm text-nere-600 hover:text-nere-700 font-medium">
@@ -229,7 +259,7 @@
                 </div>
             </section>
 
-            <section>
+            <section class="order-1">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-graphite-900">Demandes récentes</h2>
                     <a href="{{ route('intranet.submissions.index') }}" class="text-sm text-nere-600 hover:text-nere-700 font-medium">
@@ -268,20 +298,7 @@
                                             </td>
                                             <td class="px-4 py-3 text-graphite-600 hidden lg:table-cell">{{ $requestItem['requester'] }}</td>
                                             <td class="px-4 py-3">
-                                                @php
-                                                    $statutMap = [
-                                                        'pending' => ['label' => 'En attente', 'type' => 'warning'],
-                                                        'approved' => ['label' => 'Approuvée', 'type' => 'success'],
-                                                        'rejected' => ['label' => 'Rejetée', 'type' => 'danger'],
-                                                        'new' => ['label' => 'Nouveau', 'type' => 'info'],
-                                                        'in_progress' => ['label' => 'En cours', 'type' => 'warning'],
-                                                        'waiting' => ['label' => 'En attente', 'type' => 'warning'],
-                                                        'resolved' => ['label' => 'Résolu', 'type' => 'success'],
-                                                        'closed' => ['label' => 'Fermé', 'type' => 'default'],
-                                                    ];
-                                                    $statut = $statutMap[$requestItem['status']] ?? ['label' => ucfirst($requestItem['status'] ?? 'N/A'), 'type' => 'info'];
-                                                @endphp
-                                                <x-badge :type="$statut['type']">{{ $statut['label'] }}</x-badge>
+                                                <x-intranet.status-badge :status="$requestItem['status'] ?? 'N/A'" />
                                             </td>
                                             <td class="px-4 py-3 text-graphite-500 hidden sm:table-cell">
                                                 {{ $requestItem['date']?->format('d/m/Y') }}
@@ -374,7 +391,7 @@
 
             {{-- Accès rapides --}}
             <div class="bg-white rounded-lg border border-graphite-200 p-6">
-                <h2 class="text-lg font-bold text-graphite-900 mb-4">Accès rapides</h2>
+                <h2 class="text-lg font-bold text-graphite-900 mb-4">Liens utiles</h2>
                 <div class="space-y-2">
                     <a href="{{ route('intranet.forms.index') }}" class="flex items-center gap-3 p-2.5 hover:bg-graphite-50 rounded-lg transition">
                         <div class="w-8 h-8 bg-nere-100 rounded-lg flex items-center justify-center flex-shrink-0">

@@ -26,14 +26,26 @@ class DashboardController extends Controller
             $user
         );
 
-        // Statistiques générales affichées en haut du tableau de bord.
+        $isSystemAdmin = $user->is_super_admin;
+        $canProcessRequests = $user->hasDepartmentProcessingAccess();
+        $openTicketStatuses = ['new', 'in_progress', 'waiting'];
+
         $stats = [
-            'departments' => Department::active()->count(),
-            'users' => User::where('actif', true)->count(),
-            'announcements' => Announcement::where('is_active', true)->count(),
             'events' => count($upcomingCalendarEvents),
             'submissions' => FormSubmission::where('user_id', $user->id)->count(),
+            'open_submissions' => FormSubmission::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->count(),
+            'open_tickets' => Ticket::where('requester_id', $user->id)
+                ->whereIn('status', $openTicketStatuses)
+                ->count(),
         ];
+
+        if ($isSystemAdmin) {
+            $stats['departments'] = Department::active()->count();
+            $stats['users'] = User::where('actif', true)->count();
+            $stats['submissions'] = FormSubmission::count();
+        }
 
         // Tous les départements actifs pour la grille d'accueil.
         $departments = Department::active()
@@ -55,6 +67,14 @@ class DashboardController extends Controller
         $departmentIds = Department::query()
             ->pluck('id')
             ->filter(fn (int $departmentId) => $user->canHandleIn($departmentId));
+
+        if ($canProcessRequests) {
+            $stats['departments_to_process'] = $departmentIds->count();
+            $stats['pending_department_submissions'] = FormSubmission::query()
+                ->where('status', 'pending')
+                ->whereHas('form', fn ($forms) => $forms->whereIn('department_id', $departmentIds))
+                ->count();
+        }
 
         $recentSubmissions = FormSubmission::with(['form.department', 'user'])
             ->where(fn ($query) => $query
@@ -100,6 +120,8 @@ class DashboardController extends Controller
 
         return view('intranet.dashboard.index', compact(
             'user',
+            'isSystemAdmin',
+            'canProcessRequests',
             'stats',
             'departments',
             'recentAnnouncements',

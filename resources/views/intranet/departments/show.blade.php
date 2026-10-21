@@ -7,6 +7,13 @@
 @endphp
 
 <x-intranet-layout :title="$department->name" :breadcrumbs="$breadcrumbs">
+    @can('update', $department)
+        <div class="mb-4 flex justify-end">
+            <x-button :href="route('intranet.departments.manage.services.index', $department)" variant="secondary">
+                Gérer les services
+            </x-button>
+        </div>
+    @endcan
 
     {{-- ============================================================
          Hero banner : illustration + catégorie + titre + description
@@ -85,10 +92,13 @@
             @if($services->count() > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($services as $service)
-                        {{-- Sans URL renseignée, le service n'est pas encore branché : carte non cliquable. --}}
-                        @php $actif = filled($service->link_url); @endphp
+                        @php
+                            $destinationUrl = $service->destinationUrl();
+                            $actif = $destinationUrl !== null;
+                        @endphp
                         <{{ $actif ? 'a' : 'div' }}
-                            @if($actif) href="{{ $service->link_url }}" @endif
+                            @if($actif) href="{{ $destinationUrl }}" @endif
+                            @if($actif && $service->link_type === 'external') target="_blank" rel="noopener noreferrer" @endif
                             class="bg-white rounded-lg border border-graphite-200 p-6 transition group {{ $actif ? 'hover:border-nere-500 hover:shadow-md' : 'opacity-75' }}"
                         >
                             <div class="w-12 h-12 bg-nere-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-nere-100 transition">
@@ -110,7 +120,7 @@
                                 </div>
                             @else
                                 <div class="mt-4 inline-block rounded bg-graphite-100 px-2 py-0.5 text-xs font-medium text-graphite-600">
-                                    Bientôt disponible
+                                    Accès à configurer
                                 </div>
                             @endif
                         </{{ $actif ? 'a' : 'div' }}>
@@ -141,19 +151,11 @@
                             @php
                                 $formUrl = $department->code === 'RH' && $form->name === 'Demande de congé'
                                     ? route('intranet.time-off.create')
-                                    : ($form->form_schema['fields'] ?? []
-                                        ? route('intranet.forms.show', $form)
-                                        : null);
+                                    : route('intranet.forms.show', $form);
                             @endphp
-                            @if($formUrl)
-                                <a href="{{ $formUrl }}" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
-                                    Faire une demande
-                                </a>
-                            @else
-                                <span class="shrink-0 rounded bg-graphite-100 px-2.5 py-1 text-xs font-medium text-graphite-600">
-                                    Bientôt disponible
-                                </span>
-                            @endif
+                            <a href="{{ $formUrl }}" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
+                                Faire une demande
+                            </a>
                         </div>
                     @endforeach
                 </div>

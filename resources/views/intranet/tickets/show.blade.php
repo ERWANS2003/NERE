@@ -3,13 +3,6 @@
         ['label' => 'Support IT', 'url' => route('intranet.tickets.index')],
         ['label' => $ticket->number],
     ];
-    $statusStyles = [
-        'new' => 'bg-blue-100 text-blue-800',
-        'in_progress' => 'bg-amber-100 text-amber-800',
-        'waiting' => 'bg-purple-100 text-purple-800',
-        'resolved' => 'bg-green-100 text-green-800',
-        'closed' => 'bg-graphite-100 text-graphite-700',
-    ];
     $priorityStyles = [
         'low' => 'text-graphite-600',
         'normal' => 'text-blue-700',
@@ -28,7 +21,7 @@
             <div class="border-b border-graphite-100 p-6">
                 <div class="flex flex-wrap items-center gap-3">
                     <span class="font-mono text-sm text-graphite-500">{{ $ticket->number }}</span>
-                    <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $statusStyles[$ticket->status->value] }}">{{ $ticket->status->label() }}</span>
+                    <x-intranet.status-badge :status="$ticket->status" />
                     <span class="text-sm {{ $priorityStyles[$ticket->priority->value] }}">Priorité {{ $ticket->priority->label() }}</span>
                 </div>
                 <h1 class="mt-3 text-2xl font-bold text-graphite-900">{{ $ticket->subject }}</h1>

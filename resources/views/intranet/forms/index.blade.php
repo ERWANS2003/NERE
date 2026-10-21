@@ -1,98 +1,98 @@
-@extends('intranet.layouts.app')
+@php
+    $breadcrumbs = [
+        ['label' => 'Formulaires'],
+    ];
+@endphp
 
-@section('title', 'Formulaires')
+<x-intranet-layout title="Formulaires" :breadcrumbs="$breadcrumbs">
+    <x-intranet.page-header
+        title="Formulaires"
+        description="Consultez les formulaires publiés et gérez ceux de vos départements."
+    >
+        <x-slot:actions>
+            @if($manageableDepartments->isNotEmpty())
+                <x-button :href="route('intranet.forms.create')">Créer un formulaire</x-button>
+            @endif
+        </x-slot:actions>
+    </x-intranet.page-header>
 
-@section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="sm:flex sm:items-center sm:justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Formulaires dynamiques</h1>
-            <p class="mt-2 text-gray-600">Créez et gérez des formulaires personnalisés pour votre organisation</p>
-        </div>
-        <div class="mt-4 sm:mt-0">
-            @can('manage_forms')
-            <a href="{{ route('intranet.forms.create') }}" 
-               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <i class="fas fa-plus mr-2"></i>
-                Nouveau formulaire
-            </a>
-            @endcan
-        </div>
-    </div>
+    <x-intranet.filters as-form action="{{ route('intranet.forms.index') }}" class="mb-5">
+        <label for="department" class="text-sm font-medium text-graphite-700">Département</label>
+        <select id="department" name="department" class="champ max-w-xs">
+            <option value="">Tous les départements</option>
+            @foreach($departments as $department)
+                <option value="{{ $department->id }}" @selected(request('department') == $department->id)>
+                    {{ $department->name }}
+                </option>
+            @endforeach
+        </select>
+        <x-button type="submit" variant="secondary">Filtrer</x-button>
+    </x-intranet.filters>
 
-    <!-- Coming Soon Message -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-        <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <i class="fas fa-wpforms text-blue-600 text-2xl"></i>
+    @if($forms->isEmpty())
+        <x-card class="px-6 py-12 text-center">
+            <h2 class="text-base font-semibold text-graphite-900">Aucun formulaire disponible</h2>
+            <p class="mt-2 text-sm text-graphite-600">
+                Les formulaires publiés apparaîtront ici. Les responsables peuvent en créer pour leur département.
+            </p>
+        </x-card>
+    @else
+        <div class="overflow-hidden rounded-xl border border-graphite-200 bg-white">
+            <x-intranet.table>
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-graphite-50 text-xs uppercase tracking-wide text-graphite-600">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">Formulaire</th>
+                            <th scope="col" class="px-4 py-3">Département</th>
+                            <th scope="col" class="px-4 py-3">Champs</th>
+                            <th scope="col" class="px-4 py-3">État</th>
+                            <th scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-graphite-100">
+                        @foreach($forms as $form)
+                            @php($canManage = in_array($form->department_id, $manageableDepartmentIds, true))
+                            <tr>
+                                <td class="px-4 py-4">
+                                    <div class="font-semibold text-graphite-900">{{ $form->name }}</div>
+                                    @if($form->description)
+                                        <p class="mt-1 max-w-xl text-graphite-500">{{ $form->description }}</p>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4">{{ $form->department->name }}</td>
+                                <td class="px-4 py-4">{{ count(\App\Support\DynamicFormSchema::fields($form->form_schema)) }}</td>
+                                <td class="px-4 py-4">
+                                    <x-badge :type="$form->is_active ? 'success' : 'default'">
+                                        {{ $form->is_active ? 'Publié' : 'Brouillon' }}
+                                    </x-badge>
+                                </td>
+                                <td class="px-4 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        @if($form->is_active)
+                                            <x-button :href="route('intranet.forms.show', $form)" variant="secondary">
+                                                Remplir
+                                            </x-button>
+                                        @endif
+                                        @if($canManage)
+                                            <x-button :href="route('intranet.forms.edit', $form)" variant="secondary">
+                                                Modifier
+                                            </x-button>
+                                            <form method="POST" action="{{ route('intranet.forms.destroy', $form) }}"
+                                                  onsubmit="return confirm('Supprimer ou archiver ce formulaire ?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <x-button type="submit" variant="danger">Supprimer</x-button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-intranet.table>
         </div>
-        <h3 class="text-lg font-medium text-blue-900 mb-2">
-            Système de formulaires dynamiques
-        </h3>
-        <p class="text-blue-700 mb-6">
-            Cette fonctionnalité permettra de créer des formulaires personnalisés avec des champs dynamiques, 
-            des règles de validation et des workflows automatisés.
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-600">
-            <div class="flex items-center justify-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                Champs dynamiques
-            </div>
-            <div class="flex items-center justify-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                Validation avancée
-            </div>
-            <div class="flex items-center justify-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                Workflows automatisés
-            </div>
-        </div>
-        
-        @can('manage_forms')
-        <div class="mt-6">
-            <a href="{{ route('intranet.forms.create') }}" 
-               class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-white hover:bg-blue-50">
-                <i class="fas fa-cog mr-2"></i>
-                Commencer la configuration
-            </a>
-        </div>
-        @endcan
-    </div>
 
-    <!-- Quick Actions for Development -->
-    @can('manage_forms')
-    <div class="mt-8 bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Actions de développement</h3>
-        </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <a href="#" class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-database text-blue-600 mr-2"></i>
-                        <span class="font-medium">Modèles de données</span>
-                    </div>
-                    <p class="text-sm text-gray-600">Configurer les structures de formulaires</p>
-                </a>
-                
-                <a href="#" class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-palette text-green-600 mr-2"></i>
-                        <span class="font-medium">Concepteur visuel</span>
-                    </div>
-                    <p class="text-sm text-gray-600">Interface drag & drop pour formulaires</p>
-                </a>
-                
-                <a href="#" class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-chart-line text-yellow-600 mr-2"></i>
-                        <span class="font-medium">Analytics</span>
-                    </div>
-                    <p class="text-sm text-gray-600">Statistiques et rapports de soumissions</p>
-                </a>
-            </div>
-        </div>
-    </div>
-    @endcan
-</div>
-@endsection
+        <div class="mt-5">{{ $forms->links() }}</div>
+    @endif
+</x-intranet-layout>

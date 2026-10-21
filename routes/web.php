@@ -1,13 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Route d'accueil - redirige vers le tableau de bord
 Route::get('/', function (Request $request) {
-    return $request->user() 
-        ? redirect()->route('intranet.dashboard') 
+    return $request->user()
+        ? redirect()->route('intranet.dashboard')
         : redirect()->route('login');
 })->name('racine');
 
@@ -25,19 +31,29 @@ Route::middleware('guest')->group(function () {
     });
 });
 
-// Routes protégées - logout + profil
-Route::middleware(['auth'])->group(function () {
+// Routes protegees du portail, du profil et de la recherche
+Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/accueil', HomeController::class)->name('accueil');
+
+    Route::get('/departements/{code}', [DepartmentController::class, 'show'])
+        ->where('code', '[A-Z0-9]{2,16}')
+        ->name('departement.show');
+
     // Compatibilite historique: alias /logout sans redeclarer le nom de route global
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 
     // Profil utilisateur (alias profile.edit pour les vues intranet, profil.* pour les vues profil)
-    Route::get('/profil', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profil.edit');
-    Route::get('/profil/apercu', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profil.show');
-    Route::patch('/profil', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profil.update');
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profil', [ProfileController::class, 'edit'])->name('profil.edit');
+    Route::get('/profil/apercu', [ProfileController::class, 'show'])->name('profil.show');
+    Route::patch('/profil', [ProfileController::class, 'update'])->name('profil.update');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    // Anciennes URL conservees pour les liens historiques et les collaborateurs.
+    Route::get('/mon-compte', [ProfileController::class, 'edit']);
+    Route::patch('/mon-compte', [ProfileController::class, 'update']);
 
     // API de recherche globale (consommée par le modal Cmd+K, session web)
-    Route::get('/api/search/data', [\App\Http\Controllers\Api\SearchController::class, 'data'])->name('api.search.data');
+    Route::get('/api/search/data', [SearchController::class, 'data'])->name('api.search.data');
 });
 
 // Test route
@@ -46,8 +62,8 @@ Route::get('/test', function () {
         'status' => 'OK',
         'message' => 'Laravel + PostgreSQL fonctionne !',
         'timestamp' => now(),
-        'users_count' => \App\Models\User::count(),
-        'departments_count' => \App\Models\Department::count()
+        'users_count' => User::count(),
+        'departments_count' => Department::count(),
     ]);
 });
 

@@ -109,7 +109,11 @@
     }
 
     .carte {
-        @apply rounded-card border border-graphite-200 bg-white shadow-sm;
+        @apply rounded-card border border-graphite-200 bg-white p-5 shadow-sm;
+    }
+
+    .carte-plate {
+        @apply rounded-card border border-graphite-200 bg-white;
     }
 
     .bouton-primaire {
@@ -122,6 +126,73 @@
         @apply inline-flex items-center justify-center gap-2 rounded-md border border-graphite-300
                bg-white px-4 py-2.5 text-sm font-semibold text-graphite-800 transition
                hover:bg-graphite-100 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .bouton-danger {
+        @apply inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-2.5
+               text-sm font-semibold text-white transition hover:bg-red-800
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .intranet-filters {
+        @apply flex flex-wrap items-end gap-3 rounded-xl border border-graphite-200 bg-white p-4;
+    }
+
+    .intranet-filter-link {
+        @apply inline-flex items-center rounded-lg border border-graphite-200 bg-white px-3 py-1.5
+               text-sm font-medium text-graphite-700 transition hover:bg-graphite-50;
+    }
+
+    .intranet-filter-link-active {
+        @apply border-nere-600 bg-nere-600 text-white hover:bg-nere-700;
+    }
+
+    .intranet-table-container {
+        @apply overflow-hidden rounded-xl border border-graphite-200 bg-white;
+    }
+
+    .intranet-table-container table {
+        @apply w-full text-left text-sm;
+    }
+
+    .intranet-table-container thead {
+        @apply bg-graphite-50 text-graphite-600;
+    }
+
+    .intranet-table-container th {
+        @apply px-4 py-3 text-left font-semibold;
+    }
+
+    .intranet-table-container td {
+        @apply px-4 py-3 align-middle;
+    }
+
+    .intranet-table-container tbody tr {
+        @apply border-b border-graphite-100 transition-colors last:border-b-0 hover:bg-graphite-50;
+    }
+
+    .nere-badge {
+        @apply inline-flex items-center rounded-full bg-graphite-100 px-2.5 py-1 text-xs font-semibold text-graphite-700;
+    }
+
+    .nere-badge-yellow {
+        @apply bg-or-100 text-graphite-800;
+    }
+
+    .nere-badge-danger {
+        @apply bg-red-100 text-red-800;
+    }
+
+    .nere-badge-info {
+        @apply bg-blue-100 text-blue-800;
+    }
+
+    .nere-badge-warning {
+        @apply bg-amber-100 text-amber-900;
+    }
+
+    .nere-badge-success {
+        @apply bg-green-100 text-green-800;
     }
 
     .champ {

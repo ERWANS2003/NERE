@@ -1,25 +1,20 @@
 <x-intranet-layout title="Annonces">
 
-    <!-- Page Header -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-graphite-900 mb-2">
-                Annonces
-            </h1>
-            <p class="text-graphite-600">
-                Toutes les annonces et communications de l'entreprise
-            </p>
-        </div>
-
-        @can('create', \App\Models\Announcement::class)
-            <a href="{{ route('intranet.announcements.create') }}" class="bouton-primaire shrink-0">
+    <x-intranet.page-header
+        title="Annonces"
+        description="Toutes les annonces et communications de l'entreprise"
+    >
+        <x-slot:actions>
+            @can('create', \App\Models\Announcement::class)
+                <x-button :href="route('intranet.announcements.create')">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Nouvelle annonce
-            </a>
-        @endcan
-    </div>
+                </x-button>
+            @endcan
+        </x-slot:actions>
+    </x-intranet.page-header>
 
     @if(session('success'))
         <div class="mb-6 rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">
@@ -29,7 +24,7 @@
 
     <!-- Recherche + Filtres -->
     <div class="flex flex-col gap-4 mb-8">
-        <form method="GET" data-live-search class="flex gap-2">
+        <x-intranet.filters as-form label="Rechercher et filtrer les annonces" data-live-search class="flex gap-2">
             @if(request('priority'))
                 <input type="hidden" name="priority" value="{{ request('priority') }}">
             @endif
@@ -40,38 +35,46 @@
                 placeholder="Rechercher une annonce..."
                 class="champ max-w-sm"
             >
-            <button type="submit" class="bouton-secondaire shrink-0">Rechercher</button>
+            <x-button type="submit" variant="secondary" class="shrink-0">Rechercher</x-button>
             @if(request('search'))
-                <a href="{{ route('intranet.announcements.index', ['priority' => request('priority')]) }}" class="bouton-secondaire shrink-0">
+                <x-button :href="route('intranet.announcements.index', ['priority' => request('priority')])" variant="secondary" class="shrink-0">
                     Réinitialiser
-                </a>
+                </x-button>
             @endif
-        </form>
+        </x-intranet.filters>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('intranet.announcements.index', ['search' => request('search')]) }}"
-               class="px-4 py-2 rounded-lg text-sm font-medium {{ !request('priority') ? 'bg-nere-600 text-white' : 'bg-white text-graphite-700 border border-graphite-200 hover:bg-graphite-50' }} transition">
+        <x-intranet.filters label="Filtrer les annonces par priorité" class="flex flex-wrap items-center gap-2">
+            <x-intranet.filter-link
+                :href="route('intranet.announcements.index', ['search' => request('search')])"
+                :active="!request('priority')"
+            >
                 Toutes
-            </a>
-            <a href="{{ route('intranet.announcements.index', ['priority' => 'urgent', 'search' => request('search')]) }}"
-               class="px-4 py-2 rounded-lg text-sm font-medium {{ request('priority') === 'urgent' ? 'bg-nere-600 text-white' : 'bg-white text-graphite-700 border border-graphite-200 hover:bg-graphite-50' }} transition">
+            </x-intranet.filter-link>
+            <x-intranet.filter-link
+                :href="route('intranet.announcements.index', ['priority' => 'urgent', 'search' => request('search')])"
+                :active="request('priority') === 'urgent'"
+            >
                 Urgentes
-            </a>
-            <a href="{{ route('intranet.announcements.index', ['priority' => 'important', 'search' => request('search')]) }}"
-               class="px-4 py-2 rounded-lg text-sm font-medium {{ request('priority') === 'important' ? 'bg-nere-600 text-white' : 'bg-white text-graphite-700 border border-graphite-200 hover:bg-graphite-50' }} transition">
+            </x-intranet.filter-link>
+            <x-intranet.filter-link
+                :href="route('intranet.announcements.index', ['priority' => 'important', 'search' => request('search')])"
+                :active="request('priority') === 'important'"
+            >
                 Importantes
-            </a>
-            <a href="{{ route('intranet.announcements.index', ['priority' => 'info', 'search' => request('search')]) }}"
-               class="px-4 py-2 rounded-lg text-sm font-medium {{ request('priority') === 'info' ? 'bg-nere-600 text-white' : 'bg-white text-graphite-700 border border-graphite-200 hover:bg-graphite-50' }} transition">
+            </x-intranet.filter-link>
+            <x-intranet.filter-link
+                :href="route('intranet.announcements.index', ['priority' => 'info', 'search' => request('search')])"
+                :active="request('priority') === 'info'"
+            >
                 Info
-            </a>
-        </div>
+            </x-intranet.filter-link>
+        </x-intranet.filters>
     </div>
 
     <!-- Announcements List -->
     <div class="space-y-6">
         @forelse($announcements as $announcement)
-            <article class="bg-white rounded-lg border border-graphite-200 overflow-hidden hover:shadow-md transition">
+            <x-card as="article" flat class="overflow-hidden transition hover:shadow-md">
 
                 <!-- Header -->
                 <div class="p-6 border-b border-graphite-100">
@@ -138,9 +141,9 @@
                     </div>
                 </div>
 
-            </article>
+            </x-card>
         @empty
-            <div class="bg-white rounded-lg border border-graphite-200 p-12 text-center">
+            <x-card class="p-12 text-center">
                 <svg class="w-16 h-16 text-graphite-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
                 </svg>
@@ -152,7 +155,7 @@
                         Il n'y a pas d'annonces pour le moment.
                     @endif
                 </p>
-            </div>
+            </x-card>
         @endforelse
     </div>
 

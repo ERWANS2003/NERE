@@ -11,12 +11,6 @@
         && auth()->user()->canHandleIn($submission->form->department_id);
     $canReview = $submission->form?->department_id !== null
         && auth()->user()->canValidateIn($submission->form->department_id);
-    $statutMap = [
-        'pending' => ['label' => 'En attente', 'type' => 'warning'],
-        'approved' => ['label' => 'Approuvée', 'type' => 'success'],
-        'rejected' => ['label' => 'Rejetée', 'type' => 'danger'],
-    ];
-    $statut = $statutMap[$submission->status] ?? ['label' => ucfirst((string) $submission->status), 'type' => 'info'];
 @endphp
 
 <x-intranet-layout title="Demande #{{ str_pad($submission->id, 5, '0', STR_PAD_LEFT) }}" :breadcrumbs="$breadcrumbs">
@@ -43,7 +37,7 @@
                     <div>
                         <div class="flex items-center gap-3 mb-2">
                             <span class="text-sm text-graphite-500">#{{ str_pad($submission->id, 5, '0', STR_PAD_LEFT) }}</span>
-                            <x-badge :type="$statut['type']">{{ $statut['label'] }}</x-badge>
+                            <x-intranet.status-badge :status="$submission->status" />
                         </div>
                         <h1 class="text-2xl font-bold text-graphite-900">
                             {{ $submission->form?->name ?? 'Demande' }}

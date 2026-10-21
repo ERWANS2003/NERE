@@ -2,24 +2,20 @@
     $breadcrumbs = [
         ['label' => 'Demandes à traiter'],
     ];
-    $statusLabels = [
-        'pending' => ['label' => 'En attente', 'type' => 'warning'],
-        'approved' => ['label' => 'Approuvée', 'type' => 'success'],
-        'rejected' => ['label' => 'Rejetée', 'type' => 'danger'],
-    ];
 @endphp
 
 <x-intranet-layout title="Demandes à traiter" :breadcrumbs="$breadcrumbs">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-graphite-900">Demandes à traiter</h1>
-            <p class="mt-2 text-graphite-600">Suivez les demandes de service envoyées aux départements que vous gérez.</p>
-        </div>
-        <a href="{{ route('intranet.submissions.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-nere-700 hover:text-nere-800">
-            <i class="fas fa-list-check" aria-hidden="true"></i>
-            Voir mes demandes
-        </a>
-    </div>
+    <x-intranet.page-header
+        title="Demandes à traiter"
+        description="Suivez les demandes de service envoyées aux départements que vous gérez."
+    >
+        <x-slot:actions>
+            <x-button :href="route('intranet.submissions.index')" variant="secondary">
+                <i class="fas fa-list-check" aria-hidden="true"></i>
+                Voir mes demandes
+            </x-button>
+        </x-slot:actions>
+    </x-intranet.page-header>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-2">
         <a href="{{ route('intranet.submissions.queue', ['status' => 'pending']) }}"
@@ -34,8 +30,8 @@
         </a>
     </div>
 
-    <form method="GET" action="{{ route('intranet.submissions.queue') }}" data-live-search
-          class="mb-6 grid gap-4 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-3">
+    <x-intranet.filters as-form action="{{ route('intranet.submissions.queue') }}" label="Filtrer les demandes à traiter" data-live-search
+          class="mb-6 grid gap-4 sm:grid-cols-3">
         <div>
             <label for="status" class="mb-1 block text-sm font-medium text-graphite-700">Statut</label>
             <select id="status" name="status" class="w-full rounded-lg border-graphite-300 text-sm focus:border-nere-500 focus:ring-nere-500">
@@ -65,16 +61,16 @@
             </select>
         </div>
         <div class="flex flex-wrap gap-2 sm:col-span-3">
-            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-nere-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-700">
+            <x-button type="submit">
                 <i class="fas fa-filter" aria-hidden="true"></i>Filtrer
-            </button>
-            <a href="{{ route('intranet.submissions.queue') }}" class="inline-flex items-center justify-center rounded-lg border border-graphite-300 px-4 py-2 text-sm font-medium text-graphite-700 hover:bg-graphite-50">
+            </x-button>
+            <x-button :href="route('intranet.submissions.queue')" variant="secondary">
                 Effacer les filtres
-            </a>
+            </x-button>
         </div>
-    </form>
+    </x-intranet.filters>
 
-    <div class="overflow-hidden rounded-xl border border-graphite-200 bg-white">
+    <x-intranet.table>
         @if($submissions->isNotEmpty())
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
@@ -91,7 +87,6 @@
                     </thead>
                     <tbody class="divide-y divide-graphite-100">
                         @foreach($submissions as $submission)
-                            @php($status = $statusLabels[$submission->status] ?? ['label' => ucfirst($submission->status), 'type' => 'info'])
                             <tr class="hover:bg-graphite-50">
                                 <td class="px-4 py-3">
                                     <span class="block font-semibold text-graphite-900">{{ $submission->form?->name ?? 'Formulaire supprimé' }}</span>
@@ -99,7 +94,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-graphite-700">{{ $submission->user?->name ?? 'Compte supprimé' }}</td>
                                 <td class="px-4 py-3 text-graphite-700">{{ $submission->form?->department?->name ?? '—' }}</td>
-                                <td class="px-4 py-3"><x-badge :type="$status['type']">{{ $status['label'] }}</x-badge></td>
+                                <td class="px-4 py-3"><x-intranet.status-badge :status="$submission->status" /></td>
                                 <td class="px-4 py-3 text-graphite-700">
                                     {{ $submission->assignee?->name ?? 'À attribuer' }}
                                 </td>
@@ -132,7 +127,7 @@
                 @endif
             </div>
         @endif
-    </div>
+    </x-intranet.table>
 
     @if($submissions->hasPages())
         <div class="mt-6">{{ $submissions->links() }}</div>

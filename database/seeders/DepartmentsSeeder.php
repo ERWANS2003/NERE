@@ -25,6 +25,7 @@ class DepartmentsSeeder extends Seeder
 
             if (! $departement->exists) {
                 $departement->color = $service['color'];
+                $departement->is_active = true;
             }
 
             $departement->name = $service['name'];
@@ -32,8 +33,6 @@ class DepartmentsSeeder extends Seeder
             $departement->description = $service['description'];
             $departement->icon = $service['icon'];
             $departement->position = $rang + 1;
-            $departement->is_active = true;
-
             $departement->save();
         }
     }
@@ -98,7 +97,7 @@ class DepartmentsSeeder extends Seeder
                 'code' => 'PROC',
                 'name' => 'Département Processing',
                 'tag' => 'Traitement',
-                'description' => "Usine de traitement, suivi de production et analyses de laboratoire.",
+                'description' => 'Usine de traitement, suivi de production et analyses de laboratoire.',
                 'icon' => 'usine',
                 'color' => '#3a6e8f',
             ],

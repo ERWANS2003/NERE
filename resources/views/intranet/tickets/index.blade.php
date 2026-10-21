@@ -2,13 +2,6 @@
     $breadcrumbs = [
         ['label' => 'Support IT'],
     ];
-    $statusStyles = [
-        'new' => 'bg-blue-100 text-blue-800',
-        'in_progress' => 'bg-amber-100 text-amber-800',
-        'waiting' => 'bg-purple-100 text-purple-800',
-        'resolved' => 'bg-green-100 text-green-800',
-        'closed' => 'bg-graphite-100 text-graphite-700',
-    ];
     $priorityStyles = [
         'low' => 'text-graphite-600',
         'normal' => 'text-blue-700',
@@ -18,17 +11,16 @@
 @endphp
 
 <x-intranet-layout title="Support IT" :breadcrumbs="$breadcrumbs">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-graphite-900">Support informatique</h1>
-            <p class="mt-1 text-graphite-600">
-                {{ $isAgent ? 'File des tickets du département IT' : 'Consultez et suivez vos demandes d’assistance' }}
-            </p>
-        </div>
-        <a href="{{ route('intranet.tickets.create') }}" class="bouton-primaire">Créer un ticket</a>
-    </div>
+    <x-intranet.page-header
+        title="Support informatique"
+        :description="$isAgent ? 'File des tickets du département IT' : 'Consultez et suivez vos demandes d’assistance'"
+    >
+        <x-slot:actions>
+            <x-button :href="route('intranet.tickets.create')">Créer un ticket</x-button>
+        </x-slot:actions>
+    </x-intranet.page-header>
 
-    <form method="GET" data-live-search class="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-[1fr_220px_auto]">
+    <x-intranet.filters as-form label="Filtrer les tickets" data-live-search class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_220px_auto]">
         <input
             type="search"
             name="search"
@@ -42,10 +34,10 @@
                 <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
             @endforeach
         </select>
-        <button type="submit" class="rounded-lg bg-graphite-800 px-4 py-2 text-sm font-medium text-white hover:bg-graphite-900">Filtrer</button>
-    </form>
+        <x-button type="submit" variant="secondary">Filtrer</x-button>
+    </x-intranet.filters>
 
-    <div class="overflow-hidden rounded-xl border border-graphite-200 bg-white">
+    <x-intranet.table>
         @if($tickets->isNotEmpty())
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
@@ -69,9 +61,7 @@
                                 @if($isAgent)<td class="px-4 py-4 text-graphite-700">{{ $ticket->requester?->name ?? 'Compte supprimé' }}</td>@endif
                                 <td class="px-4 py-4 {{ $priorityStyles[$ticket->priority->value] }}">{{ $ticket->priority->label() }}</td>
                                 <td class="px-4 py-4">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $statusStyles[$ticket->status->value] }}">
-                                        {{ $ticket->status->label() }}
-                                    </span>
+                                    <x-intranet.status-badge :status="$ticket->status" />
                                 </td>
                                 <td class="px-4 py-4 text-graphite-600">{{ $ticket->assignee?->name ?? 'Non attribué' }}</td>
                                 <td class="whitespace-nowrap px-4 py-4 text-graphite-500">{{ $ticket->created_at->format('d/m/Y H:i') }}</td>
@@ -86,7 +76,7 @@
                 <p class="mt-1 text-sm text-graphite-600">Les nouveaux tickets créés apparaîtront ici.</p>
             </div>
         @endif
-    </div>
+    </x-intranet.table>
 
     @if($tickets->hasPages())
         <div class="mt-6">{{ $tickets->links() }}</div>

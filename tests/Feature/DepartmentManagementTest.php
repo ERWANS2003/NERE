@@ -2,6 +2,7 @@
 
 use App\Enums\DepartmentRole;
 use App\Models\Department;
+use App\Models\Ticket;
 use App\Models\User;
 
 it('lets department heads view all departments but only edit their own', function () {
@@ -86,4 +87,60 @@ it('preserves full department management for system administrators', function ()
         ->assertRedirect(route('intranet.departments.manage.index'));
 
     $this->assertDatabaseMissing('departments', ['id' => $department->id]);
+});
+
+it('calculates open and monthly ticket statistics for the selected department', function () {
+    $department = Department::factory()->create();
+    $otherDepartment = Department::factory()->create();
+    $admin = User::factory()->superAdmin()->create();
+
+    Ticket::create([
+        'number' => 'IT-STAT-1',
+        'department_id' => $department->id,
+        'requester_id' => $admin->id,
+        'subject' => 'Ticket ouvert',
+        'description' => 'Ouvert ce mois-ci',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+    Ticket::create([
+        'number' => 'IT-STAT-2',
+        'department_id' => $department->id,
+        'requester_id' => $admin->id,
+        'subject' => 'Ticket fermé',
+        'description' => 'Clos ce mois-ci',
+        'category' => 'software',
+        'priority' => 'normal',
+        'status' => 'closed',
+    ]);
+    Ticket::create([
+        'number' => 'IT-STAT-3',
+        'department_id' => $department->id,
+        'requester_id' => $admin->id,
+        'subject' => 'Ticket ancien',
+        'description' => 'Créé le mois dernier',
+        'category' => 'network',
+        'priority' => 'normal',
+        'status' => 'waiting',
+        'created_at' => now()->subMonth(),
+        'updated_at' => now()->subMonth(),
+    ]);
+    Ticket::create([
+        'number' => 'IT-STAT-4',
+        'department_id' => $otherDepartment->id,
+        'requester_id' => $admin->id,
+        'subject' => 'Autre département',
+        'description' => 'Ne doit pas être compté',
+        'category' => 'other',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('intranet.departments.manage.show', $department))
+        ->assertOk()
+        ->assertSee('Tickets ouverts')
+        ->assertSee('Tickets ce mois')
+        ->assertSee('>2<', false);
 });

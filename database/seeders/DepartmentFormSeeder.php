@@ -9,8 +9,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Formulaires de démonstration pour peupler l'onglet « Formulaires » des pages
- * département. Idempotent (identifiés par département + nom). Le module de
- * remplissage dynamique n'étant pas encore livré, ils servent de vitrine.
+ * département. Les formulaires sans schéma détaillé disposent d'un champ de
+ * description générique utilisable et personnalisable depuis l'intranet.
  */
 class DepartmentFormSeeder extends Seeder
 {
@@ -57,18 +57,36 @@ class DepartmentFormSeeder extends Seeder
             }
 
             foreach ($noms as $index => $nom) {
-                DepartmentForm::updateOrCreate(
-                    ['department_id' => $departement->id, 'name' => $nom],
-                    [
-                        'description' => $catalog[$code][$nom]['description']
-                            ?? 'Formulaire '.mb_strtolower($nom).' du département '.$departement->name.'.',
-                        'form_schema' => isset($catalog[$code][$nom])
-                            ? ['fields' => $catalog[$code][$nom]['fields']]
-                            : [],
-                        'is_active' => true,
-                        'order' => $index,
-                    ]
-                );
+                $form = DepartmentForm::firstOrNew([
+                    'department_id' => $departement->id,
+                    'name' => $nom,
+                ]);
+
+                if (! $form->exists) {
+                    $form->description = $catalog[$code][$nom]['description']
+                        ?? 'Formulaire '.mb_strtolower($nom).' du département '.$departement->name.'.';
+                    $form->form_schema = [
+                        'fields' => $catalog[$code][$nom]['fields'] ?? [[
+                            'key' => 'details',
+                            'label' => 'Décrivez votre demande',
+                            'type' => 'textarea',
+                            'required' => true,
+                        ]],
+                    ];
+                    $form->is_active = true;
+                    $form->order = $index;
+                } elseif (empty($form->form_schema['fields'])) {
+                    $form->form_schema = [
+                        'fields' => $catalog[$code][$nom]['fields'] ?? [[
+                            'key' => 'details',
+                            'label' => 'Décrivez votre demande',
+                            'type' => 'textarea',
+                            'required' => true,
+                        ]],
+                    ];
+                }
+
+                $form->save();
             }
         }
     }

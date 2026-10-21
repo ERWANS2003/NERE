@@ -5,22 +5,21 @@
 @endphp
 
 <x-intranet-layout title="Base de connaissances" :breadcrumbs="$breadcrumbs">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold text-graphite-900">Base de connaissances</h1>
-            <p class="mt-2 max-w-2xl text-graphite-600">
-                Des solutions simples aux problèmes courants. Consultez un guide avant d’envoyer un ticket au support.
-            </p>
-        </div>
-        @if($isManager)
-            <a href="{{ route('intranet.knowledge-base.create') }}" class="bouton-primaire shrink-0">
-                <span aria-hidden="true">+</span> Ajouter un guide
-            </a>
-        @endif
-    </div>
+    <x-intranet.page-header
+        title="Base de connaissances"
+        description="Des solutions simples aux problèmes courants. Consultez un guide avant d’envoyer un ticket au support."
+    >
+        <x-slot:actions>
+            @if($isManager)
+                <x-button :href="route('intranet.knowledge-base.create')">
+                    <span aria-hidden="true">+</span> Ajouter un guide
+                </x-button>
+            @endif
+        </x-slot:actions>
+    </x-intranet.page-header>
 
-    <form method="GET" action="{{ route('intranet.knowledge-base.index') }}" data-live-search
-          class="mb-6 grid gap-3 rounded-xl border border-graphite-200 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
+    <x-intranet.filters as-form action="{{ route('intranet.knowledge-base.index') }}" label="Rechercher et filtrer les guides" data-live-search
+          class="mb-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
         <div>
             <label for="knowledge-search" class="sr-only">Rechercher un guide</label>
             <input id="knowledge-search" type="search" name="search" value="{{ request('search') }}"
@@ -36,8 +35,8 @@
                 @endforeach
             </select>
         </div>
-        <button type="submit" class="bouton-secondaire">Rechercher</button>
-    </form>
+        <x-button type="submit" variant="secondary">Rechercher</x-button>
+    </x-intranet.filters>
 
     <p class="mb-4 text-sm text-graphite-600" aria-live="polite">
         {{ $articles->total() }} guide(s) disponible(s)
@@ -46,7 +45,7 @@
     @if($articles->isNotEmpty())
         <div class="grid gap-4 md:grid-cols-2">
             @foreach($articles as $article)
-                <article class="flex flex-col rounded-xl border border-graphite-200 bg-white p-5 shadow-sm">
+                <x-card as="article" class="flex flex-col">
                     <div class="mb-3 flex flex-wrap items-center gap-2">
                         @if($article->category && isset($categories[$article->category]))
                             <span class="rounded-full bg-nere-50 px-3 py-1 text-xs font-semibold text-nere-700">
@@ -72,7 +71,7 @@
                             Lire le guide <span aria-hidden="true">→</span>
                         </a>
                     </div>
-                </article>
+                </x-card>
             @endforeach
         </div>
 
@@ -80,13 +79,13 @@
             <div class="mt-6">{{ $articles->links() }}</div>
         @endif
     @else
-        <div class="rounded-xl border border-graphite-200 bg-white p-10 text-center">
+        <x-card class="p-10 text-center">
             <h2 class="font-semibold text-graphite-900">Aucun guide trouvé</h2>
             <p class="mt-2 text-sm text-graphite-600">Essayez d’autres mots-clés ou choisissez une autre catégorie.</p>
             <a href="{{ route('intranet.knowledge-base.index') }}" class="mt-4 inline-flex text-sm font-semibold text-nere-700 hover:underline">
                 Afficher tous les guides
             </a>
-        </div>
+        </x-card>
     @endif
 
     <div class="mt-8 rounded-xl border border-or-200 bg-or-50 p-5">

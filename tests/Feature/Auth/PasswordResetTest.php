@@ -115,7 +115,7 @@ it('permet de se connecter avec le nouveau mot de passe', function () {
         $this->post('/connexion', [
             'identifiant' => (string) $utilisateur->matricule,
             'password' => 'NouveauMotDePasse!2026',
-        ])->assertRedirect('/accueil');
+        ])->assertRedirect('/intranet/dashboard');
 
         $this->assertAuthenticatedAs($utilisateur->fresh());
 

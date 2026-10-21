@@ -1,18 +1,19 @@
 @props([
-    'variant' => 'primary', // primary, secondary, outline
+    'variant' => 'primary',
     'href' => null,
     'icon' => null,
+    'type' => null,
 ])
 
 @php
     $classes = match($variant) {
-        'secondary' => 'nere-btn nere-btn-secondary',
-        'outline' => 'nere-btn nere-btn-outline',
-        default => 'nere-btn nere-btn-primary',
+        'secondary', 'outline' => 'bouton-secondaire',
+        'danger' => 'bouton-danger',
+        default => 'bouton-primaire',
     };
     
     $tag = $href ? 'a' : 'button';
-    $extraAttrs = $href ? ['href' => $href] : ['type' => 'button'];
+    $extraAttrs = $href ? ['href' => $href] : ['type' => $type ?? 'button'];
 @endphp
 
 <{{ $tag }} {{ $attributes->merge(['class' => $classes] + $extraAttrs) }}>

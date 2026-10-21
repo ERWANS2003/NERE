@@ -19,7 +19,7 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user !== null && ! $user->is_active) {
+        if ($user !== null && ! $user->refresh()->is_active) {
             Auth::guard('web')->logout();
 
             $request->session()->invalidate();

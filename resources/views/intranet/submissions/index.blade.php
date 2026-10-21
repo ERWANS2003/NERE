@@ -6,22 +6,22 @@
 
 <x-intranet-layout title="Mes demandes" :breadcrumbs="$breadcrumbs">
 
-    {{-- En-tête --}}
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-graphite-900 mb-2">Mes demandes</h1>
-            <p class="text-graphite-600">Suivez l'état de vos demandes soumises aux départements</p>
-        </div>
-        <a href="{{ route('intranet.forms.index') }}" class="bouton-primaire">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nouvelle demande
-        </a>
-    </div>
+    <x-intranet.page-header
+        title="Mes demandes"
+        description="Suivez l'état de vos demandes soumises aux départements"
+    >
+        <x-slot:actions>
+            <x-button :href="route('intranet.forms.index')">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nouvelle demande
+            </x-button>
+        </x-slot:actions>
+    </x-intranet.page-header>
 
     {{-- Filtres statut --}}
-    <div class="flex flex-wrap gap-2 mb-6">
+    <x-intranet.filters label="Filtrer mes demandes par statut" class="mb-6 flex flex-wrap gap-2">
         @php
             $filtres = [
                 '' => 'Toutes',
@@ -31,16 +31,17 @@
             ];
         @endphp
         @foreach($filtres as $valeur => $label)
-            <a href="{{ route('intranet.submissions.index', array_filter(['status' => $valeur])) }}"
-               class="px-3 py-1.5 rounded-full text-sm font-medium transition
-               {{ request('status', '') === $valeur ? 'bg-nere-600 text-white' : 'bg-white text-graphite-700 border border-graphite-200 hover:bg-graphite-50' }}">
+            <x-intranet.filter-link
+                :href="route('intranet.submissions.index', array_filter(['status' => $valeur]))"
+                :active="request('status', '') === $valeur"
+            >
                 {{ $label }}
-            </a>
+            </x-intranet.filter-link>
         @endforeach
-    </div>
+    </x-intranet.filters>
 
     {{-- Liste --}}
-    <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden">
+    <x-intranet.table>
         @if($submissions->count() > 0)
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -63,15 +64,7 @@
                                 <td class="px-4 py-3 text-graphite-900">{{ $submission->form?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-graphite-600 hidden md:table-cell">{{ $submission->form?->department?->name ?? '—' }}</td>
                                 <td class="px-4 py-3">
-                                    @php
-                                        $statutMap = [
-                                            'pending' => ['label' => 'En attente', 'type' => 'warning'],
-                                            'approved' => ['label' => 'Approuvée', 'type' => 'success'],
-                                            'rejected' => ['label' => 'Rejetée', 'type' => 'danger'],
-                                        ];
-                                        $statut = $statutMap[$submission->status] ?? ['label' => ucfirst((string) $submission->status), 'type' => 'info'];
-                                    @endphp
-                                    <x-badge :type="$statut['type']">{{ $statut['label'] }}</x-badge>
+                                    <x-intranet.status-badge :status="$submission->status" />
                                 </td>
                                 <td class="px-4 py-3 text-graphite-500 hidden sm:table-cell">{{ $submission->created_at?->format('d/m/Y') }}</td>
                                 <td class="px-4 py-3 text-right">
@@ -95,7 +88,7 @@
                 </a>
             </div>
         @endif
-    </div>
+    </x-intranet.table>
 
     @if($submissions->hasPages())
         <div class="mt-6">

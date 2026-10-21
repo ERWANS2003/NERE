@@ -35,7 +35,7 @@ it('renvoie les invites vers la page de connexion', function (string $url) {
 it('accepte le matricule', function () {
     $utilisateur = User::factory()->create(['matricule' => '1042']);
 
-    seConnecter('1042')->assertRedirect('/accueil');
+    seConnecter('1042')->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -43,7 +43,7 @@ it('accepte le matricule', function () {
 it('accepte l adresse e-mail', function () {
     $utilisateur = User::factory()->create(['email' => 'camille.roux@nere.fr']);
 
-    seConnecter('camille.roux@nere.fr')->assertRedirect('/accueil');
+    seConnecter('camille.roux@nere.fr')->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -51,7 +51,7 @@ it('accepte l adresse e-mail', function () {
 it('ignore la casse de l adresse e-mail', function () {
     $utilisateur = User::factory()->create(['email' => 'camille.roux@nere.fr']);
 
-    seConnecter('Camille.Roux@NERE.FR')->assertRedirect('/accueil');
+    seConnecter('Camille.Roux@NERE.FR')->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -61,7 +61,7 @@ it('preserve la casse d un matricule mixte', function () {
     // normaliser en minuscules empecherait `ab123` de retrouver la ligne `AB123`.
     $utilisateur = User::factory()->create(['matricule' => 'AB123']);
 
-    seConnecter('AB123')->assertRedirect('/accueil');
+    seConnecter('AB123')->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -69,7 +69,7 @@ it('preserve la casse d un matricule mixte', function () {
 it('ignore les espaces autour de l identifiant', function () {
     $utilisateur = User::factory()->create(['matricule' => '1042']);
 
-    seConnecter('  1042  ')->assertRedirect('/accueil');
+    seConnecter('  1042  ')->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -179,7 +179,7 @@ it('rend le meme message de verrouillage quelle que soit la saisie', function ()
 it('laisse reconnecter quand le verrouillage est echu', function () {
     $utilisateur = User::factory()->lockoutExpired()->create();
 
-    seConnecter((string) $utilisateur->matricule)->assertRedirect('/accueil');
+    seConnecter((string) $utilisateur->matricule)->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 });
@@ -192,7 +192,7 @@ it('compte les echecs puis les remet a zero apres un succes', function () {
 
     expect($utilisateur->fresh()->failed_attempts)->toBe(2);
 
-    seConnecter((string) $utilisateur->matricule)->assertRedirect('/accueil');
+    seConnecter((string) $utilisateur->matricule)->assertRedirect('/intranet/dashboard');
 
     expect($utilisateur->fresh()->failed_attempts)->toBe(0)
         ->and($utilisateur->fresh()->locked_until)->toBeNull();
@@ -210,7 +210,7 @@ it('ne bloque pas un collegue derriere la meme adresse IP', function () {
 
     $collegue = User::factory()->create();
 
-    seConnecter((string) $collegue->matricule)->assertRedirect('/accueil');
+    seConnecter((string) $collegue->matricule)->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($collegue);
 });
@@ -258,21 +258,21 @@ it('n a aucune page d inscription publique', function (string $url) {
     $this->get($url)->assertNotFound();
 })->with(['/inscription', '/register']);
 
-it('renvoie un utilisateur deja connecte vers l accueil', function () {
-    // Le middleware `guest` renvoie vers la racine, qui redirige a son tour vers
-    // l'accueil : le test suit la chaine complete.
+it('renvoie un utilisateur deja connecte vers le tableau de bord', function () {
+    // Le middleware `guest` renvoie vers la racine, qui redirige vers le tableau
+    // de bord de l'intranet.
     $utilisateur = User::factory()->create();
 
     $this->actingAs($utilisateur)->get('/connexion')->assertRedirect('/');
 
-    $this->actingAs($utilisateur)->get('/')->assertRedirect('/accueil');
+    $this->actingAs($utilisateur)->get('/')->assertRedirect('/intranet/dashboard');
 });
 
 it('ouvre une session prolongee quand la case se souvenir de moi est cochee', function () {
     $utilisateur = User::factory()->create();
 
     seConnecter((string) $utilisateur->matricule, UserFactory::PASSWORD, ['remember' => 'on'])
-        ->assertRedirect('/accueil');
+        ->assertRedirect('/intranet/dashboard');
 
     $this->assertAuthenticatedAs($utilisateur);
 

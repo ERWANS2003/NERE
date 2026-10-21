@@ -1,8 +1,5 @@
-@extends('layouts.app')
-
-@section('title', 'Accueil')
-
-@section('content')
+<x-app-layout>
+    <x-slot name="titre">Accueil</x-slot>
 
     {{-- Salutation : la page doit situer l'agent dans le temps et lui rappeler
          l'objet du portail avant de lui proposer des services. --}}
@@ -107,4 +104,4 @@
             </ul>
         @endif
     </section>
-@endsection
+</x-app-layout>

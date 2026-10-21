@@ -18,7 +18,7 @@
 
         <form method="POST" action="{{ route('intranet.submissions.store', $form) }}" class="space-y-5 rounded-xl border border-graphite-200 bg-white p-6">
             @csrf
-            @foreach($form->form_schema['fields'] ?? [] as $field)
+            @foreach($fields as $field)
                 @php
                     $key = $field['key'];
                     $name = 'data['.$key.']';
@@ -41,12 +41,15 @@
                         <input
                             id="{{ $key }}"
                             name="{{ $name }}"
-                            type="{{ in_array($field['type'] ?? 'text', ['text', 'date', 'time', 'datetime-local', 'number'], true) ? $field['type'] : 'text' }}"
+                            type="{{ $field['type'] }}"
                             value="{{ old($errorKey) }}"
-                            @if(($field['type'] ?? '') === 'number') step="any" min="0" @endif
+                            @if(($field['type'] ?? '') === 'number') step="any" @endif
                             @required($field['required'] ?? false)
                             class="w-full rounded-lg border border-graphite-300 px-3 py-2"
                         >
+                    @endif
+                    @if(filled($field['help_text'] ?? null))
+                        <p class="mt-1 text-sm text-graphite-500">{{ $field['help_text'] }}</p>
                     @endif
                     @error($errorKey)<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                 </div>

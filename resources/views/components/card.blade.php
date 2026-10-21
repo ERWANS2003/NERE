@@ -1,21 +1,23 @@
 @props([
+    'as' => 'div',
     'title' => null,
     'flat' => false,
     'padding' => true,
 ])
 
 @php
-    $cardClass = $flat ? 'nere-card-flat' : 'nere-card';
+    $tag = in_array($as, ['div', 'article', 'section'], true) ? $as : 'div';
+    $cardClass = $flat ? 'carte-plate' : 'carte';
     if (!$padding) {
         $cardClass .= ' !p-0';
     }
 @endphp
 
-<div {{ $attributes->merge(['class' => $cardClass]) }}>
+<{{ $tag }} {{ $attributes->merge(['class' => $cardClass]) }}>
     @if($title)
-        <div class="mb-4 pb-3 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $title }}</h3>
-        </div>
+        <div class="mb-4 border-b border-graphite-200 pb-3">
+            <h3 class="text-lg font-semibold text-graphite-900">{{ $title }}</h3>
+        </{{ $tag }}>
     @endif
     
     {{ $slot }}

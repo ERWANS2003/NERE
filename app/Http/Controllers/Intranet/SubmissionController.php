@@ -7,9 +7,9 @@ use App\Models\Department;
 use App\Models\DepartmentForm;
 use App\Models\FormSubmission;
 use App\Notifications\SubmissionReviewed;
+use App\Support\DynamicFormSchema;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SubmissionController extends Controller
@@ -84,37 +84,16 @@ class SubmissionController extends Controller
      */
     public function store(Request $request, DepartmentForm $form): RedirectResponse
     {
-        abort_unless($form->is_active, 404);
+        $form->loadMissing('department');
+        abort_unless($form->is_active && $form->department?->is_active, 404);
 
-        $rules = ['data' => ['required', 'array']];
-        foreach ($form->form_schema['fields'] ?? [] as $field) {
-            $key = $field['key'];
-            $fieldRules = [($field['required'] ?? false) ? 'required' : 'nullable'];
-
-            if ($field['type'] === 'number') {
-                $fieldRules[] = 'numeric';
-            } elseif ($field['type'] === 'date') {
-                $fieldRules[] = 'date';
-            } elseif ($field['type'] === 'time') {
-                $fieldRules[] = 'date_format:H:i';
-            } elseif ($field['type'] === 'datetime-local') {
-                $fieldRules[] = 'date_format:Y-m-d\TH:i';
-            } elseif ($field['type'] === 'select') {
-                $fieldRules[] = Rule::in(
-                    array_column($field['options'] ?? [], 'value')
-                );
-            } else {
-                $fieldRules[] = 'string';
-                $fieldRules[] = 'max:5000';
-            }
-
-            $rules['data.'.$key] = $fieldRules;
-        }
-
-        $validated = $request->validate($rules);
+        $fields = DynamicFormSchema::fields($form->form_schema);
+        $validated = $request->validate(DynamicFormSchema::submissionRules([
+            'fields' => $fields,
+        ]));
         $submittedData = array_intersect_key(
             $validated['data'],
-            array_column($form->form_schema['fields'] ?? [], null, 'key')
+            array_column($fields, null, 'key')
         );
 
         $submission = FormSubmission::create([
