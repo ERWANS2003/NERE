@@ -17,8 +17,8 @@
     @if($title)
         <div class="mb-4 border-b border-graphite-200 pb-3">
             <h3 class="text-lg font-semibold text-graphite-900">{{ $title }}</h3>
-        </{{ $tag }}>
+        </div>
     @endif
     
     {{ $slot }}
-</div>
+</{{ $tag }}>
