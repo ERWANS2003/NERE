@@ -109,6 +109,10 @@ class RegistrationController extends Controller
     {
         $user = $request->user();
 
-        return strtolower($user->domain).'|'.strtolower($user->guid);
+        if (filled($user->domain) && filled($user->guid)) {
+            return strtolower($user->domain).'|'.strtolower($user->guid);
+        }
+
+        return 'local|'.$user->getKey();
     }
 }

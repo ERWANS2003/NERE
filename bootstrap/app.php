@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\EnsureMenuManager;
-use App\Http\Middleware\EnsureMenuUserIsFromActiveDirectory;
 use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -26,7 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserIsActive::class,
             'admin' => EnsureUserIsAdmin::class,
             'module' => EnsureModuleIsEnabled::class,
-            'menu.ad' => EnsureMenuUserIsFromActiveDirectory::class,
             'menu.manager' => EnsureMenuManager::class,
         ]);
 

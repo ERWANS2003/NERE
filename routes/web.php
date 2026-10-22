@@ -79,7 +79,7 @@ require __DIR__.'/auth.php';
 // Import admin routes
 require __DIR__.'/admin.php';
 
-Route::middleware(['auth', 'active', 'menu.ad'])
+Route::middleware(['auth', 'active'])
     ->prefix('menu')
     ->name('menu.')
     ->group(function (): void {

@@ -41,7 +41,7 @@ function createMenuManager(array $attributes = []): User
     return $manager;
 }
 
-it('requires an Active Directory-authenticated session and denies employees menu management', function () {
+it('allows local and Active Directory employees to use menus but denies employees menu management', function () {
     $campaign = createOpenMenuCampaign();
     $closedCampaign = createOpenMenuCampaign([
         'title' => 'Semaine clôturée',
@@ -56,7 +56,8 @@ it('requires an Active Directory-authenticated session and denies employees menu
     $this->actingAs($employee)
         ->withSession(['auth_provider' => 'local'])
         ->get(route('menu.portal'))
-        ->assertForbidden();
+        ->assertOk()
+        ->assertSee($campaign->title);
 
     $this->withSession(['auth_provider' => 'active_directory'])
         ->get(route('menu.portal'))
@@ -69,7 +70,8 @@ it('requires an Active Directory-authenticated session and denies employees menu
     $this->actingAs($employee)
         ->withSession(['auth_provider' => 'local'])
         ->get(route('menu.registration.show', $campaign->link_token))
-        ->assertForbidden();
+        ->assertOk()
+        ->assertSee($employee->name);
 
     $this->withSession(['auth_provider' => 'active_directory'])
         ->get(route('menu.registration.show', $campaign->link_token))
@@ -87,10 +89,10 @@ it('requires an Active Directory-authenticated session and denies employees menu
         ->assertSee('Semaines de menus');
 });
 
-it('marks local password sessions so they cannot use the AD-only menu module', function () {
+it('allows local password sessions to register independently for the menu', function () {
     $employee = User::factory()->create([
-        'guid' => 'local-session-guid',
-        'domain' => 'default',
+        'guid' => null,
+        'domain' => null,
         'password' => 'Password123!',
     ]);
     $campaign = createOpenMenuCampaign();
@@ -102,7 +104,33 @@ it('marks local password sessions so they cannot use the AD-only menu module', f
 
     expect(session('auth_provider'))->toBe('local');
 
-    $this->get(route('menu.registration.show', $campaign->link_token))->assertForbidden();
+    $this->get(route('menu.registration.show', $campaign->link_token))
+        ->assertOk()
+        ->assertSee($employee->name);
+
+    $firstDay = $campaign->days()->orderBy('date')->firstOrFail();
+    $this->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => 'Finances',
+        'choices' => [$firstDay->id => '1'],
+    ])->assertRedirect(route('menu.registration.show', $campaign->link_token))
+        ->assertSessionHas('success');
+
+    $registration = MenuRegistration::query()->firstOrFail();
+    expect($registration->employee_identifier)->toBe('local|'.$employee->id)
+        ->and($registration->user_id)->toBe($employee->id);
+
+    $secondEmployee = User::factory()->create();
+    $this->actingAs($secondEmployee)
+        ->withSession(['auth_provider' => 'local'])
+        ->post(route('menu.registration.store', $campaign->link_token), [
+            'department' => 'Finances',
+            'choices' => [$firstDay->id => '2'],
+        ])->assertRedirect(route('menu.registration.show', $campaign->link_token))
+        ->assertSessionHas('success');
+
+    expect(MenuRegistration::query()->count())->toBe(2)
+        ->and(MenuRegistration::query()->orderBy('id')->pluck('employee_identifier')->all())
+        ->toBe(['local|'.$employee->id, 'local|'.$secondEmployee->id]);
 });
 
 it('shows the menu management shortcut only to menu managers and intranet administrators', function () {
