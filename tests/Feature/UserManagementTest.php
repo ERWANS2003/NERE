@@ -77,6 +77,33 @@ it('clears department and system role assignments when all checkboxes are unchec
         ->and($user->fresh()->roles()->count())->toBe(0);
 });
 
+it('updates the employee directory title when an administrator changes the post', function () {
+    $employee = User::factory()->create([
+        'poste' => 'Ancien poste',
+        'position_title' => 'Ancien intitulé organisationnel',
+    ]);
+
+    $this->actingAs(User::factory()->superAdmin()->create())
+        ->put(route('admin.users.update', $employee), [
+            'name' => $employee->name,
+            'email' => $employee->email,
+            'matricule' => $employee->matricule,
+            'poste' => 'Responsable des opérations',
+            'actif' => '1',
+        ])
+        ->assertRedirect(route('admin.users.show', $employee));
+
+    $employee->refresh();
+
+    expect($employee->poste)->toBe('Responsable des opérations')
+        ->and($employee->position_title)->toBe('Responsable des opérations')
+        ->and($employee->job_title)->toBe('Responsable des opérations');
+
+    $this->get(route('intranet.directory'))
+        ->assertOk()
+        ->assertSee('Responsable des opérations');
+});
+
 it('creates department memberships with the default user role', function () {
     $department = Department::factory()->create();
 

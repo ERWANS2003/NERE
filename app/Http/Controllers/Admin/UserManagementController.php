@@ -79,6 +79,7 @@ class UserManagementController extends Controller
             'roles.*' => 'exists:roles,id',
         ]);
 
+        $validated['position_title'] = $validated['poste'] ?? null;
         $validated['password'] = Hash::make($validated['password']);
         $validated['actif'] = $request->boolean('actif', true);
         $validated['is_super_admin'] = $request->boolean('is_super_admin', false);
@@ -179,6 +180,10 @@ class UserManagementController extends Controller
             'roles' => 'array',
             'roles.*' => 'exists:roles,id',
         ]);
+        if (array_key_exists('poste', $validated)) {
+            $validated['position_title'] = $validated['poste'];
+        }
+
         $departmentIds = $validated['departments'] ?? [];
         $roleIds = $validated['roles'] ?? [];
         unset($validated['departments'], $validated['roles']);
