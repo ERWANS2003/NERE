@@ -33,6 +33,25 @@
             <p class="mt-1 text-sm text-graphite-600">Les actions utiles à portée de main.</p>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            @if(auth()->user()->hasPermission('menu.manage'))
+            <a href="{{ route('menu.manager.campaigns') }}"
+               class="group flex items-center gap-4 rounded-xl border border-nere-200 bg-linear-to-br from-white to-nere-50 p-4 transition hover:-translate-y-0.5 hover:border-nere-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
+               aria-label="Gestion du menu du personnel : préparer les semaines et exporter les commandes">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-nere-600 text-white shadow-sm transition group-hover:bg-nere-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zm3 10h3m-3 3h6"/>
+                    </svg>
+                </span>
+                <span>
+                    <span class="block font-semibold text-graphite-900 group-hover:text-nere-700">Menu du personnel</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">Gérer les semaines et les commandes</span>
+                </span>
+                <svg class="ml-auto h-4 w-4 shrink-0 text-graphite-400 transition group-hover:translate-x-1 group-hover:text-nere-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+            @endif
+
             @if($enabledModules['forms']['enabled'])
             <a href="{{ route('intranet.forms.index') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"

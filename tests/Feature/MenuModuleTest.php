@@ -105,6 +105,27 @@ it('marks local password sessions so they cannot use the AD-only menu module', f
     $this->get(route('menu.registration.show', $campaign->link_token))->assertForbidden();
 });
 
+it('shows the menu management shortcut only to menu managers and intranet administrators', function () {
+    $employee = User::factory()->create();
+    $this->actingAs($employee)
+        ->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertDontSee(route('menu.manager.campaigns'), false);
+
+    $manager = createMenuManager();
+    $this->actingAs($manager)
+        ->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Menu du personnel')
+        ->assertSee(route('menu.manager.campaigns'), false);
+
+    $admin = User::factory()->create(['is_super_admin' => true]);
+    $this->actingAs($admin)
+        ->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee(route('menu.manager.campaigns'), false);
+});
+
 it('creates a complete Monday-to-Friday campaign by selecting one ISO week', function () {
     $manager = createMenuManager();
     $this->actingAs($manager)->withSession(['auth_provider' => 'active_directory']);
@@ -188,7 +209,7 @@ it('saves optional choices independently by day without exposing other employees
         ->assertSee($employee->name)
         ->assertSee('Votre département')
         ->assertSee('Menu 1')
-        ->assertSee('Dessert : Fruit du jour 1');
+        ->assertSee('Dessert fixe : Fruit du jour 1');
 
     $this->post(route('menu.registration.store', $campaign->link_token), [
         'department' => 'Finances',
