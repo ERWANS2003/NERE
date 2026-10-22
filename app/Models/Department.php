@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Department extends Model
 {
@@ -169,12 +170,27 @@ class Department extends Model
     ];
 
     /**
+     * Noms et tags alternatifs utilisés dans certaines bases déjà configurées.
+     *
+     * @var array<string, string>
+     */
+    private const ILLUSTRATION_ALIASES = [
+        'ADMINISTRATION' => '01-administration.png',
+        'ADMINISTRATION ET FINANCES' => '01-administration.png',
+        'ADMINISTRATION FINANCE' => '01-administration.png',
+        'ADMINISTRATION FINANCES' => '01-administration.png',
+        'SECURITE' => '03-securite.png',
+        'SURETE' => '03-securite.png',
+        'SECURITY' => '03-securite.png',
+    ];
+
+    /**
      * URL publique de l'illustration du département, ou null si aucune image
      * n'est associée ou présente sur le disque.
      */
     public function illustrationUrl(): ?string
     {
-        $fichier = self::ILLUSTRATIONS[$this->code] ?? null;
+        $fichier = self::ILLUSTRATIONS[$this->code] ?? $this->illustrationFromMetadata();
 
         if ($fichier === null) {
             return null;
@@ -183,6 +199,25 @@ class Department extends Model
         return file_exists(public_path('images/departments/' . $fichier))
             ? asset('images/departments/' . $fichier)
             : null;
+    }
+
+    private function illustrationFromMetadata(): ?string
+    {
+        foreach ([$this->tag, $this->name] as $identity) {
+            if (! is_string($identity) || trim($identity) === '') {
+                continue;
+            }
+
+            $normalized = Str::upper(Str::ascii($identity));
+            $normalized = preg_replace('/[^A-Z0-9]+/', ' ', $normalized) ?? '';
+            $normalized = trim(preg_replace('/^DEPARTEMENT\s+/', '', $normalized) ?? '');
+
+            if (isset(self::ILLUSTRATION_ALIASES[$normalized])) {
+                return self::ILLUSTRATION_ALIASES[$normalized];
+            }
+        }
+
+        return null;
     }
 
     /**
