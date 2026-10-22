@@ -91,6 +91,7 @@ try {
     Invoke-CheckedCommand -Executable "npm" -Arguments @("run", "build")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "optimize:clear")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "migrate", "--force")
+    Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "db:seed", "--class=Database\Seeders\ResourceSeeder", "--force")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "optimize")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "queue:restart")
     Invoke-CheckedCommand -Executable "iisreset" -Arguments @()

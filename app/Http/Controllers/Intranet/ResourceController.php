@@ -202,11 +202,15 @@ class ResourceController extends Controller
             ->with('success', 'Ressource ajoutée à la bibliothèque.');
     }
 
-    public function download(Resource $resource): StreamedResponse
+    public function download(Resource $resource): RedirectResponse|StreamedResponse
     {
         abort_unless($resource->is_active && $this->fileExists($resource), 404);
 
         $resource->increment('download_count');
+
+        if ($resource->file_type === 'link') {
+            return redirect((string) $resource->file_path);
+        }
 
         return Storage::disk(self::DISK)->download(
             $this->storagePath($resource),
@@ -330,6 +334,10 @@ class ResourceController extends Controller
 
     private function fileExists(Resource $resource): bool
     {
+        if ($resource->file_type === 'link') {
+            return str_starts_with((string) $resource->file_path, '/intranet/');
+        }
+
         return filled($resource->file_path)
             && Storage::disk(self::DISK)->exists($this->storagePath($resource));
     }

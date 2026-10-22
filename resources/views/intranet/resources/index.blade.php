@@ -208,7 +208,7 @@
 
                                     <!-- Métadonnées -->
                                     <div class="flex items-center gap-3 text-xs text-graphite-500 mt-2">
-                                        <span class="uppercase">{{ $resource->file_type }}</span>
+                                        <span class="uppercase">{{ $resource->file_type === 'link' ? 'Lien interne' : $resource->file_type }}</span>
                                         @if($resource->file_size)<span>{{ $resource->file_size }}</span>@endif
                                         <span>{{ $resource->download_count }} téléch.</span>
                                         <span>{{ $resource->created_at?->format('d/m/Y') }}</span>

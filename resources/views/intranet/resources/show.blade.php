@@ -13,7 +13,7 @@
             <div class="p-6 border-b border-graphite-100">
                 <div class="flex items-center gap-3 mb-3 text-sm">
                     <span class="px-2 py-0.5 rounded bg-graphite-100 text-graphite-700 font-semibold uppercase text-xs">
-                        {{ $resource->file_type }}
+                        {{ $resource->file_type === 'link' ? 'Lien interne' : $resource->file_type }}
                     </span>
                     @if($resource->category)
                         <span class="text-graphite-500">{{ $resource->category->name }}</span>
@@ -82,7 +82,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
-                            Télécharger
+                            {{ $resource->file_type === 'link' ? 'Ouvrir' : 'Télécharger' }}
                         </a>
                     @else
                         <p class="rounded-lg bg-or-50 border border-or-200 px-4 py-3 text-sm text-or-800" role="status">
