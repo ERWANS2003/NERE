@@ -54,6 +54,8 @@ try {
         throw "PHP 8.3 or newer is required; detected '$phpVersion'."
     }
 
+    Set-Location -Path $ProjectPath
+
     $envPath = Join-Path $ProjectPath ".env"
     if (-not (Test-Path $envPath)) {
         throw "Production .env is missing. Create and configure it before deploying."
@@ -68,8 +70,6 @@ try {
         throw "APP_DEBUG is true in .env. Disable debug mode before deploying to production."
     }
 
-    Set-Location -Path $ProjectPath
-
     $branch = (& git branch --show-current).Trim()
     if ($LASTEXITCODE -ne 0) {
         throw "Could not determine the current Git branch."
@@ -78,12 +78,15 @@ try {
         throw "Expected branch 'main', found '$branch'. Switch to main before deploying."
     }
 
-    $changes = & git status --porcelain
+    $changes = & git status --porcelain --untracked-files=normal
     if ($LASTEXITCODE -ne 0) {
         throw "Could not inspect the Git working tree."
     }
+    if ($changes) {
+        throw "The Git working tree is not clean. Preserve or commit the server-side changes before deploying."
+    }
 
-    Write-Host "Database backup confirmed; environment and working tree checks passed." -ForegroundColor Green
+    Write-Host "Database backup confirmed; environment and clean working tree checks passed." -ForegroundColor Green
 
     Invoke-CheckedCommand -Executable "git" -Arguments @("pull", "--ff-only", "origin", "main")
     Invoke-CheckedCommand -Executable "composer" -Arguments @("install", "--no-dev", "--no-interaction", "--prefer-dist", "--optimize-autoloader")
@@ -93,6 +96,33 @@ try {
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "migrate", "--force")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "db:seed", "--class=Database\Seeders\ResourceSeeder", "--force")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "optimize")
+
+    Write-Host "`n> Verifying central administration routes" -ForegroundColor Cyan
+    $routeListJson = & php artisan route:list --json
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not verify the registered Laravel routes."
+    }
+
+    try {
+        $registeredRoutes = @($routeListJson | ConvertFrom-Json)
+    } catch {
+        throw "Laravel returned invalid JSON while verifying registered routes: $($_.Exception.Message)"
+    }
+
+    $registeredRouteNames = @($registeredRoutes | ForEach-Object { $_.name })
+    $requiredRoutes = @(
+        "admin.modules.index",
+        "admin.time-off.index",
+        "admin.resources.index",
+        "admin.tickets.index"
+    )
+    $missingRoutes = @($requiredRoutes | Where-Object { $_ -notin $registeredRouteNames })
+    if ($missingRoutes.Count -gt 0) {
+        throw "Central administration routes are missing: $($missingRoutes -join ', ')."
+    }
+    Write-Host "Central administration routes are registered." -ForegroundColor Green
+
+    Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "migrate:status")
     Invoke-CheckedCommand -Executable "php" -Arguments @("artisan", "queue:restart")
     Invoke-CheckedCommand -Executable "iisreset" -Arguments @()
 

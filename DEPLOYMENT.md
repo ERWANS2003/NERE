@@ -12,16 +12,30 @@ git clone https://github.com/ERWANS2003/NERE.git .
 .\deploy.ps1
 ```
 
-## Mise à jour (après un git pull)
+## Mise à jour du serveur Windows/IIS
+
+La mise à jour de production doit être lancée depuis une session PowerShell
+élevée, après une sauvegarde de la base. Le script récupère lui-même `main`,
+installe les dépendances, reconstruit les assets, applique les migrations,
+alimente les ressources, vérifie les routes d'administration centrale et
+redémarre les services.
 
 ```powershell
 cd C:\inetpub\wwwroot\itsm-nere-mining
 
-git pull origin main
-
-# Exécuter le script de déploiement
-.\deploy.ps1
+# Sauvegarder la base de données avant cette étape, puis confirmer :
+.\update-windows-server.ps1 -BackupConfirmed
 ```
+
+Le script refuse de continuer si le dépôt du serveur contient des changements
+locaux, si `.env` est manquant ou mal configuré, ou si les routes des modules
+d'administration ne sont pas disponibles.
+
+La gestion des modules n'exige pas de migration ni de seeder dédié : les
+réglages absents signifient que les modules restent activés. Le seeder des
+ressources peut être relancé sans désactiver les entrées existantes. Ne lancez
+pas `TimeOffSeeder` en production : il réinitialise les soldes de congés des
+employés.
 
 ## Dépannage
 
