@@ -1,7 +1,10 @@
 <?php
 
-use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureMenuManager;
+use App\Http\Middleware\EnsureMenuUserIsFromActiveDirectory;
 use App\Http\Middleware\EnsureModuleIsEnabled;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUtf8Response;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,14 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Désactiver TOUS les middlewares temporairement pour test
         // $middleware->append(EnsureUtf8Response::class);
-        
+
         // Register custom middleware aliases
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'admin' => EnsureUserIsAdmin::class,
             'module' => EnsureModuleIsEnabled::class,
+            'menu.ad' => EnsureMenuUserIsFromActiveDirectory::class,
+            'menu.manager' => EnsureMenuManager::class,
         ]);
-        
+
         $middleware->redirectGuestsTo('/connexion');
         $middleware->redirectUsersTo('/');
 

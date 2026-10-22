@@ -57,6 +57,11 @@ class RoleProfileCatalog
                     'departments.manage',
                 ],
             ],
+            'gestionnaire-menu' => [
+                'nom' => 'Gestionnaire Menu',
+                'description' => 'Créer les menus, suivre les inscriptions et exporter les commandes de repas.',
+                'permissions' => ['menu.manage'],
+            ],
             'administrateur-systeme' => [
                 'nom' => 'Administrateur système',
                 'description' => 'Accès complet à l’administration et aux fonctionnalités de l’intranet.',

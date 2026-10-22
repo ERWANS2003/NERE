@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Ldap\LdapAuthenticator;
 use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -45,7 +46,7 @@ class LoginRequest extends FormRequest
         //    - false : trouvé dans l'AD mais refusé (mot de passe faux ou compte
         //              désactivé) → échec, sans repli local ;
         //    - null  : pas un compte AD / AD indisponible → on tente le local.
-        $resultatAd = app(\App\Ldap\LdapAuthenticator::class)->attempt(
+        $resultatAd = app(LdapAuthenticator::class)->attempt(
             $this->identifiantBrut(),
             $this->string('password')->value(),
             $this->boolean('remember'),
@@ -115,6 +116,7 @@ class LoginRequest extends FormRequest
         }
 
         Auth::login($user, $this->boolean('remember'));
+        $this->session()->put('auth_provider', 'local');
 
         $user->clearFailedAttempts();
         RateLimiter::clear($this->throttleKey());

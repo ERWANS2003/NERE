@@ -151,6 +151,14 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $this->belongsToMany(Role::class);
     }
 
+    public function hasPermission(string $permission): bool
+    {
+        return $this->is_super_admin
+            || $this->roles()
+                ->whereHas('permissions', fn (Builder $query) => $query->where('slug', $permission))
+                ->exists();
+    }
+
     /**
      * Ressources de la bibliothèque mises en favori par l'utilisateur.
      */
@@ -227,6 +235,11 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function formSubmissions(): HasMany
     {
         return $this->hasMany(FormSubmission::class);
+    }
+
+    public function menuRegistrations(): HasMany
+    {
+        return $this->hasMany(MenuRegistration::class);
     }
 
     public function pushSubscriptions(): HasMany

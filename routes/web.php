@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Menu\CampaignController;
+use App\Http\Controllers\Menu\MenuExportController;
+use App\Http\Controllers\Menu\RegistrationController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Department;
 use App\Models\User;
@@ -75,3 +78,21 @@ require __DIR__.'/auth.php';
 
 // Import admin routes
 require __DIR__.'/admin.php';
+
+Route::middleware(['auth', 'active', 'menu.ad'])
+    ->prefix('menu')
+    ->name('menu.')
+    ->group(function (): void {
+        Route::get('/', [RegistrationController::class, 'index'])->name('portal');
+
+        Route::middleware('menu.manager')->prefix('gestion')->name('manager.')->group(function (): void {
+            Route::get('/', [CampaignController::class, 'index'])->name('campaigns');
+            Route::get('/creer', [CampaignController::class, 'create'])->name('create');
+            Route::post('/', [CampaignController::class, 'store'])->name('store');
+            Route::post('/campagnes/{campaign}/cloturer', [CampaignController::class, 'close'])->name('close');
+            Route::get('/campagnes/{campaign}/exporter', MenuExportController::class)->name('export');
+        });
+
+        Route::get('/{campaign:link_token}', [RegistrationController::class, 'show'])->name('registration.show');
+        Route::post('/{campaign:link_token}', [RegistrationController::class, 'store'])->name('registration.store');
+    });

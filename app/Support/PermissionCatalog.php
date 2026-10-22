@@ -21,6 +21,7 @@ class PermissionCatalog
         'announcements' => 'Communication et ressources',
         'calendar' => 'Communication et ressources',
         'resources' => 'Communication et ressources',
+        'menu' => 'Gestion des menus',
         'departments' => 'Organisation',
         'users' => 'Administration système',
         'roles' => 'Administration système',
@@ -129,6 +130,13 @@ class PermissionCatalog
                     'nom' => 'Gérer les ressources',
                     'slug' => 'resources.manage',
                     'description' => 'Ajouter, modifier et retirer des ressources partagées.',
+                ],
+            ],
+            'Gestion des menus' => [
+                [
+                    'nom' => 'Gérer les menus et inscriptions',
+                    'slug' => 'menu.manage',
+                    'description' => 'Créer les menus hebdomadaires, suivre les inscriptions et exporter les commandes.',
                 ],
             ],
             'Organisation' => [

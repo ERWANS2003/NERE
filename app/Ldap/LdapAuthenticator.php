@@ -20,8 +20,7 @@ class LdapAuthenticator
 {
     public function __construct(
         private readonly LdapUserSynchronizer $synchronizer,
-    ) {
-    }
+    ) {}
 
     /** L'intégration AD est-elle activée ? */
     public function enabled(): bool
@@ -32,9 +31,9 @@ class LdapAuthenticator
     /**
      * Essaie de connecter l'utilisateur via l'AD.
      *
-     * @return bool|null  true  = authentifié et connecté (session ouverte)
-     *                    false = trouvé dans l'AD mais mot de passe refusé / compte désactivé
-     *                    null  = AD indisponible ou utilisateur absent → tenter le local
+     * @return bool|null true  = authentifié et connecté (session ouverte)
+     *                   false = trouvé dans l'AD mais mot de passe refusé / compte désactivé
+     *                   null  = AD indisponible ou utilisateur absent → tenter le local
      */
     public function attempt(string $identifiant, string $password, bool $remember = false): ?bool
     {
@@ -83,6 +82,7 @@ class LdapAuthenticator
         }
 
         Auth::login($user, $remember);
+        session()->put('auth_provider', 'active_directory');
 
         return true;
     }
@@ -134,7 +134,7 @@ class LdapAuthenticator
 
         $user = User::query()->where('guid', $guid)->first()
             ?? User::query()->where('email', $ldap->getFirstAttribute('mail'))->first()
-            ?? new User();
+            ?? new User;
 
         $user->guid = $guid;
         $user->domain = config('ldap.default', 'default');
