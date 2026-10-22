@@ -9,6 +9,7 @@ use App\Models\FormSubmission;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Intranet\CalendarFeed;
+use App\Support\IntranetModuleRegistry;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -17,9 +18,14 @@ class DashboardController extends Controller
     /**
      * Affiche le tableau de bord intranet (page d'accueil).
      */
-    public function index(Request $request, CalendarFeed $calendarFeed): View
+    public function index(
+        Request $request,
+        CalendarFeed $calendarFeed,
+        IntranetModuleRegistry $modules,
+    ): View
     {
         $user = $request->user();
+        $enabledModules = $modules->all();
         $upcomingCalendarEvents = $calendarFeed->between(
             today(),
             today()->copy()->addYear(),
@@ -126,7 +132,8 @@ class DashboardController extends Controller
             'departments',
             'recentAnnouncements',
             'upcomingEvents',
-            'recentRequests'
+            'recentRequests',
+            'enabledModules'
         ));
     }
 }

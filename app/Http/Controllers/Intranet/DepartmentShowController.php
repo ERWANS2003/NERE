@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Intranet;
 use App\Enums\DepartmentRole;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Support\IntranetModuleRegistry;
 use Illuminate\View\View;
 
 /**
@@ -15,23 +16,29 @@ use Illuminate\View\View;
  */
 class DepartmentShowController extends Controller
 {
-    public function __invoke(string $code): View
+    public function __invoke(string $code, IntranetModuleRegistry $modules): View
     {
         $department = Department::query()
             ->where('code', strtoupper($code))
             ->firstOrFail();
 
-        $services = $department->services()
-            ->where('is_active', true)
-            ->orderBy('order')
-            ->orderBy('name')
-            ->get();
+        $formsEnabled = $modules->enabled('forms');
 
-        $forms = $department->forms()
-            ->where('is_active', true)
-            ->orderBy('order')
-            ->orderBy('name')
-            ->get();
+        $services = $formsEnabled
+            ? $department->services()
+                ->where('is_active', true)
+                ->orderBy('order')
+                ->orderBy('name')
+                ->get()
+            : collect();
+
+        $forms = $formsEnabled
+            ? $department->forms()
+                ->where('is_active', true)
+                ->orderBy('order')
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         $team = $this->buildTeam($department);
 
@@ -39,6 +46,7 @@ class DepartmentShowController extends Controller
             'department' => $department,
             'services' => $services,
             'forms' => $forms,
+            'formsEnabled' => $formsEnabled,
             'team' => $team,
             'memberCount' => $team->count(),
         ]);

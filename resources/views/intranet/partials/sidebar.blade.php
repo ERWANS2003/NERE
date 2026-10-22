@@ -1,4 +1,5 @@
 @php($currentUser = auth()->user())
+@php($enabledModules = app(\App\Support\IntranetModuleRegistry::class)->all())
 
 <aside
     id="intranet-sidebar"
@@ -52,6 +53,7 @@
         <section class="mt-6" aria-labelledby="nav-services-heading">
             <h2 id="nav-services-heading" class="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-graphite-500">Services</h2>
             <ul class="space-y-1">
+                @if($enabledModules['forms']['enabled'])
                 <li>
                     <a href="{{ route('intranet.forms.index') }}"
                        @if(request()->routeIs('intranet.forms.*')) aria-current="page" @endif
@@ -62,6 +64,8 @@
                         <span>Faire une demande</span>
                     </a>
                 </li>
+                @endif
+                @if($enabledModules['knowledge_base']['enabled'])
                 <li>
                     <a href="{{ route('intranet.knowledge-base.index') }}"
                        @if(request()->routeIs('intranet.knowledge-base.*')) aria-current="page" @endif
@@ -72,6 +76,8 @@
                         <span>Base de connaissances</span>
                     </a>
                 </li>
+                @endif
+                @if($enabledModules['tickets']['enabled'])
                 <li>
                     <a href="{{ route('intranet.tickets.index') }}"
                        @if(request()->routeIs('intranet.tickets.*')) aria-current="page" @endif
@@ -82,7 +88,8 @@
                         <span>Support informatique</span>
                     </a>
                 </li>
-                @if($currentUser->hasDepartmentProcessingAccess())
+                @endif
+                @if($enabledModules['forms']['enabled'] && $currentUser->hasDepartmentProcessingAccess())
                     <li>
                         <a href="{{ route('intranet.submissions.queue') }}"
                            @if(request()->routeIs('intranet.submissions.queue')) aria-current="page" @endif
@@ -140,6 +147,7 @@
                         <span>Annuaire</span>
                     </a>
                 </li>
+                @if($enabledModules['resources']['enabled'])
                 <li>
                     <a href="{{ route('intranet.resources') }}"
                        @if(request()->routeIs('intranet.resources*')) aria-current="page" @endif
@@ -150,6 +158,7 @@
                         <span>Ressources</span>
                     </a>
                 </li>
+                @endif
             </ul>
         </section>
 

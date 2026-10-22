@@ -3,7 +3,11 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\ContentManagementController;
+use App\Http\Controllers\Admin\ModuleManagementController;
+use App\Http\Controllers\Admin\ResourceManagementController;
 use App\Http\Controllers\Admin\RoleManagementController;
+use App\Http\Controllers\Admin\TicketManagementController;
+use App\Http\Controllers\Admin\TimeOffManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +24,20 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
+    Route::get('/modules', [ModuleManagementController::class, 'index'])->name('modules.index');
+    Route::put('/modules/{module}', [ModuleManagementController::class, 'update'])->name('modules.update');
+    Route::get('/time-off', [TimeOffManagementController::class, 'index'])->name('time-off.index');
+    Route::post('/time-off/policies', [TimeOffManagementController::class, 'storePolicy'])->name('time-off.policies.store');
+    Route::put('/time-off/policies/{policy}', [TimeOffManagementController::class, 'updatePolicy'])->name('time-off.policies.update');
+    Route::delete('/time-off/policies/{policy}', [TimeOffManagementController::class, 'deactivatePolicy'])->name('time-off.policies.destroy');
+    Route::post('/time-off/balances', [TimeOffManagementController::class, 'storeBalance'])->name('time-off.balances.store');
+    Route::put('/time-off/balances/{balance}', [TimeOffManagementController::class, 'updateBalance'])->name('time-off.balances.update');
+    Route::get('/resources', [ResourceManagementController::class, 'index'])->name('resources.index');
+    Route::put('/resources/{resource}', [ResourceManagementController::class, 'update'])->name('resources.update');
+    Route::post('/resources/categories', [ResourceManagementController::class, 'storeCategory'])->name('resources.categories.store');
+    Route::put('/resources/categories/{category}', [ResourceManagementController::class, 'updateCategory'])->name('resources.categories.update');
+    Route::delete('/resources/categories/{category}', [ResourceManagementController::class, 'destroyCategory'])->name('resources.categories.destroy');
+    Route::get('/tickets', [TicketManagementController::class, 'index'])->name('tickets.index');
     Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/ldap/sync', [AdminSettingsController::class, 'synchronizeLdap'])
         ->name('settings.ldap.sync');

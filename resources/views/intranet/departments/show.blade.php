@@ -7,6 +7,7 @@
 @endphp
 
 <x-intranet-layout :title="$department->name" :breadcrumbs="$breadcrumbs">
+    @if($formsEnabled)
     @can('update', $department)
         <div class="mb-4 flex justify-end">
             <x-button :href="route('intranet.departments.manage.services.index', $department)" variant="secondary">
@@ -14,6 +15,7 @@
             </x-button>
         </div>
     @endcan
+    @endif
 
     {{-- ============================================================
          Hero banner : illustration + catégorie + titre + description
@@ -58,16 +60,18 @@
     {{-- ============================================================
          Onglets : Services / Formulaires / Équipe (Alpine, sans rechargement)
     ============================================================ --}}
-    <div x-data="{ onglet: 'services' }">
+    <div x-data="{ onglet: '{{ $formsEnabled ? 'services' : 'equipe' }}' }">
 
         <div class="border-b border-graphite-200 mb-6" role="tablist" aria-label="Sections du département">
             <nav class="flex gap-1 -mb-px overflow-x-auto">
                 @php
-                    $onglets = [
-                        'services' => ['label' => 'Services', 'count' => $services->count()],
-                        'formulaires' => ['label' => 'Formulaires', 'count' => $forms->count()],
-                        'equipe' => ['label' => 'Équipe', 'count' => $memberCount],
-                    ];
+                    $onglets = $formsEnabled
+                        ? [
+                            'services' => ['label' => 'Services', 'count' => $services->count()],
+                            'formulaires' => ['label' => 'Formulaires', 'count' => $forms->count()],
+                            'equipe' => ['label' => 'Équipe', 'count' => $memberCount],
+                        ]
+                        : ['equipe' => ['label' => 'Équipe', 'count' => $memberCount]];
                 @endphp
                 @foreach($onglets as $cle => $meta)
                     <button
@@ -87,6 +91,7 @@
             </nav>
         </div>
 
+        @if($formsEnabled)
         {{-- ---------- Onglet Services ---------- --}}
         <div x-show="onglet === 'services'" role="tabpanel">
             @if($services->count() > 0)
@@ -163,6 +168,7 @@
                 <x-departments.empty-tab message="Aucun formulaire disponible pour ce département." />
             @endif
         </div>
+        @endif
 
         {{-- ---------- Onglet Équipe ---------- --}}
         <div x-show="onglet === 'equipe'" role="tabpanel" x-cloak>

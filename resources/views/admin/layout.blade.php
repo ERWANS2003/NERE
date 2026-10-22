@@ -46,6 +46,40 @@
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.roles.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                     <i class="fas fa-user-tag mr-2"></i> Rôles
                 </a>
+
+                <a href="{{ route('admin.modules.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.modules.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-puzzle-piece mr-2"></i> Modules de l’intranet
+                </a>
+
+                <a href="{{ route('admin.time-off.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.time-off.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-calendar-check mr-2"></i> Congés
+                </a>
+
+                <a href="{{ route('admin.resources.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.resources.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-folder-open mr-2"></i> Ressources
+                </a>
+
+                @if(app(\App\Support\IntranetModuleRegistry::class)->enabled('knowledge_base'))
+                    <a href="{{ route('intranet.knowledge-base.index') }}"
+                       class="block px-4 py-2 mb-2 rounded text-gray-300 hover:bg-gray-800">
+                        <i class="fas fa-book-open mr-2"></i> Base de connaissances
+                    </a>
+                @endif
+
+                @if(app(\App\Support\IntranetModuleRegistry::class)->enabled('forms'))
+                    <a href="{{ route('intranet.forms.index') }}"
+                       class="block px-4 py-2 mb-2 rounded text-gray-300 hover:bg-gray-800">
+                        <i class="fas fa-file-lines mr-2"></i> Formulaires et services
+                    </a>
+                @endif
+
+                <a href="{{ route('admin.tickets.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.tickets.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <i class="fas fa-ticket mr-2"></i> Tickets support
+                </a>
                 @endif
 
                 <a href="{{ route('intranet.departments.manage.index') }}"
@@ -101,6 +135,16 @@
                 @if(session('error'))
                 <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
                     <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div role="alert" class="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+                    <ul class="list-inside list-disc">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
                 @endif
 

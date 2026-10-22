@@ -37,7 +37,7 @@ class TimeOffBalance extends Model
 
     public function updateBalance()
     {
-        $this->remaining_days = $this->total_days - $this->used_days;
+        $this->remaining_days = $this->total_days + $this->carry_over_days - $this->used_days;
         $this->save();
     }
 }

@@ -33,6 +33,7 @@
             <p class="mt-1 text-sm text-graphite-600">Les actions utiles à portée de main.</p>
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            @if($enabledModules['forms']['enabled'])
             <a href="{{ route('intranet.forms.index') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
                aria-label="Faire une demande : consulter les formulaires de service">
@@ -46,7 +47,9 @@
                     <span class="mt-0.5 block text-xs text-graphite-600">Choisir un service de l’entreprise</span>
                 </span>
             </a>
+            @endif
 
+            @if($enabledModules['tickets']['enabled'])
             <a href="{{ route('intranet.tickets.create') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
                aria-label="Signaler un problème informatique : créer un ticket">
@@ -60,6 +63,7 @@
                     <span class="mt-0.5 block text-xs text-graphite-600">Contacter le support informatique</span>
                 </span>
             </a>
+            @endif
 
             <a href="{{ route('intranet.submissions.index') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
@@ -75,6 +79,7 @@
                 </span>
             </a>
 
+            @if($enabledModules['knowledge_base']['enabled'])
             <a href="{{ route('intranet.knowledge-base.index') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
                aria-label="Trouver une solution dans la base de connaissances">
@@ -88,6 +93,7 @@
                     <span class="mt-0.5 block text-xs text-graphite-600">Guides et réponses pratiques</span>
                 </span>
             </a>
+            @endif
 
             <a href="{{ route('intranet.calendar') }}"
                class="group flex items-center gap-4 rounded-xl border border-graphite-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-nere-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600"
@@ -103,7 +109,7 @@
                 </span>
             </a>
 
-            @if(auth()->user()->hasDepartmentProcessingAccess())
+            @if($enabledModules['forms']['enabled'] && auth()->user()->hasDepartmentProcessingAccess())
                 <a href="{{ route('intranet.submissions.queue') }}"
                    class="group flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-amber-600 sm:col-span-2 xl:col-span-4"
                    aria-label="Traiter les demandes de service de mes départements">

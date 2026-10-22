@@ -49,10 +49,12 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
             Route::get('/', [IntranetDepartmentController::class, 'index'])->name('index');
             Route::get('/create', [IntranetDepartmentController::class, 'create'])->name('create');
             Route::post('/', [IntranetDepartmentController::class, 'store'])->name('store');
-            Route::get('/{department}/services', [DepartmentServiceController::class, 'index'])->name('services.index');
-            Route::post('/{department}/services', [DepartmentServiceController::class, 'store'])->name('services.store');
-            Route::put('/{department}/services/{service}', [DepartmentServiceController::class, 'update'])->name('services.update');
-            Route::delete('/{department}/services/{service}', [DepartmentServiceController::class, 'destroy'])->name('services.destroy');
+            Route::middleware('module:forms')->group(function () {
+                Route::get('/{department}/services', [DepartmentServiceController::class, 'index'])->name('services.index');
+                Route::post('/{department}/services', [DepartmentServiceController::class, 'store'])->name('services.store');
+                Route::put('/{department}/services/{service}', [DepartmentServiceController::class, 'update'])->name('services.update');
+                Route::delete('/{department}/services/{service}', [DepartmentServiceController::class, 'destroy'])->name('services.destroy');
+            });
             Route::get('/{department}', [IntranetDepartmentController::class, 'show'])->name('show');
             Route::get('/{department}/edit', [IntranetDepartmentController::class, 'edit'])->name('edit');
             Route::put('/{department}', [IntranetDepartmentController::class, 'update'])->name('update');
@@ -64,7 +66,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     });
 
     // Gestion des formulaires
-    Route::prefix('forms')->name('forms.')->group(function () {
+    Route::prefix('forms')->name('forms.')->middleware('module:forms')->group(function () {
         Route::get('/', [FormController::class, 'index'])->name('index');
         Route::get('/create', [FormController::class, 'create'])->name('create');
         Route::post('/', [FormController::class, 'store'])->name('store');
@@ -76,17 +78,17 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
 
     // Gestion des soumissions de formulaires (= "Mes demandes")
     Route::prefix('submissions')->name('submissions.')->group(function () {
-        Route::get('/traitement', [SubmissionController::class, 'queue'])->name('queue');
+        Route::get('/traitement', [SubmissionController::class, 'queue'])->middleware('module:forms')->name('queue');
         Route::get('/', [SubmissionController::class, 'index'])->name('index');
-        Route::post('/forms/{form}', [SubmissionController::class, 'store'])->name('store');
+        Route::post('/forms/{form}', [SubmissionController::class, 'store'])->middleware('module:forms')->name('store');
         Route::get('/{submission}', [SubmissionController::class, 'show'])->name('show');
-        Route::post('/{submission}/take', [SubmissionController::class, 'take'])->name('take');
-        Route::put('/{submission}', [SubmissionController::class, 'update'])->name('update');
+        Route::post('/{submission}/take', [SubmissionController::class, 'take'])->middleware('module:forms')->name('take');
+        Route::put('/{submission}', [SubmissionController::class, 'update'])->middleware('module:forms')->name('update');
         Route::delete('/{submission}', [SubmissionController::class, 'destroy'])->name('destroy');
     });
 
     // Support informatique
-    Route::prefix('base-de-connaissances')->name('knowledge-base.')->group(function () {
+    Route::prefix('base-de-connaissances')->name('knowledge-base.')->middleware('module:knowledge_base')->group(function () {
         Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
         Route::get('/create', [KnowledgeBaseController::class, 'create'])->name('create');
         Route::post('/', [KnowledgeBaseController::class, 'store'])->name('store');
@@ -97,7 +99,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/{article:slug}', [KnowledgeBaseController::class, 'show'])->name('show');
     });
 
-    Route::prefix('tickets')->name('tickets.')->group(function () {
+    Route::prefix('tickets')->name('tickets.')->middleware('module:tickets')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->name('index');
         Route::get('/create', [TicketController::class, 'create'])->name('create');
         Route::post('/', [TicketController::class, 'store'])->name('store');
@@ -143,13 +145,15 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     });
 
     // Ressources
-    Route::get('/resources', [ResourceController::class, 'index'])->name('resources');
-    Route::get('/resources/ajouter', [ResourceController::class, 'create'])->name('resources.create');
-    Route::post('/resources', [ResourceController::class, 'store'])->name('resources.store');
-    Route::get('/resources/{resource}', [ResourceController::class, 'show'])->name('resources.show');
-    Route::get('/resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
-    Route::post('/resources/{resource}/favori', [ResourceController::class, 'toggleFavorite'])->name('resources.favorite');
-    Route::delete('/resources/{resource}', [ResourceController::class, 'destroy'])->name('resources.destroy');
+    Route::middleware('module:resources')->group(function () {
+        Route::get('/resources', [ResourceController::class, 'index'])->name('resources');
+        Route::get('/resources/ajouter', [ResourceController::class, 'create'])->name('resources.create');
+        Route::post('/resources', [ResourceController::class, 'store'])->name('resources.store');
+        Route::get('/resources/{resource}', [ResourceController::class, 'show'])->name('resources.show');
+        Route::get('/resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
+        Route::post('/resources/{resource}/favori', [ResourceController::class, 'toggleFavorite'])->name('resources.favorite');
+        Route::delete('/resources/{resource}', [ResourceController::class, 'destroy'])->name('resources.destroy');
+    });
 
     // Notifications (centre + marquage)
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -162,7 +166,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     });
 
     // Congés (Time Off)
-    Route::prefix('time-off')->name('time-off.')->group(function () {
+    Route::prefix('time-off')->name('time-off.')->middleware('module:time_off')->group(function () {
         Route::get('/', [TimeOffController::class, 'index'])->name('index');
         Route::get('/demande', [TimeOffController::class, 'create'])->name('create');
         Route::post('/', [TimeOffController::class, 'store'])->name('store');

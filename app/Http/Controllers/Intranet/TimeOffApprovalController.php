@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Intranet;
 use App\Http\Controllers\Controller;
 use App\Models\TimeOffBalance;
 use App\Models\TimeOffRequest;
+use App\Models\User;
 use App\Notifications\TimeOffReviewed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,7 +98,9 @@ class TimeOffApprovalController extends Controller
         }
 
         $balance->used_days = (float) $balance->used_days + (float) $req->total_days;
-        $balance->remaining_days = (float) $balance->total_days - (float) $balance->used_days;
+        $balance->remaining_days = (float) $balance->total_days
+            + (float) $balance->carry_over_days
+            - (float) $balance->used_days;
         $balance->save();
     }
 
@@ -106,7 +109,7 @@ class TimeOffApprovalController extends Controller
         $user = $request->user();
         // Un manager est quelqu'un qui a au moins un collaborateur direct.
         $estManager = $user->is_super_admin
-            || \App\Models\User::where('manager_id', $user->id)->exists();
+            || User::where('manager_id', $user->id)->exists();
 
         abort_unless($estManager, 403, "Vous n'avez pas de demandes à approuver.");
     }
