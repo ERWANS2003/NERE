@@ -12,12 +12,12 @@ Le module Menu est autonome de l’intranet. Il permet à un gestionnaire de pub
 ## Utilisation
 
 1. Tout utilisateur AD ouvre `/menu` pour voir les semaines actuellement ouvertes et accéder à son formulaire d’inscription.
-2. Le gestionnaire ouvre `/menu/gestion`, crée une semaine et renseigne les menus et le dessert fixe pour chaque jour.
+2. Le gestionnaire ouvre `/menu/gestion`, sélectionne une semaine ISO et renseigne les menus du lundi au vendredi. Les cinq dates sont générées automatiquement et le titre est créé à partir de la période sélectionnée.
 3. Le gestionnaire peut aussi partager le lien d’une campagne. Chaque employé ne voit et ne modifie que sa propre inscription.
 4. L’employé renseigne son département et choisit éventuellement un menu pour chacun des jours proposés. Un jour sans choix reste sans commande.
 5. Le gestionnaire peut clôturer la campagne. Il peut télécharger le classeur Excel tant que la campagne n’est pas en brouillon.
 
-Le classeur contient un récapitulatif et une feuille par jour. Les feuilles quotidiennes regroupent les inscrits par département et indiquent leur menu, le dessert fixe, les totaux inscrits et les quantités à commander. Deux repas imprévus sont ajoutés par jour : un pour le menu 1 et un pour le menu 2. Le récapitulatif prévoit également deux desserts imprévus.
+Le classeur contient une feuille par jour ouvré, nommée avec le jour et sa date. Chaque feuille suit le modèle de la liste SOGA : inscrits regroupés par département, plats choisis dans la colonne « Observations », couleurs distinctes pour chaque menu, nombre total d’inscrits et de plats, puis deux repas imprévus (un par menu). Le dessert n’est pas inclus dans le classeur.
 
 ## Déploiement
 

@@ -105,17 +105,17 @@ it('marks local password sessions so they cannot use the AD-only menu module', f
     $this->get(route('menu.registration.show', $campaign->link_token))->assertForbidden();
 });
 
-it('creates a shareable menu week with weekday choices and a fixed dessert per day', function () {
+it('creates a complete Monday-to-Friday campaign by selecting one ISO week', function () {
     $manager = createMenuManager();
     $this->actingAs($manager)->withSession(['auth_provider' => 'active_directory']);
 
     $this->get(route('menu.manager.create'))
         ->assertOk()
-        ->assertSee('Préparer les menus');
+        ->assertSee('Préparer les menus')
+        ->assertSee('type="week"', false);
 
     $days = collect(range(0, 4))->mapWithKeys(fn (int $offset) => [
         $offset => [
-            'date' => now()->startOfWeek()->addWeek()->addDays($offset)->toDateString(),
             'menu_one' => 'Plat poisson '.$offset,
             'menu_two' => 'Plat viande '.$offset,
             'dessert' => 'Dessert '.$offset,
@@ -123,7 +123,7 @@ it('creates a shareable menu week with weekday choices and a fixed dessert per d
     ])->all();
 
     $this->post(route('menu.manager.store'), [
-        'title' => 'Menu du personnel du 19 au 23 octobre',
+        'week' => now()->startOfWeek()->addWeek()->format('o-\WW'),
         'registration_closes_at' => now()->addDays(2)->format('Y-m-d\TH:i'),
         'status' => 'open',
         'days' => $days,
@@ -133,13 +133,44 @@ it('creates a shareable menu week with weekday choices and a fixed dessert per d
     $campaign = MenuCampaign::with('days')->firstOrFail();
     expect($campaign->status)->toBe('open')
         ->and(strlen($campaign->link_token))->toBe(64)
+        ->and($campaign->starts_on->format('N'))->toBe('1')
+        ->and($campaign->starts_on->diffInDays($campaign->ends_on))->toBe(4.0)
+        ->and($campaign->title)->toStartWith('Menus du ')
         ->and($campaign->days)->toHaveCount(5)
         ->and($campaign->days->first()->menu_one)->toBe('Plat poisson 0')
+        ->and($campaign->days->first()->date->format('N'))->toBe('1')
+        ->and($campaign->days->last()->date->format('N'))->toBe('5')
         ->and($campaign->days->first()->dessert)->toBe('Dessert 0');
 
     $this->get(route('menu.manager.campaigns'))
         ->assertOk()
         ->assertSee(route('menu.registration.show', $campaign->link_token));
+});
+
+it('rejects invalid ISO weeks and incomplete weekday menus', function () {
+    $manager = createMenuManager();
+    $this->actingAs($manager)->withSession(['auth_provider' => 'active_directory']);
+
+    $days = collect(range(0, 4))->map(fn (): array => [
+        'menu_one' => 'Plat 1',
+        'menu_two' => 'Plat 2',
+        'dessert' => 'Fruit',
+    ])->all();
+    $payload = [
+        'week' => '2026-W99',
+        'status' => 'open',
+        'days' => $days,
+    ];
+
+    $this->post(route('menu.manager.store'), $payload)
+        ->assertSessionHasErrors('week');
+
+    unset($payload['days'][4]);
+    $payload['week'] = now()->startOfWeek()->format('o-\WW');
+    $this->post(route('menu.manager.store'), $payload)
+        ->assertSessionHasErrors('days');
+
+    expect(MenuCampaign::query()->count())->toBe(0);
 });
 
 it('saves optional choices independently by day without exposing other employees', function () {
@@ -268,6 +299,16 @@ it('exports daily menus grouped by department with totals and two unexpected mea
         'employee_identifier' => 'default|admin-guid',
         'department' => 'Administration',
     ]);
+    $campaign->registrations()->create([
+        'user_id' => User::factory()->create([
+            'name' => 'Celine Administration',
+            'guid' => 'no-choice-guid',
+            'domain' => 'default',
+        ])->id,
+        'employee_name' => 'Celine Administration',
+        'employee_identifier' => 'default|no-choice-guid',
+        'department' => 'Administration',
+    ]);
     $financeRegistration->choices()->create([
         'menu_day_id' => $monday->id,
         'selected_menu' => 2,
@@ -302,30 +343,43 @@ it('exports daily menus grouped by department with totals and two unexpected mea
     try {
         expect(file_put_contents($path, $xlsx))->toBe(strlen($xlsx));
         $workbook = IOFactory::load($path);
-        $daily = $workbook->getSheetByName('2026-10-19');
-        $summary = $workbook->getSheetByName('Récapitulatif');
+        $daily = $workbook->getSheet(0);
+        $expectedSheetTitle = mb_convert_case(
+            $monday->date->locale('fr')->translatedFormat('l d M Y'),
+            MB_CASE_TITLE,
+            'UTF-8',
+        );
 
-        expect($workbook->getSheetCount())->toBe(6)
+        expect($workbook->getSheetCount())->toBe(5)
             ->and($daily)->not->toBeNull()
-            ->and($daily->getCell('A8')->getValue())->toBe('Administration')
-            ->and($daily->getCell('B9')->getValue())->toBe('Bala Administration')
-            ->and($daily->getCell('A10')->getValue())->toBe('Finances')
-            ->and($daily->getCell('B11')->getValue())->toBe('Awa Finance')
-            ->and($daily->getCell('C9')->getValue())->toBe($monday->menu_one)
-            ->and($daily->getCell('C11')->getValue())->toBe($monday->menu_two)
-            ->and($daily->getCell('D9')->getValue())->toBe($monday->dessert)
-            ->and($daily->getCell('D17')->getValue())->toBe(2)
-            ->and($daily->getCell('D18')->getValue())->toBe(2)
-            ->and($daily->getCell('D19')->getValue())->toBe(4)
-            ->and($daily->getCell('D20')->getValue())->toBe(4)
-            ->and($summary->getCell('F4')->getValue())->toBe(2)
-            ->and($summary->getCell('F5')->getValue())->toBe(2)
-            ->and($summary->getCell('F6')->getValue())->toBe(4)
-            ->and($summary->getCell('F7')->getValue())->toBe(4)
-            ->and($summary->getCell('F8')->getValue())->toBe(1)
-            ->and($summary->getCell('F9')->getValue())->toBe(1)
-            ->and($summary->getCell('F10')->getValue())->toBe(2)
-            ->and($summary->getCell('F11')->getValue())->toBe(2);
+            ->and($daily->getTitle())->toBe($expectedSheetTitle)
+            ->and($daily->getCell('B1')->getValue())->toContain('Lundi')
+            ->and($daily->getCell('B2')->getValue())->toBe("N° D'ORDRE")
+            ->and($daily->getCell('C2')->getValue())->toBe('NOM ET PRÉNOM(S)')
+            ->and($daily->getCell('D2')->getValue())->toBe('OBSERVATIONS')
+            ->and($daily->getCell('C3')->getValue())->toBe('Administration')
+            ->and($daily->getCell('D3')->getValue())->toBe(2)
+            ->and($daily->getCell('B4')->getValue())->toBe('1')
+            ->and($daily->getCell('C4')->getValue())->toBe('Bala Administration')
+            ->and($daily->getCell('D4')->getValue())->toBe($monday->menu_one)
+            ->and($daily->getCell('C5')->getValue())->toBe('Celine Administration')
+            ->and($daily->getCell('D5')->getValue())->toBeNull()
+            ->and($daily->getCell('C6')->getValue())->toBe('Finances')
+            ->and($daily->getCell('C7')->getValue())->toBe('Awa Finance')
+            ->and($daily->getCell('D7')->getValue())->toBe($monday->menu_two)
+            ->and($daily->getCell('D4')->getStyle()->getFill()->getStartColor()->getARGB())->toBe('FFFFFF00')
+            ->and($daily->getCell('D7')->getStyle()->getFill()->getStartColor()->getARGB())->toBe('FF92D050')
+            ->and($daily->getCell('B9')->getValue())->toBe('TOTAL = 3')
+            ->and($daily->getCell('C9')->getValue())->toBe('PLATS = 2')
+            ->and($daily->getCell('B10')->getValue())->toBe('MENU 1 : 1')
+            ->and($daily->getCell('B11')->getValue())->toBe('MENU 2 : 1')
+            ->and($daily->getCell('B12')->getValue())->toBe('IMPRÉVUS : 02 PLATS')
+            ->and($daily->getCell('D13')->getValue())->toBe(2)
+            ->and($daily->getCell('D14')->getValue())->toBe(2)
+            ->and($daily->getCell('B15')->getValue())->toBe('TOTAL À COMMANDER')
+            ->and($daily->getCell('D15')->getValue())->toBe(4)
+            ->and($daily->getCell('D2')->getValue())->not->toContain('Dessert')
+            ->and($workbook->getSheetByName('Récapitulatif'))->toBeNull();
 
         $workbook->disconnectWorksheets();
     } finally {

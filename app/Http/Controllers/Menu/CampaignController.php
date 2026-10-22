@@ -24,47 +24,53 @@ class CampaignController extends Controller
         return view('menu.manager.index', compact('campaigns'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('menu.manager.create', [
-            'weekdays' => collect(range(0, 4))
-                ->map(fn (int $offset) => now()->startOfWeek()->addDays($offset)->toDateString()),
+            'week' => $request->old('week', now()->startOfWeek()->format('o-\WW')),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:200'],
+            'week' => ['required', 'regex:/^\d{4}-W\d{2}$/'],
             'registration_closes_at' => ['nullable', 'date', 'after:now'],
             'status' => ['required', 'in:draft,open'],
-            'days' => ['required', 'array', 'min:1', 'max:5'],
-            'days.*.date' => ['required', 'date', 'distinct'],
+            'days' => ['required', 'array', 'size:5'],
             'days.*.menu_one' => ['required', 'string', 'max:1000'],
             'days.*.menu_two' => ['required', 'string', 'max:1000'],
             'days.*.dessert' => ['required', 'string', 'max:255'],
         ]);
 
-        $days = collect($validated['days'])
-            ->map(fn (array $day): array => [...$day, 'date' => Carbon::parse($day['date'])->startOfDay()])
-            ->sortBy('date')
-            ->values();
-        $firstDate = $days->first()['date'];
-        $lastDate = $days->last()['date'];
-
-        if ($firstDate->diffInDays($lastDate) > 6 || $days->contains(fn (array $day) => $day['date']->isWeekend())) {
+        if (array_keys($validated['days']) !== range(0, 4)) {
             throw ValidationException::withMessages([
-                'days' => 'Les menus doivent concerner des jours ouvrés compris dans une même semaine.',
+                'days' => 'Renseignez les menus du lundi au vendredi.',
             ]);
         }
+
+        [$isoYear, $isoWeek] = array_map('intval', explode('-W', $validated['week']));
+        $firstDate = Carbon::now()->setISODate($isoYear, $isoWeek, 1)->startOfDay();
+        if ($firstDate->format('o-\WW') !== $validated['week']) {
+            throw ValidationException::withMessages([
+                'week' => 'La semaine sélectionnée n’existe pas.',
+            ]);
+        }
+        $lastDate = $firstDate->copy()->addDays(4);
+        $days = collect($validated['days'])
+            ->map(fn (array $day, int $offset): array => [
+                ...$day,
+                'date' => $firstDate->copy()->addDays($offset)->toDateString(),
+            ]);
 
         $closeAt = isset($validated['registration_closes_at'])
             ? Carbon::parse($validated['registration_closes_at'])
             : null;
 
-        $campaign = DB::transaction(function () use ($request, $validated, $days, $firstDate, $lastDate, $closeAt) {
+        $title = 'Menus du '.$firstDate->locale('fr')->translatedFormat('d').' au '.$lastDate->locale('fr')->translatedFormat('d F Y');
+        $campaign = DB::transaction(function () use ($request, $validated, $days, $firstDate, $lastDate, $closeAt, $title) {
             $campaign = MenuCampaign::create([
-                'title' => $validated['title'],
+                'title' => $title,
                 'link_token' => Str::random(64),
                 'starts_on' => $firstDate->toDateString(),
                 'ends_on' => $lastDate->toDateString(),
@@ -72,11 +78,10 @@ class CampaignController extends Controller
                 'status' => $validated['status'],
                 'created_by' => $request->user()->id,
             ]);
-
             foreach ($days as $day) {
                 $campaign->days()->create([
                     ...$day,
-                    'date' => $day['date']->toDateString(),
+                    ...$day,
                 ]);
             }
 

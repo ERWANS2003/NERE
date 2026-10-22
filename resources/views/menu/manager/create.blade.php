@@ -6,16 +6,17 @@
     <div class="mb-6">
         <a href="{{ route('menu.manager.campaigns') }}" class="text-sm text-red-700 hover:underline">← Retour aux semaines</a>
         <h1 class="mt-3 text-2xl font-semibold">Préparer les menus</h1>
-        <p class="mt-1 text-sm text-gray-600">Saisissez les choix proposés chaque jour. Chaque personne pourra choisir indépendamment son menu pour chaque journée.</p>
+        <p class="mt-1 text-sm text-gray-600">Choisissez une semaine complète du lundi au vendredi, puis saisissez les plats proposés pour chaque jour.</p>
     </div>
 
     <form method="POST" action="{{ route('menu.manager.store') }}" class="space-y-5">
         @csrf
         <section class="rounded-lg bg-white p-5 shadow-sm">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <label class="md:col-span-2">
-                    <span class="mb-1 block text-sm font-medium">Titre de la semaine</span>
-                    <input name="title" value="{{ old('title') }}" required maxlength="200" placeholder="Menu du personnel du 19 au 23 octobre" class="w-full rounded border-gray-300">
+                <label>
+                    <span class="mb-1 block text-sm font-medium">Semaine concernée</span>
+                    <input name="week" type="week" value="{{ old('week', $week) }}" required class="w-full rounded border-gray-300">
+                    <span class="mt-1 block text-xs text-gray-500">La période comprend automatiquement le lundi et le vendredi de cette semaine.</span>
                 </label>
                 <label>
                     <span class="mb-1 block text-sm font-medium">Clôture des inscriptions</span>
@@ -31,14 +32,10 @@
             </div>
         </section>
 
-        @foreach($weekdays as $index => $weekday)
+        @foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'] as $index => $weekday)
             <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="mb-4 font-semibold">Jour {{ $index + 1 }}</h2>
+                <h2 class="mb-4 font-semibold">{{ $weekday }}</h2>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <label>
-                        <span class="mb-1 block text-sm font-medium">Date</span>
-                        <input name="days[{{ $index }}][date]" type="date" required value="{{ old("days.$index.date", $weekday) }}" class="w-full rounded border-gray-300">
-                    </label>
                     <label>
                         <span class="mb-1 block text-sm font-medium">Menu 1</span>
                         <textarea name="days[{{ $index }}][menu_one]" required maxlength="1000" rows="2" class="w-full rounded border-gray-300">{{ old("days.$index.menu_one") }}</textarea>
