@@ -83,16 +83,57 @@
 
             <!-- Départements -->
             <div class="mb-6 pb-6 border-b border-gray-200">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Départements</label>
+                <div class="mb-3">
+                    <h4 class="block text-sm font-medium text-gray-700">Départements</h4>
+                    <p class="mt-1 text-xs text-gray-500">Sélectionnez les départements de l’employé, puis définissez son rôle et son niveau dans chacun.</p>
+                </div>
                 <input type="hidden" name="departments_present" value="1">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-3">
                     @foreach($departments as $dept)
-                    <label class="flex items-center">
-                        <input type="checkbox" name="departments[]" value="{{ $dept->id }}" 
-                               {{ in_array($dept->id, old('departments', $user->departments->pluck('id')->toArray())) ? 'checked' : '' }}
-                               class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
-                        <span class="ml-2 text-sm text-gray-700">{{ $dept->name }}</span>
-                    </label>
+                        @php
+                            $membership = $user->departments->firstWhere('id', $dept->id);
+                            $departmentRole = old('department_roles.'.$dept->id, $membership?->pivot->role ?? \App\Enums\DepartmentRole::User->value);
+                            $departmentLevel = old('department_levels.'.$dept->id, $membership?->pivot->tech_level);
+                        @endphp
+                        <div class="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.75fr)] sm:items-center">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="departments[]" value="{{ $dept->id }}"
+                                       {{ in_array($dept->id, old('departments', $user->departments->pluck('id')->toArray())) ? 'checked' : '' }}
+                                       class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
+                                <span class="ml-2 text-sm font-medium text-gray-700">
+                                    {{ $dept->name }}
+                                    @unless($dept->is_active)
+                                        <span class="text-xs text-amber-700">(inactif)</span>
+                                    @endunless
+                                </span>
+                            </label>
+                            <div>
+                                <label for="department_role_{{ $dept->id }}" class="mb-1 block text-xs font-medium text-gray-600">Rôle dans le département</label>
+                                <select id="department_role_{{ $dept->id }}" name="department_roles[{{ $dept->id }}]"
+                                        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-nere-500 focus:ring-nere-500">
+                                    @foreach(\App\Enums\DepartmentRole::options() as $value => $label)
+                                        <option value="{{ $value }}" @selected($departmentRole === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('department_roles.'.$dept->id)
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label for="department_level_{{ $dept->id }}" class="mb-1 block text-xs font-medium text-gray-600">Niveau technicien</label>
+                                <select id="department_level_{{ $dept->id }}" name="department_levels[{{ $dept->id }}]"
+                                        class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-nere-500 focus:ring-nere-500">
+                                    <option value="">Non applicable</option>
+                                    @foreach([1, 2, 3] as $level)
+                                        <option value="{{ $level }}" @selected((string) $departmentLevel === (string) $level)>Niveau {{ $level }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Obligatoire pour un technicien.</p>
+                                @error('department_levels.'.$dept->id)
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>

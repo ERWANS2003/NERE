@@ -108,13 +108,9 @@ class UserManagementController extends Controller
     public function show(User $user)
     {
         $user->load(['departments', 'roles']);
-        $availableDepartments = Department::active()
-            ->whereDoesntHave('users', fn ($query) => $query->whereKey($user->id))
-            ->orderBy('name')
-            ->get();
         $departmentRoles = DepartmentRole::options();
 
-        return view('admin.users.show', compact('user', 'availableDepartments', 'departmentRoles'));
+        return view('admin.users.show', compact('user', 'departmentRoles'));
     }
 
     /**
@@ -158,7 +154,13 @@ class UserManagementController extends Controller
     public function edit(User $user)
     {
         $user->load(['departments', 'roles']);
-        $departments = Department::active()->orderBy('name')->get();
+        $departments = Department::active()
+            ->orderBy('name')
+            ->get()
+            ->merge($user->departments)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
         $roles = Role::withCount('permissions')->orderBy('nom')->get();
 
         return view('admin.users.edit', compact('user', 'departments', 'roles'));
@@ -169,7 +171,7 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'matricule' => ['nullable', 'string', 'max:50', Rule::unique('users')->ignore($user->id)],
@@ -180,16 +182,41 @@ class UserManagementController extends Controller
             'is_super_admin' => 'boolean',
             'departments' => 'array',
             'departments.*' => 'exists:departments,id',
+            'department_roles' => 'sometimes|array',
+            'department_roles.*' => ['required', Rule::enum(DepartmentRole::class)],
+            'department_levels' => 'sometimes|array',
+            'department_levels.*' => ['nullable', 'integer', 'between:1,3'],
             'roles' => 'array',
             'roles.*' => 'exists:roles,id',
-        ]);
+        ];
+
+        $submittedDepartmentIds = $request->input('departments', []);
+        if ($request->has('department_roles') && is_array($submittedDepartmentIds)) {
+            foreach ($submittedDepartmentIds as $departmentId) {
+                if (filter_var($departmentId, FILTER_VALIDATE_INT) === false) {
+                    continue;
+                }
+
+                $rules['department_levels.'.$departmentId] = [
+                    'required_if:department_roles.'.$departmentId.','.DepartmentRole::Technician->value,
+                    'nullable',
+                    'integer',
+                    'between:1,3',
+                ];
+            }
+        }
+
+        $validated = $request->validate($rules);
+
         if (array_key_exists('poste', $validated)) {
             $validated['position_title'] = $validated['poste'];
         }
 
         $departmentIds = $validated['departments'] ?? [];
+        $departmentRoles = $validated['department_roles'] ?? [];
+        $departmentLevels = $request->input('department_levels', []);
         $roleIds = $validated['roles'] ?? [];
-        unset($validated['departments'], $validated['roles']);
+        unset($validated['departments'], $validated['department_roles'], $validated['department_levels'], $validated['roles']);
 
         $actif = $request->boolean('actif');
         $administrateur = $request->boolean('is_super_admin');
@@ -216,7 +243,7 @@ class UserManagementController extends Controller
 
         // Synchroniser les départements
         if ($request->has('departments_present') || $request->has('departments')) {
-            $this->syncDepartmentMemberships($user, $departmentIds);
+            $this->syncDepartmentMemberships($user, $departmentIds, $departmentRoles, $departmentLevels);
         }
 
         if ($request->has('roles_present') || $request->has('roles')) {
@@ -273,19 +300,30 @@ class UserManagementController extends Controller
      * donnant le rôle de base aux nouveaux rattachements.
      *
      * @param  array<int, int|string>  $departmentIds
+     * @param  array<int|string, string>  $departmentRoles
+     * @param  array<int|string, int|string|null>  $departmentLevels
      */
-    private function syncDepartmentMemberships(User $user, array $departmentIds): void
-    {
+    private function syncDepartmentMemberships(
+        User $user,
+        array $departmentIds,
+        array $departmentRoles = [],
+        array $departmentLevels = []
+    ): void {
         $existingMemberships = $user->departments()->get()->keyBy('id');
         $memberships = [];
 
         foreach ($departmentIds as $departmentId) {
             $departmentId = (int) $departmentId;
             $existingMembership = $existingMemberships->get($departmentId);
+            $role = $departmentRoles[$departmentId]
+                ?? $existingMembership?->pivot->role
+                ?? DepartmentRole::User->value;
 
             $memberships[$departmentId] = [
-                'role' => $existingMembership?->pivot->role ?? DepartmentRole::User->value,
-                'tech_level' => $existingMembership?->pivot->tech_level,
+                'role' => $role,
+                'tech_level' => $role === DepartmentRole::Technician->value
+                    ? ($departmentLevels[$departmentId] ?? $existingMembership?->pivot->tech_level)
+                    : null,
             ];
         }
 

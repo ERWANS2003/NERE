@@ -48,6 +48,46 @@ it('updates department memberships with required roles and preserves existing ro
         ->count())->toBe(2);
 });
 
+it('edits department membership roles and technician levels from the user edit page', function () {
+    $department = Department::factory()->create(['code' => 'IT']);
+    $user = User::factory()->create();
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $user))
+        ->assertOk()
+        ->assertSee('Rôle dans le département')
+        ->assertSee('Niveau technicien')
+        ->assertSee('name="department_roles['.$department->id.']"', false)
+        ->assertSee('name="department_levels['.$department->id.']"', false);
+
+    $this->put(route('admin.users.update', $user), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'matricule' => $user->matricule,
+        'actif' => '1',
+        'departments_present' => '1',
+        'departments' => [$department->id],
+        'department_roles' => [$department->id => DepartmentRole::Technician->value],
+    ])->assertSessionHasErrors('department_levels.'.$department->id);
+
+    $this->put(route('admin.users.update', $user), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'matricule' => $user->matricule,
+        'actif' => '1',
+        'departments_present' => '1',
+        'departments' => [$department->id],
+        'department_roles' => [$department->id => DepartmentRole::Technician->value],
+        'department_levels' => [$department->id => 2],
+    ])->assertRedirect(route('admin.users.show', $user));
+
+    $membership = $user->fresh()->departments()->findOrFail($department->id)->pivot;
+
+    expect($membership->role)->toBe(DepartmentRole::Technician->value)
+        ->and((int) $membership->tech_level)->toBe(2);
+});
+
 it('clears department and system role assignments when all checkboxes are unchecked', function () {
     $department = Department::factory()->create();
     $user = User::factory()->create();
@@ -128,7 +168,7 @@ it('creates department memberships with the default user role', function () {
         ->toBe(DepartmentRole::User->value);
 });
 
-it('quickly assigns an employee to another department without removing existing memberships', function () {
+it('shows department assignments on the user page and edits them from the edit page', function () {
     $existingDepartment = Department::factory()->create();
     $newDepartment = Department::factory()->create();
     $inactiveDepartment = Department::factory()->inactive()->create();
@@ -142,7 +182,12 @@ it('quickly assigns an employee to another department without removing existing 
     $this->actingAs($admin)
         ->get(route('admin.users.show', $employee))
         ->assertOk()
-        ->assertSee('Affecter à un département')
+        ->assertSee('Modifier les départements')
+        ->assertDontSee('Affecter à un département')
+        ->assertSee($existingDepartment->name);
+
+    $this->get(route('admin.users.edit', $employee))
+        ->assertOk()
         ->assertSee($newDepartment->name)
         ->assertDontSee($inactiveDepartment->name);
 
@@ -161,16 +206,16 @@ it('quickly assigns an employee to another department without removing existing 
         ->toBe(DepartmentRole::Director->value);
 });
 
-it('quickly assigns technicians with a level required for ticket assignment', function () {
+it('validates the legacy quick-assignment endpoint technician level', function () {
     $department = Department::factory()->create(['code' => 'IT']);
     $employee = User::factory()->create();
     $admin = User::factory()->superAdmin()->create();
 
     $this->actingAs($admin)
-        ->get(route('admin.users.show', $employee))
+        ->get(route('admin.users.edit', $employee))
         ->assertOk()
         ->assertSee('Niveau technicien')
-        ->assertSee('Obligatoire pour le rôle technicien.');
+        ->assertSee('Obligatoire pour un technicien.');
 
     $this->from(route('admin.users.show', $employee))
         ->post(route('admin.users.departments.assign', $employee), [
