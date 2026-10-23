@@ -358,7 +358,16 @@ it('lets the IT director take a ticket or assign it to an active technician', fu
     Notification::fake();
     $it = departementIt();
     $director = User::factory()->withRole($it, DepartmentRole::Director)->create();
-    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+    $technician = User::factory()->create();
+    $this->actingAs(User::factory()->superAdmin()->create())
+        ->post(route('admin.users.departments.assign', $technician), [
+            'department_id' => $it->id,
+            'role' => DepartmentRole::Technician->value,
+            'tech_level' => 1,
+        ])
+        ->assertRedirect(route('admin.users.show', $technician))
+        ->assertSessionHas('success');
+
     $requester = User::factory()->create();
     $ticket = Ticket::create([
         'number' => 'IT-000104',

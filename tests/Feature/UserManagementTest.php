@@ -161,6 +161,39 @@ it('quickly assigns an employee to another department without removing existing 
         ->toBe(DepartmentRole::Director->value);
 });
 
+it('quickly assigns technicians with a level required for ticket assignment', function () {
+    $department = Department::factory()->create(['code' => 'IT']);
+    $employee = User::factory()->create();
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.show', $employee))
+        ->assertOk()
+        ->assertSee('Niveau technicien')
+        ->assertSee('Obligatoire pour le rôle technicien.');
+
+    $this->from(route('admin.users.show', $employee))
+        ->post(route('admin.users.departments.assign', $employee), [
+            'department_id' => $department->id,
+            'role' => DepartmentRole::Technician->value,
+        ])
+        ->assertRedirect(route('admin.users.show', $employee))
+        ->assertSessionHasErrors('tech_level');
+
+    $this->post(route('admin.users.departments.assign', $employee), [
+        'department_id' => $department->id,
+        'role' => DepartmentRole::Technician->value,
+        'tech_level' => 2,
+    ])
+        ->assertRedirect(route('admin.users.show', $employee))
+        ->assertSessionHas('success');
+
+    expect($employee->fresh()->departments()->findOrFail($department->id)->pivot->role)
+        ->toBe(DepartmentRole::Technician->value)
+        ->and((int) $employee->fresh()->departments()->findOrFail($department->id)->pivot->tech_level)
+        ->toBe(2);
+});
+
 it('validates quick department assignments and prevents duplicate memberships', function () {
     $department = Department::factory()->create();
     $inactiveDepartment = Department::factory()->inactive()->create();
@@ -173,6 +206,7 @@ it('validates quick department assignments and prevents duplicate memberships', 
         ->post(route('admin.users.departments.assign', $employee), [
             'department_id' => $department->id,
             'role' => DepartmentRole::Technician->value,
+            'tech_level' => 1,
         ])
         ->assertRedirect(route('admin.users.show', $employee))
         ->assertSessionHasErrors('department_id');

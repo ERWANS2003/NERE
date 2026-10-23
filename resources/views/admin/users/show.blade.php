@@ -101,7 +101,7 @@
 
             @if($availableDepartments->isNotEmpty())
                 <form id="assign-department" method="POST" action="{{ route('admin.users.departments.assign', $user) }}"
-                      class="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                      class="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.75fr)_auto] sm:items-end">
                     @csrf
                     <div>
                         <label for="department_id" class="mb-1 block text-sm font-medium text-gray-700">Département</label>
@@ -127,6 +127,20 @@
                             @endforeach
                         </select>
                         @error('role')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="tech_level" class="mb-1 block text-sm font-medium text-gray-700">Niveau technicien</label>
+                        <select id="tech_level" name="tech_level"
+                                class="w-full rounded border border-gray-300 px-3 py-2 focus:border-nere-500 focus:ring-nere-500">
+                            <option value="">Non applicable</option>
+                            @foreach([1, 2, 3] as $level)
+                                <option value="{{ $level }}" @selected((string) old('tech_level') === (string) $level)>Niveau {{ $level }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Obligatoire pour le rôle technicien.</p>
+                        @error('tech_level')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

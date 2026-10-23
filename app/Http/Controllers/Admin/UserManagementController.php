@@ -128,6 +128,7 @@ class UserManagementController extends Controller
                 Rule::exists('departments', 'id')->where('is_active', true),
             ],
             'role' => ['required', Rule::enum(DepartmentRole::class)],
+            'tech_level' => ['nullable', 'required_if:role,'.DepartmentRole::Technician->value, 'integer', 'between:1,3'],
         ], [
             'department_id.exists' => 'Sélectionnez un département actif.',
         ]);
@@ -140,7 +141,9 @@ class UserManagementController extends Controller
 
         $user->departments()->attach($validated['department_id'], [
             'role' => $validated['role'],
-            'tech_level' => null,
+            'tech_level' => $validated['role'] === DepartmentRole::Technician->value
+                ? $validated['tech_level']
+                : null,
         ]);
         $user->refreshAuthorisations();
 
