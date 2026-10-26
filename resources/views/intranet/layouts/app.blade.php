@@ -79,6 +79,8 @@
     <!-- Search Modal (Cmd+K) -->
     @include('intranet.partials.search-modal')
 
+    @include('intranet.partials.tutorial')
+
     {{-- Messages flash (success / error / status / warning) relayés en toasts.
          Les contrôleurs redirigent avec ->with('success', …) ; sans ce pont,
          ces messages n'étaient jamais affichés à l'utilisateur. --}}

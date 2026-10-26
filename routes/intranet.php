@@ -18,6 +18,7 @@ use App\Http\Controllers\Intranet\SubmissionController;
 use App\Http\Controllers\Intranet\TicketController;
 use App\Http\Controllers\Intranet\TimeOffApprovalController;
 use App\Http\Controllers\Intranet\TimeOffController;
+use App\Http\Controllers\Intranet\TutorialController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     // Dashboard (Accueil) — vue unique rendue par le contrôleur
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/tutoriel/terminer', [TutorialController::class, 'complete'])->name('tutorial.complete');
 
     // Départements — vitrine (vues maquette, basées sur le code du département)
     Route::prefix('departments')->name('departments.')->group(function () {

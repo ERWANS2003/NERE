@@ -25,6 +25,7 @@ it('affiche la page de connexion aux invites', function () {
     $this->get('/connexion')
         ->assertOk()
         ->assertSee('Connexion')
+        ->assertSee('Nom d’utilisateur ou e-mail')
         ->assertSee('identifiant', false);
 });
 

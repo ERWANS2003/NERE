@@ -5,7 +5,7 @@
         @csrf
 
         <div class="input-group">
-            <label for="identifiant">Username</label>
+            <label for="identifiant">Nom d’utilisateur ou e-mail</label>
             <input id="identifiant" 
                    type="text" 
                    name="identifiant" 
@@ -13,7 +13,7 @@
                    required 
                    autofocus 
                    autocomplete="username" 
-                   placeholder="Saisissez votre username" />
+                   placeholder="Saisissez votre nom d’utilisateur ou adresse e-mail" />
             @if($errors->has('identifiant'))
                 <p class="error-message">{{ $errors->first('identifiant') }}</p>
             @endif

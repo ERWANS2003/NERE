@@ -132,6 +132,17 @@
                     Mon profil
                 </a>
 
+                <button
+                    type="button"
+                    @click="$dispatch('open-intranet-tutorial'); open = false"
+                    class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-graphite-700 transition hover:bg-graphite-50"
+                >
+                    <svg class="h-5 w-5 text-graphite-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 1.806-2 3.272-2 1.933 0 3.5 1.343 3.5 3 0 1.4-1.1 2.575-2.589 2.892-.986.209-1.683 1.055-1.683 2.108M12 18h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Revoir le tutoriel
+                </button>
+
                 <!-- Mes Demandes -->
                 <a 
                     href="{{ route('intranet.submissions.index') }}" 
