@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
-use App\Models\TimeOffBalance;
 use App\Models\TimeOffRequest;
 use App\Models\User;
 use App\Notifications\TimeOffReviewed;
+use App\Services\TimeOffBalanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,13 +41,11 @@ class TimeOffApprovalController extends Controller
         return view('intranet.time-off.approvals', compact('requests'));
     }
 
-    public function update(Request $request, TimeOffRequest $timeOffRequest): RedirectResponse
+    public function update(Request $request, TimeOffRequest $timeOffRequest, TimeOffBalanceService $balances): RedirectResponse
     {
         $this->authorizeApprover($request);
         $this->authorizeManages($request, $timeOffRequest);
 
-        // Seule une demande en attente peut être traitée : évite une double
-        // approbation (et donc un double décrément du solde).
         abort_unless($timeOffRequest->status === 'pending', 409, 'Cette demande a déjà été traitée.');
 
         $validated = $request->validate([
@@ -57,19 +55,39 @@ class TimeOffApprovalController extends Controller
 
         $approuve = $validated['decision'] === 'approve';
 
-        DB::transaction(function () use ($timeOffRequest, $request, $validated, $approuve) {
-            if ($approuve) {
-                $this->decrementBalance($timeOffRequest);
+        $resultat = DB::transaction(function () use ($timeOffRequest, $request, $validated, $approuve, $balances) {
+            // Verrou sur la demande puis nouvelle lecture du statut : deux clics
+            // simultanés ne peuvent plus approuver (et décompter) deux fois.
+            $demande = TimeOffRequest::query()->lockForUpdate()->find($timeOffRequest->getKey());
+
+            if ($demande === null || $demande->status !== 'pending') {
+                return 'deja-traitee';
             }
 
-            $timeOffRequest->update([
+            if ($approuve && ! $balances->consume($demande)) {
+                return 'solde-insuffisant';
+            }
+
+            $demande->update([
                 // La base contraint le statut à pending/approved/denied/cancelled.
                 'status' => $approuve ? 'approved' : 'denied',
                 'approved_by' => $request->user()->id,
                 'approved_at' => now(),
                 'approval_comment' => $validated['approval_comment'] ?? null,
             ]);
+
+            return 'ok';
         });
+
+        if ($resultat === 'deja-traitee') {
+            abort(409, 'Cette demande a déjà été traitée.');
+        }
+
+        if ($resultat === 'solde-insuffisant') {
+            return redirect()
+                ->route('intranet.time-off.approvals')
+                ->with('error', 'Solde insuffisant : cette demande dépasse les jours restants du collaborateur. Elle reste en attente.');
+        }
 
         // Notifier l'employé (hors transaction : un échec d'envoi ne doit pas
         // annuler la décision déjà enregistrée).
@@ -78,30 +96,6 @@ class TimeOffApprovalController extends Controller
         return redirect()
             ->route('intranet.time-off.approvals')
             ->with('success', $approuve ? 'Demande approuvée.' : 'Demande refusée.');
-    }
-
-    /**
-     * Décrémente le solde de l'année de début de la demande. Verrouille la
-     * ligne pour la durée de la transaction (lockForUpdate) afin que deux
-     * approbations concurrentes ne corrompent pas le solde.
-     */
-    private function decrementBalance(TimeOffRequest $req): void
-    {
-        $balance = TimeOffBalance::where([
-            'user_id' => $req->user_id,
-            'policy_id' => $req->policy_id,
-            'year' => $req->start_date->year,
-        ])->lockForUpdate()->first();
-
-        if (! $balance) {
-            return; // pas de solde défini : rien à décrémenter
-        }
-
-        $balance->used_days = (float) $balance->used_days + (float) $req->total_days;
-        $balance->remaining_days = (float) $balance->total_days
-            + (float) $balance->carry_over_days
-            - (float) $balance->used_days;
-        $balance->save();
     }
 
     private function authorizeApprover(Request $request): void

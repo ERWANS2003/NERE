@@ -18,6 +18,12 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="mb-6 rounded-lg bg-nere-50 border border-nere-200 text-nere-800 px-4 py-3 text-sm" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if($requests->count() > 0)
         <div class="space-y-4">
             @foreach($requests as $req)

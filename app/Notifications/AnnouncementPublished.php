@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Announcement;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,13 +16,23 @@ use Illuminate\Notifications\Notification;
  * canal "database" (badge de l'en-tête), pour ne pas noyer les boîtes mail
  * sous des communications routinières.
  */
-class AnnouncementPublished extends Notification
+class AnnouncementPublished extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly Announcement $announcement)
+    /**
+     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
+     * bloque plus l'action de l'utilisateur. La notification intranet reste
+     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
     {
+        return ['database' => 'sync'];
     }
+
+    public function __construct(private readonly Announcement $announcement) {}
 
     /**
      * @return list<string>
@@ -36,10 +47,10 @@ class AnnouncementPublished extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('[Urgent] ' . $this->announcement->title)
-            ->greeting('Bonjour ' . $notifiable->first_name . ',')
+            ->subject('[Urgent] '.$this->announcement->title)
+            ->greeting('Bonjour '.$notifiable->first_name.',')
             ->line("Une annonce urgente vient d'être publiée sur l'intranet NÉRÉ Mining :")
-            ->line('**' . $this->announcement->title . '**')
+            ->line('**'.$this->announcement->title.'**')
             ->action("Lire l'annonce", route('intranet.announcements.show', $this->announcement->id))
             ->line("Merci d'en prendre connaissance rapidement.");
     }
@@ -60,7 +71,7 @@ class AnnouncementPublished extends Notification
             'icon' => 'megaphone',
             'title' => $this->announcement->title,
             'message' => $this->announcement->department?->name
-                ? 'Annonce · ' . $this->announcement->department->name
+                ? 'Annonce · '.$this->announcement->department->name
                 : "Annonce · Toute l'entreprise",
             'url' => route('intranet.announcements.show', $this->announcement->id),
             'announcement_id' => $this->announcement->id,

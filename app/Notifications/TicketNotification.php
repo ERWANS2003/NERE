@@ -4,12 +4,25 @@ namespace App\Notifications;
 
 use App\Models\Ticket;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TicketNotification extends Notification
+class TicketNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    /**
+     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
+     * bloque plus l'action de l'utilisateur. La notification intranet reste
+     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
 
     public function __construct(
         private readonly Ticket $ticket,

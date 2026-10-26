@@ -7,9 +7,12 @@ use App\Models\TimeOffBalance;
 use App\Models\TimeOffPolicy;
 use App\Models\TimeOffRequest;
 use App\Models\User;
+use App\Services\TimeOffBalanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -67,12 +70,12 @@ class TimeOffController extends Controller
         return view('intranet.time-off.create', compact('policies'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TimeOffBalanceService $balances): RedirectResponse
     {
         $user = $request->user();
 
         $validated = $request->validate([
-            'policy_id' => ['required', 'exists:time_off_policies,id'],
+            'policy_id' => ['required', Rule::exists('time_off_policies', 'id')->where('is_active', true)],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'is_half_day' => ['sometimes', 'boolean'],
@@ -110,31 +113,45 @@ class TimeOffController extends Controller
             }
         }
 
-        // Vérification du solde disponible (année de début).
-        $balance = TimeOffBalance::firstWhere([
-            'user_id' => $user->id,
-            'policy_id' => $policy->id,
-            'year' => $debut->year,
-        ]);
-
-        if ($balance && $jours > (float) $balance->remaining_days) {
+        if ($balances->overlaps($user->id, $debut, $fin)) {
             throw ValidationException::withMessages([
-                'end_date' => "Solde insuffisant : {$balance->remaining_days} jour(s) restant(s), {$jours} demandé(s).",
+                'start_date' => 'Vous avez déjà une demande en attente ou approuvée sur ces dates.',
             ]);
         }
 
-        TimeOffRequest::create([
-            'user_id' => $user->id,
-            'policy_id' => $policy->id,
-            'start_date' => $debut->toDateString(),
-            'end_date' => $fin->toDateString(),
-            'total_days' => $jours,
-            'reason' => $validated['reason'] ?? null,
-            'emergency_contact' => $validated['emergency_contact'] ?? null,
-            'is_half_day' => $demiJournee,
-            // Les politiques sans approbation sont acceptées d'office.
-            'status' => $policy->requires_approval ? 'pending' : 'approved',
-        ]);
+        // Solde de l'année de début, déduction faite des demandes encore en attente.
+        $disponible = $balances->availableDays($user->id, $policy->id, $debut->year);
+
+        if ($disponible !== null && $jours > $disponible) {
+            $affiche = rtrim(rtrim(number_format(max(0, $disponible), 1, ',', ''), '0'), ',');
+
+            throw ValidationException::withMessages([
+                'end_date' => "Solde insuffisant : {$affiche} jour(s) disponible(s) en tenant compte des demandes en attente, {$jours} demandé(s).",
+            ]);
+        }
+
+        DB::transaction(function () use ($user, $policy, $debut, $fin, $jours, $validated, $demiJournee, $balances) {
+            $demande = TimeOffRequest::create([
+                'user_id' => $user->id,
+                'policy_id' => $policy->id,
+                'start_date' => $debut->toDateString(),
+                'end_date' => $fin->toDateString(),
+                'total_days' => $jours,
+                'reason' => $validated['reason'] ?? null,
+                'emergency_contact' => $validated['emergency_contact'] ?? null,
+                'is_half_day' => $demiJournee,
+                // Les politiques sans approbation sont acceptées d'office.
+                'status' => $policy->requires_approval ? 'pending' : 'approved',
+                'approved_at' => $policy->requires_approval ? null : now(),
+            ]);
+
+            // Une acceptation d'office consomme le solde comme une approbation manuelle.
+            if (! $policy->requires_approval && ! $balances->consume($demande)) {
+                throw ValidationException::withMessages([
+                    'end_date' => 'Solde insuffisant pour cette demande.',
+                ]);
+            }
+        });
 
         return redirect()
             ->route('intranet.time-off.index')

@@ -167,7 +167,7 @@ class TicketController extends Controller
             'canAssign' => $canAssign,
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
-            'agents' => $this->itTechnicians($department)->sortBy('name')->values(),
+            'agents' => $this->itAgents($department)->sortBy('name')->values(),
         ]);
     }
 
@@ -183,11 +183,13 @@ class TicketController extends Controller
         ];
 
         if ($canAssign) {
+            // Techniciens et directeurs IT : un directeur qui a pris un ticket
+            // en charge doit pouvoir continuer à l'enregistrer.
             $rules['assignee_id'] = [
                 'present',
                 'nullable',
                 'integer',
-                Rule::in($this->itTechnicians($department)->modelKeys()),
+                Rule::in($this->itAgents($department)->modelKeys()),
             ];
         }
 
@@ -203,11 +205,15 @@ class TicketController extends Controller
         $reopened = in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)
             && ! in_array($status, [TicketStatus::Resolved, TicketStatus::Closed], true);
 
+        // Un ticket fermé reste un ticket résolu : on garde (ou on fixe) sa date
+        // de résolution, sans quoi le délai et le SLA de résolution sont perdus.
+        $done = in_array($status, [TicketStatus::Resolved, TicketStatus::Closed], true);
+
         $ticket->update([
             'status' => $status,
             'priority' => $validated['priority'],
             'assignee_id' => $canAssign ? $validated['assignee_id'] : $ticket->assignee_id,
-            'resolved_at' => $status === TicketStatus::Resolved ? ($ticket->resolved_at ?? now()) : null,
+            'resolved_at' => $done ? ($ticket->resolved_at ?? now()) : null,
             'closed_at' => $status === TicketStatus::Closed ? ($ticket->closed_at ?? now()) : null,
         ]);
 
@@ -396,17 +402,6 @@ class TicketController extends Controller
             ->whereHas('departments', fn ($query) => $query
                 ->where('departments.id', $department->id)
                 ->whereIn('department_user.role', [DepartmentRole::Technician->value, DepartmentRole::Director->value]))
-            ->get();
-    }
-
-    /** @return Collection<int, User> */
-    private function itTechnicians(Department $department): Collection
-    {
-        return User::query()
-            ->where('actif', true)
-            ->whereHas('departments', fn ($query) => $query
-                ->where('departments.id', $department->id)
-                ->where('department_user.role', DepartmentRole::Technician->value))
             ->get();
     }
 
