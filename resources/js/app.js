@@ -21,6 +21,7 @@ import './intranet/auto-refresh.js';
 import './intranet/push-notifications.js';
 import './intranet/pwa-install.js';
 import './intranet/tutorial.js';
+import './intranet/glass.js';
 
 // Configuration Day.js
 dayjs.locale('fr');

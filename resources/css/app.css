@@ -1054,3 +1054,237 @@
         background-color: rgb(255 255 255 / 92%);
     }
 }
+
+/*
+ * Liquid glass : lumière et mouvement.
+ * Effets ajoutés par-dessus la couche de verre, tous désactivés quand le
+ * système demande moins d'animations ou moins de transparence :
+ *  - halos d'arrière-plan qui dérivent lentement (grand écran uniquement) ;
+ *  - reflet qui suit le pointeur et éclat qui balaie la surface au survol
+ *    (attribut data-glass posé par resources/js/intranet/glass.js) ;
+ *  - apparition des cartes en cascade, en-tête qui se densifie au défilement,
+ *    menus qui s'ouvrent en fondu, boutons qui s'enfoncent à l'appui.
+ */
+@property --glass-x {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 50%;
+}
+
+@property --glass-y {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 0%;
+}
+
+@property --glass-lit {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+@property --glass-sweep {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 135%;
+}
+
+/* Halos vivants : deux nappes de lumière posées derrière tout le contenu. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .intranet-shell,
+    .app-shell,
+    .admin-shell {
+        isolation: isolate;
+    }
+
+    :is(.intranet-shell, .app-shell, .admin-shell)::before,
+    :is(.intranet-shell, .app-shell, .admin-shell)::after {
+        position: fixed;
+        z-index: -1;
+        width: 55vmax;
+        height: 55vmax;
+        border-radius: 9999px;
+        content: "";
+        pointer-events: none;
+        will-change: transform;
+    }
+
+    :is(.intranet-shell, .app-shell, .admin-shell)::before {
+        top: -22vmax;
+        left: -12vmax;
+        background: radial-gradient(circle, rgb(var(--glass-red) / 22%) 0%, rgb(var(--glass-red) / 0%) 68%);
+        animation: glass-drift-a 38s ease-in-out infinite alternate;
+    }
+
+    :is(.intranet-shell, .app-shell, .admin-shell)::after {
+        right: -16vmax;
+        bottom: -24vmax;
+        background: radial-gradient(circle, rgb(var(--glass-blue) / 20%) 0%, rgb(255 210 90 / 12%) 42%, rgb(255 210 90 / 0%) 70%);
+        animation: glass-drift-b 46s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes glass-drift-a {
+    to {
+        transform: translate3d(22vw, 18vh, 0) scale(1.15);
+    }
+}
+
+@keyframes glass-drift-b {
+    to {
+        transform: translate3d(-20vw, -22vh, 0) scale(1.1);
+    }
+}
+
+/* Reflet au pointeur + éclat de survol, en plus du lustre fixe du verre. */
+/*
+ * !important : les règles de carte au-dessus ciblent #main-content, plus
+ * spécifique qu'un attribut ; l'état posé par le script doit l'emporter.
+ */
+[data-glass] {
+    background-image:
+        radial-gradient(
+            220px circle at var(--glass-x) var(--glass-y),
+            rgb(255 255 255 / calc(var(--glass-lit) * 95%)),
+            rgb(255 255 255 / calc(var(--glass-lit) * 30%)) 45%,
+            transparent 72%
+        ),
+        radial-gradient(
+            420px circle at var(--glass-x) var(--glass-y),
+            rgb(var(--glass-blue) / calc(var(--glass-lit) * 9%)),
+            transparent 70%
+        ),
+        linear-gradient(
+            115deg,
+            transparent 34%,
+            rgb(255 210 90 / 22%) 43%,
+            rgb(255 255 255 / 85%) 50%,
+            rgb(var(--glass-blue) / 16%) 57%,
+            transparent 66%
+        ),
+        var(--glass-sheen) !important;
+    background-size: auto, auto, 260% 100%, auto !important;
+    background-position: 0 0, 0 0, var(--glass-sweep) 0, 0 0 !important;
+    background-repeat: no-repeat !important;
+    transition:
+        --glass-lit 260ms ease,
+        --glass-sweep 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 220ms ease,
+        border-color 220ms ease,
+        background-color 220ms ease,
+        translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+[data-glass].is-lit {
+    --glass-lit: 1;
+}
+
+[data-glass]:hover {
+    --glass-sweep: -35%;
+}
+
+a[data-glass]:hover {
+    translate: 0 -2px;
+}
+
+/* Apparition en cascade des cartes au chargement de la page. */
+[data-glass-enter] {
+    animation: glass-rise 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--glass-i, 0) * 45ms);
+}
+
+@keyframes glass-rise {
+    from {
+        opacity: 0;
+        translate: 0 14px;
+        filter: blur(6px);
+    }
+
+    to {
+        opacity: 1;
+        translate: none;
+        filter: none;
+    }
+}
+
+/* L'en-tête se densifie dès que le contenu défile dessous. */
+.intranet-header {
+    transition: background-color 260ms ease, box-shadow 260ms ease;
+}
+
+.intranet-header.is-scrolled {
+    background-color: rgb(255 255 255 / 72%);
+    box-shadow:
+        inset 0 1px 0 var(--glass-edge),
+        inset 0 -1px 0 rgb(255 255 255 / 60%),
+        0 14px 30px -18px rgb(var(--glass-ink) / 40%);
+}
+
+/* Menus flottants : ouverture en fondu, légèrement zoomée (navigateurs récents). */
+.intranet-shell #intranet-profile-menu,
+.intranet-shell [role="menu"],
+.intranet-header .absolute.bg-white {
+    transform-origin: top right;
+    transition: opacity 180ms ease, scale 220ms cubic-bezier(0.2, 0.8, 0.2, 1), translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@starting-style {
+    .intranet-shell #intranet-profile-menu,
+    .intranet-shell [role="menu"],
+    .intranet-header .absolute.bg-white {
+        opacity: 0;
+        scale: 0.96;
+        translate: 0 -6px;
+    }
+}
+
+/* Boutons et pastilles : léger enfoncement à l'appui, comme une goutte. */
+:is(.intranet-shell, .app-shell, .admin-shell) :is(.bouton-primaire, .bouton-secondaire, .bouton-danger, .intranet-filter-link),
+.intranet-header :is(button.p-2, #intranet-profile-trigger, #intranet-search-trigger),
+.intranet-shell .sidebar-link {
+    transition-property: background-color, border-color, box-shadow, color, scale;
+    transition-duration: 180ms;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:is(.intranet-shell, .app-shell, .admin-shell) :is(.bouton-primaire, .bouton-secondaire, .bouton-danger, .intranet-filter-link):active,
+.intranet-header :is(button.p-2, #intranet-profile-trigger, #intranet-search-trigger):active,
+.intranet-shell .sidebar-link:active {
+    scale: 0.96;
+}
+
+/* Le lien actif du menu latéral apparaît avec un léger rebond. */
+.intranet-shell .sidebar-link.active {
+    animation: glass-pill-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes glass-pill-in {
+    from {
+        scale: 0.94;
+        opacity: 0.6;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-glass],
+    [data-glass-enter],
+    .intranet-header,
+    .intranet-shell .sidebar-link.active,
+    .intranet-shell #intranet-profile-menu,
+    .intranet-shell [role="menu"],
+    .intranet-header .absolute.bg-white {
+        animation: none;
+        transition: none !important;
+    }
+
+    [data-glass]:hover {
+        --glass-sweep: 135%;
+        translate: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    [data-glass] {
+        background-image: none !important;
+    }
+}
