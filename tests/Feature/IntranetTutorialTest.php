@@ -8,8 +8,11 @@ it('affiche le tutoriel aux nouveaux utilisateurs et permet de le terminer', fun
     $this->actingAs($user)
         ->get(route('intranet.dashboard'))
         ->assertOk()
-        ->assertSee('x-init="open = true"', false)
         ->assertSee('Bienvenue dans votre intranet')
+        ->assertSee('intranet-services-section')
+        ->assertSee('intranet-company-section')
+        ->assertSee('intranet-search-trigger')
+        ->assertSee('intranet-notifications-trigger')
         ->assertSee('Revoir le tutoriel');
 
     $this->post(route('intranet.tutorial.complete'))
@@ -20,7 +23,7 @@ it('affiche le tutoriel aux nouveaux utilisateurs et permet de le terminer', fun
 
     $this->get(route('intranet.dashboard'))
         ->assertOk()
-        ->assertSee('x-init="open = false"', false);
+        ->assertSee('x-init="init(false)"', false);
 });
 
 it('permet de relancer le tutoriel depuis le menu du profil', function () {

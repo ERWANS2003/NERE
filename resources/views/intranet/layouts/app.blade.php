@@ -22,7 +22,7 @@
     @livewireStyles
     @stack('styles')
 </head>
-<body class="bg-graphite-50 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+<body class="bg-graphite-50 antialiased" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false" @intranet-tour-open-sidebar.window="sidebarOpen = true" @intranet-tour-close-sidebar.window="sidebarOpen = false">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-semibold focus:text-nere-700 focus:shadow-lg">
         Aller au contenu principal
     </a>

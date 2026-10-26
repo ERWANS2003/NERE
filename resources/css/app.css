@@ -99,6 +99,19 @@
         @apply bg-nere-50 text-nere-700 hover:bg-nere-100;
     }
 
+    .intranet-tour-highlight {
+        z-index: 55 !important;
+        isolation: isolate;
+        outline: 3px solid #ffd25a;
+        outline-offset: 4px;
+        box-shadow: 0 0 0 8px rgb(17 22 26 / 65%) !important;
+        border-radius: 0.75rem;
+    }
+
+    .intranet-tour-highlight:not(#intranet-profile-menu) {
+        position: relative;
+    }
+
     .sidebar-link svg {
         @apply shrink-0;
     }

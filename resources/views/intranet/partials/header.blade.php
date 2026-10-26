@@ -19,6 +19,7 @@
 
             <button
                 @click="$dispatch('open-search')"
+                id="intranet-search-trigger"
                 class="flex w-full max-w-xl min-w-0 items-center gap-3 rounded-xl border border-graphite-200 bg-graphite-50 px-3 py-2.5 transition hover:border-nere-200 hover:bg-white sm:px-4"
                 aria-label="Ouvrir la recherche"
                 aria-keyshortcuts="Control+K Meta+K"
@@ -62,12 +63,15 @@
         </div>
 
         <!-- User Profile Dropdown -->
-        <div class="relative" x-data="{ open: false }">
+        <div class="relative" x-data="{ open: false }" @open-intranet-profile.window="open = true" @close-intranet-profile.window="open = false">
             
             <!-- Trigger -->
             <button 
                 @click="open = !open"
                 @click.away="open = false"
+                id="intranet-profile-trigger"
+                :aria-expanded="open.toString()"
+                aria-controls="intranet-profile-menu"
                 class="flex items-center gap-3 hover:bg-graphite-50 rounded-lg px-3 py-2 transition"
             >
                 <!-- Avatar -->
@@ -100,6 +104,7 @@
 
             <!-- Dropdown Menu -->
             <div 
+                id="intranet-profile-menu"
                 x-show="open"
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 scale-95"

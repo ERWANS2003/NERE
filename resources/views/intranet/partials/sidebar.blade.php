@@ -24,11 +24,11 @@
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 py-5" aria-label="Sections de l’intranet">
-        <section aria-labelledby="nav-personal-heading">
+        <section id="intranet-personal-section" aria-labelledby="nav-personal-heading">
             <h2 id="nav-personal-heading" class="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-graphite-500">Mon espace</h2>
             <ul class="space-y-1">
                 <li>
-                    <a href="{{ route('intranet.dashboard') }}"
+                    <a id="intranet-home-link" href="{{ route('intranet.dashboard') }}"
                        @if(request()->routeIs('intranet.dashboard')) aria-current="page" @endif
                        class="sidebar-link {{ request()->routeIs('intranet.dashboard') ? 'active' : '' }}">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -38,7 +38,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('intranet.submissions.index') }}"
+                    <a id="intranet-requests-link" href="{{ route('intranet.submissions.index') }}"
                        @if(request()->routeIs('intranet.submissions.index', 'intranet.submissions.show', 'intranet.submissions.store', 'intranet.submissions.update', 'intranet.submissions.destroy')) aria-current="page" @endif
                        class="sidebar-link {{ request()->routeIs('intranet.submissions.index', 'intranet.submissions.show', 'intranet.submissions.store', 'intranet.submissions.update', 'intranet.submissions.destroy') ? 'active' : '' }}">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -50,7 +50,7 @@
             </ul>
         </section>
 
-        <section class="mt-6" aria-labelledby="nav-services-heading">
+        <section id="intranet-services-section" class="mt-6" aria-labelledby="nav-services-heading">
             <h2 id="nav-services-heading" class="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-graphite-500">Services</h2>
             <ul class="space-y-1">
                 @if($enabledModules['forms']['enabled'])
@@ -104,7 +104,7 @@
             </ul>
         </section>
 
-        <section class="mt-6" aria-labelledby="nav-company-heading">
+        <section id="intranet-company-section" class="mt-6" aria-labelledby="nav-company-heading">
             <h2 id="nav-company-heading" class="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-graphite-500">Vie de l’entreprise</h2>
             <ul class="space-y-1">
                 <li>

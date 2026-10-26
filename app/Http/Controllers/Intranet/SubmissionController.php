@@ -141,19 +141,28 @@ class SubmissionController extends Controller
                 || ($departmentId !== null && $request->user()->canValidateIn($departmentId)),
             403
         );
-        abort_unless($submission->status === 'pending', 409);
 
         $validated = $request->validate([
             'status' => ['required', 'in:approved,rejected'],
             'review_comment' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $submission->update([
-            'status' => $validated['status'],
-            'review_comment' => $validated['review_comment'] ?? null,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+        $updated = FormSubmission::query()
+            ->whereKey($submission->getKey())
+            ->where('status', 'pending')
+            ->update([
+                'status' => $validated['status'],
+                'review_comment' => $validated['review_comment'] ?? null,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated === 0) {
+            return back()->with('error', 'Cette demande a déjà été traitée. La page a été actualisée avec son statut actuel.');
+        }
+
+        $submission->refresh();
 
         // Prévient le demandeur du verdict (sauf s'il s'est auto-traité).
         $demandeur = $submission->user;

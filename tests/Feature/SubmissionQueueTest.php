@@ -106,6 +106,34 @@ it('lets the department head decide on a request and notifies its requester', fu
     Notification::assertSentTo($requester, SubmissionReviewed::class);
 });
 
+it('shows a conflict message instead of an error page when a reviewed request is submitted again', function () {
+    $department = Department::factory()->create();
+    $requester = User::factory()->create();
+    $head = User::factory()->withRole($department, DepartmentRole::Director)->create();
+    $submission = createSubmission($department, $requester);
+
+    $this->actingAs($head)
+        ->put(route('intranet.submissions.update', $submission), [
+            'status' => 'approved',
+            'review_comment' => 'Demande approuvée.',
+        ])
+        ->assertRedirect(route('intranet.submissions.show', $submission));
+
+    $reviewedAt = $submission->fresh()->reviewed_at;
+
+    $this->from(route('intranet.submissions.show', $submission))
+        ->put(route('intranet.submissions.update', $submission), [
+            'status' => 'rejected',
+            'review_comment' => 'Nouvelle décision.',
+        ])
+        ->assertRedirect(route('intranet.submissions.show', $submission))
+        ->assertSessionHas('error', 'Cette demande a déjà été traitée. La page a été actualisée avec son statut actuel.');
+
+    expect($submission->fresh()->status)->toBe('approved')
+        ->and($submission->fresh()->review_comment)->toBe('Demande approuvée.')
+        ->and($submission->fresh()->reviewed_at->equalTo($reviewedAt))->toBeTrue();
+});
+
 it('denies the processing queue to ordinary users and blocks cross-department requests', function () {
     $department = Department::factory()->create();
     $otherDepartment = Department::factory()->create();

@@ -18,6 +18,8 @@
     <button
         @click="open = !open"
         @click.away="open = false"
+        id="intranet-notifications-trigger"
+        :aria-expanded="open.toString()"
         class="relative p-2 rounded-lg hover:bg-graphite-100 text-graphite-600 transition"
         aria-label="Notifications"
     >
