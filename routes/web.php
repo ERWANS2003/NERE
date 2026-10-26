@@ -8,8 +8,6 @@ use App\Http\Controllers\Menu\CampaignController;
 use App\Http\Controllers\Menu\MenuExportController;
 use App\Http\Controllers\Menu\RegistrationController;
 use App\Http\Controllers\ProfileController;
-use App\Models\Department;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -57,17 +55,6 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // API de recherche globale (consommée par le modal Cmd+K, session web)
     Route::get('/api/search/data', [SearchController::class, 'data'])->name('api.search.data');
-});
-
-// Test route
-Route::get('/test', function () {
-    return response()->json([
-        'status' => 'OK',
-        'message' => 'Laravel + PostgreSQL fonctionne !',
-        'timestamp' => now(),
-        'users_count' => User::count(),
-        'departments_count' => Department::count(),
-    ]);
 });
 
 // Import intranet routes
