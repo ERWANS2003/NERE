@@ -99,17 +99,82 @@
         @apply bg-nere-50 text-nere-700 hover:bg-nere-100;
     }
 
-    .intranet-tour-highlight {
-        z-index: 55 !important;
-        isolation: isolate;
-        outline: 3px solid #ffd25a;
-        outline-offset: 4px;
-        box-shadow: 0 0 0 8px rgb(17 22 26 / 65%) !important;
-        border-radius: 0.75rem;
+    /* Tutoriel : projecteur fixe percé sur la cible et bulle ancrée. */
+    .intranet-tour-spotlight {
+        border-radius: 1rem;
+        box-shadow: 0 0 0 200vmax rgb(11 8 24 / 70%);
+        transition: top 320ms cubic-bezier(0.2, 0.8, 0.2, 1), left 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            width 320ms cubic-bezier(0.2, 0.8, 0.2, 1), height 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .intranet-tour-highlight:not(#intranet-profile-menu) {
-        position: relative;
+    .intranet-tour-spotlight.is-target {
+        outline: 3px solid #ffd25a;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 200vmax rgb(11 8 24 / 70%), 0 0 28px 6px rgb(255 210 90 / 55%);
+        animation: intranet-tour-pulse 2.4s ease-in-out infinite;
+    }
+
+    .intranet-tour-card {
+        border-radius: 1.25rem;
+        border: 1px solid rgb(255 255 255 / 75%);
+        background-color: rgb(255 255 255 / 94%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 95%), 0 28px 60px -20px rgb(11 8 24 / 55%);
+        -webkit-backdrop-filter: var(--glass-blur-float);
+        backdrop-filter: var(--glass-blur-float);
+        transition: top 320ms cubic-bezier(0.2, 0.8, 0.2, 1), left 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .intranet-tour-card.is-sheet {
+        width: calc(100vw - 24px);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .intranet-tour-arrow {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border: 1px solid rgb(255 255 255 / 75%);
+        transform: rotate(45deg);
+    }
+
+    .intranet-tour-arrow.is-left {
+        left: -7px;
+        margin-top: -7px;
+        border-right: 0;
+        border-top: 0;
+    }
+
+    .intranet-tour-arrow.is-top {
+        top: -7px;
+        margin-left: -7px;
+        border-right: 0;
+        border-bottom: 0;
+    }
+
+    .intranet-tour-arrow.is-bottom {
+        bottom: -7px;
+        margin-left: -7px;
+        border-left: 0;
+        border-top: 0;
+    }
+
+    @keyframes intranet-tour-pulse {
+        50% {
+            outline-color: rgb(255 210 90 / 55%);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .intranet-tour-spotlight,
+        .intranet-tour-card {
+            transition: none;
+        }
+
+        .intranet-tour-spotlight.is-target {
+            animation: none;
+        }
     }
 
     .sidebar-link svg {
@@ -601,7 +666,7 @@
     --glass-tint: rgb(255 255 255 / 56%);
     --glass-tint-hover: rgb(255 255 255 / 72%);
     --glass-tint-bar: rgb(255 255 255 / 50%);
-    --glass-tint-float: rgb(255 255 255 / 74%);
+    --glass-tint-float: rgb(255 255 255 / 90%);
     --glass-edge: rgb(255 255 255 / 92%);
     --glass-border: rgb(255 255 255 / 70%);
     --glass-sheen: linear-gradient(

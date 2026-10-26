@@ -27,7 +27,7 @@
         <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
     </section>
 
-    <section class="mb-7" aria-labelledby="quick-actions-heading">
+    <section id="intranet-quick-actions" class="mb-7" aria-labelledby="quick-actions-heading">
         <div class="mb-3">
             <h2 id="quick-actions-heading" class="text-lg font-bold text-graphite-900">Accès rapides</h2>
             <p class="mt-1 text-sm text-graphite-600">Les actions utiles à portée de main.</p>

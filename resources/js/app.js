@@ -20,6 +20,7 @@ import './intranet/live-search.js';
 import './intranet/auto-refresh.js';
 import './intranet/push-notifications.js';
 import './intranet/pwa-install.js';
+import './intranet/tutorial.js';
 
 // Configuration Day.js
 dayjs.locale('fr');

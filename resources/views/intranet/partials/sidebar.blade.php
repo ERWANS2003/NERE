@@ -91,7 +91,7 @@
                 @endif
                 @if($enabledModules['forms']['enabled'] && $currentUser->hasDepartmentProcessingAccess())
                     <li>
-                        <a href="{{ route('intranet.submissions.queue') }}"
+                        <a id="intranet-queue-link" href="{{ route('intranet.submissions.queue') }}"
                            @if(request()->routeIs('intranet.submissions.queue')) aria-current="page" @endif
                            class="sidebar-link {{ request()->routeIs('intranet.submissions.queue') ? 'active' : '' }}">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -163,7 +163,7 @@
         </section>
 
         @if($currentUser->is_super_admin || $currentUser->isDepartmentHead())
-            <section class="mt-6" aria-labelledby="nav-management-heading">
+            <section id="intranet-management-section" class="mt-6" aria-labelledby="nav-management-heading">
                 <h2 id="nav-management-heading" class="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-graphite-500">Pilotage</h2>
                 <ul class="space-y-1">
                     <li>
