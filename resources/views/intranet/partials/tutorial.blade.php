@@ -2,6 +2,7 @@
     x-data="{
         open: false,
         step: 0,
+        indicator: { top: '0px', left: '0px' },
         steps: @js([
             [
                 'title' => 'Bienvenue dans votre intranet',
@@ -89,6 +90,20 @@
             }
 
             target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            window.setTimeout(() => this.positionIndicator(), 350);
+        },
+        positionIndicator() {
+            const target = document.querySelector('.intranet-tour-highlight');
+            if (!target || !this.open) return;
+
+            const rect = target.getBoundingClientRect();
+            const top = rect.top > 72 ? rect.top - 48 : Math.min(rect.bottom + 8, window.innerHeight - 56);
+            const left = Math.max(12, Math.min(rect.left, window.innerWidth - 220));
+
+            this.indicator = {
+                top: `${top}px`,
+                left: `${left}px`,
+            };
         },
         clearTarget() {
             document.querySelectorAll('.intranet-tour-highlight').forEach((element) => {
@@ -104,6 +119,8 @@
     x-init="init(@js(auth()->user()->tutorial_completed_at === null))"
     @open-intranet-tutorial.window="open = true; step = 0"
     @keydown.escape.window.stop="close()"
+    @keydown.arrow-right.window.prevent="step = Math.min(step + 1, steps.length - 1)"
+    @keydown.arrow-left.window.prevent="step = Math.max(step - 1, 0)"
     x-show="open"
     x-trap.noscroll="open"
     x-cloak
@@ -112,6 +129,17 @@
     aria-label="Tutoriel de prise en main de l’intranet"
 >
     <div class="fixed inset-0 z-30 bg-graphite-950/65" aria-hidden="true"></div>
+
+    <div
+        x-show="step > 0"
+        :style="indicator"
+        class="pointer-events-none fixed z-[60] rounded-full border-2 border-graphite-950 bg-or-400 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide text-graphite-950 shadow-lg"
+        aria-hidden="true"
+    >
+        <span x-text="'Repère ' + step"></span>
+        <span class="mx-1">·</span>
+        <span x-text="steps[step].label"></span>
+    </div>
 
     <section class="fixed inset-x-3 bottom-3 z-[70] max-h-[55vh] overflow-y-auto rounded-2xl border border-graphite-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2">
         <div class="h-2 bg-nere-700"></div>
@@ -149,15 +177,25 @@
             <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-graphite-200 pt-4">
                 <div class="flex gap-1.5" role="group" aria-label="Progression du tutoriel">
                     <template x-for="(item, index) in steps" :key="index">
-                        <span
-                            class="h-2 rounded-full transition-all"
-                            :class="step === index ? 'w-6 bg-nere-700' : 'w-2 bg-graphite-300'"
+                        <button
+                            type="button"
+                            @click="step = index"
+                            class="flex min-h-11 min-w-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nere-600"
+                            :aria-label="'Aller à l’étape ' + (index + 1) + ' : ' + item.title"
                             :aria-current="step === index ? 'step' : null"
-                        ></span>
+                        >
+                            <span
+                                class="h-2 rounded-full transition-all"
+                                :class="step === index ? 'w-6 bg-nere-700' : 'w-2 bg-graphite-300'"
+                            ></span>
+                        </button>
                     </template>
                 </div>
 
                 <div class="flex gap-2">
+                    <p class="hidden self-center text-xs text-graphite-500 md:block">
+                        ← → pour naviguer
+                    </p>
                     <button
                         type="button"
                         x-show="step > 0"

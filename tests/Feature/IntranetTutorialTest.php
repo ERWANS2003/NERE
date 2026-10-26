@@ -13,6 +13,9 @@ it('affiche le tutoriel aux nouveaux utilisateurs et permet de le terminer', fun
         ->assertSee('intranet-company-section')
         ->assertSee('intranet-search-trigger')
         ->assertSee('intranet-notifications-trigger')
+        ->assertSee('positionIndicator()')
+        ->assertSee('Aller à l’étape')
+        ->assertSee('keydown.arrow-right')
         ->assertSee('Revoir le tutoriel');
 
     $this->post(route('intranet.tutorial.complete'))
