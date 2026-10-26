@@ -12,6 +12,6 @@ it('finds department illustrations from alternate tags and names', function (str
     expect($department->image_url)
         ->toEndWith('/images/departments/'.$image);
 })->with([
-    ['Administration', 'Administration & Finances', '01-administration.png'],
-    ['Sûreté', 'Département Sûreté', '03-securite.png'],
+    ['Administration', 'Administration & Finances', '01-administration.jpg'],
+    ['Sûreté', 'Département Sûreté', '03-securite.jpg'],
 ]);

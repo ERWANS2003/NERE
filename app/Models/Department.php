@@ -158,15 +158,15 @@ class Department extends Model
      * @var array<string, string>
      */
     private const ILLUSTRATIONS = [
-        'ADMIN' => '01-administration.png',
-        'RH' => '02-ressources-humaines.png',
-        'SEC' => '03-securite.png',
-        'MINING' => '04-mining.png',
-        'HSE' => '05-hse.png',
-        'PROC' => '06-processing.png',
-        'SCM' => '07-scm.png',
-        'IT' => '08-it.png',
-        'RELCOM' => '09-relations-communautaires.png',
+        'ADMIN' => '01-administration.jpg',
+        'RH' => '02-ressources-humaines.jpg',
+        'SEC' => '03-securite.jpg',
+        'MINING' => '04-mining.jpg',
+        'HSE' => '05-hse.jpg',
+        'PROC' => '06-processing.jpg',
+        'SCM' => '07-scm.jpg',
+        'IT' => '08-it.jpg',
+        'RELCOM' => '09-relations-communautaires.jpg',
     ];
 
     /**
@@ -175,13 +175,13 @@ class Department extends Model
      * @var array<string, string>
      */
     private const ILLUSTRATION_ALIASES = [
-        'ADMINISTRATION' => '01-administration.png',
-        'ADMINISTRATION ET FINANCES' => '01-administration.png',
-        'ADMINISTRATION FINANCE' => '01-administration.png',
-        'ADMINISTRATION FINANCES' => '01-administration.png',
-        'SECURITE' => '03-securite.png',
-        'SURETE' => '03-securite.png',
-        'SECURITY' => '03-securite.png',
+        'ADMINISTRATION' => '01-administration.jpg',
+        'ADMINISTRATION ET FINANCES' => '01-administration.jpg',
+        'ADMINISTRATION FINANCE' => '01-administration.jpg',
+        'ADMINISTRATION FINANCES' => '01-administration.jpg',
+        'SECURITE' => '03-securite.jpg',
+        'SURETE' => '03-securite.jpg',
+        'SECURITY' => '03-securite.jpg',
     ];
 
     /**
