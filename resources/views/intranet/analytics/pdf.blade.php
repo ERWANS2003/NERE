@@ -77,5 +77,36 @@
             </tbody>
         </table>
     @endforeach
+
+    @if(! empty($sections['synthese']['alertes']))
+        <h2>Points d’attention</h2>
+        <table>
+            <tbody>
+                @foreach($sections['synthese']['alertes'] as $alerte)
+                    <tr><td>{{ $alerte['texte'] }}</td></tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
+    @foreach(['demandes' => 'Demandes', 'support' => 'Support IT', 'conges' => 'Congés', 'contenus' => 'Contenus et adoption', 'effectifs' => 'Effectifs'] as $cle => $titre)
+        @isset($sections[$cle])
+            <h2>Indicateurs détaillés · {{ $titre }}</h2>
+            <table>
+                <thead>
+                    <tr><th>Indicateur</th><th>Valeur</th><th>Évolution</th></tr>
+                </thead>
+                <tbody>
+                    @foreach($sections[$cle]['kpis'] as $kpi)
+                        <tr>
+                            <td>{{ $kpi['label'] }}</td>
+                            <td>{{ $kpi['valeur'] }}</td>
+                            <td>{{ $kpi['variation'] ? ($kpi['variation']['sens'] === 'hausse' ? '+' : '−').$kpi['variation']['pourcentage'].' %' : '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endisset
+    @endforeach
 </body>
 </html>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsReport;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,6 +25,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AnalyticsController extends Controller
 {
     private const PERIODES = [7 => '7 jours', 30 => '30 jours', 90 => '3 mois', 365 => '1 an'];
+
+    private const SECTION_TITLES = [
+        'demandes' => 'Demandes',
+        'support' => 'Support IT',
+        'conges' => 'Congés',
+        'contenus' => 'Contenus et adoption',
+        'effectifs' => 'Effectifs',
+    ];
 
     public function index(Request $request): View
     {
@@ -95,6 +104,7 @@ class AnalyticsController extends Controller
             'overview' => $data['overview'],
             'kpis' => $data['kpis'],
             'charts' => $data['charts'],
+            'sections' => $data['sections'],
         ], 200, [
             'Content-Disposition' => 'attachment; filename="'.$this->exportFilename($data, 'json').'"',
             'Cache-Control' => 'private, no-store',
@@ -166,6 +176,15 @@ class AnalyticsController extends Controller
         foreach ($this->chartRows($data) as [$chart, $label, $value]) {
             if ($chart !== 'Graphique') {
                 $rows[] = ['Donnée graphique', $chart.' - '.$label, $value, ''];
+            }
+        }
+
+        foreach (self::SECTION_TITLES as $key => $title) {
+            foreach ($data['sections'][$key]['kpis'] ?? [] as $kpi) {
+                $variation = $kpi['variation'] === null
+                    ? ''
+                    : ucfirst($kpi['variation']['sens']).' de '.$kpi['variation']['pourcentage'].' %';
+                $rows[] = [$title, $kpi['label'], $kpi['valeur'], $variation];
             }
         }
 
@@ -247,6 +266,16 @@ class AnalyticsController extends Controller
             $days = 30;
         }
 
+        // Filtre facultatif sur un département : parmi tous pour un admin,
+        // parmi ceux qu'il dirige pour un chef de département.
+        $filterOptions = $isAdmin
+            ? Department::active()->orderBy('position')->orderBy('name')->get(['id', 'name'])
+            : $departments;
+        $selectedDepartment = $filterOptions->firstWhere('id', $request->integer('departement'));
+        if ($selectedDepartment !== null) {
+            $departmentIds = [$selectedDepartment->id];
+        }
+
         $start = Carbon::now()->subDays($days)->startOfDay();
         $previousStart = (clone $start)->subDays($days);
 
@@ -254,9 +283,14 @@ class AnalyticsController extends Controller
             'jours' => $days,
             'periodes' => self::PERIODES,
             'isAdmin' => $isAdmin,
-            'scopeLabel' => $isAdmin
-                ? 'Vue globale de l’entreprise'
-                : 'Statistiques de : '.$departments->pluck('name')->join(', '),
+            'departementOptions' => $filterOptions->count() > 1 ? $filterOptions : collect(),
+            'departementId' => $selectedDepartment?->id,
+            'filtres' => array_filter(['periode' => $days, 'departement' => $selectedDepartment?->id]),
+            'scopeLabel' => match (true) {
+                $selectedDepartment !== null => 'Département : '.$selectedDepartment->name,
+                $isAdmin => 'Vue globale de l’entreprise',
+                default => 'Statistiques de : '.$departments->pluck('name')->join(', '),
+            },
             'overview' => $isAdmin ? [
                 'departements' => Department::active()->count(),
                 'effectif' => User::where('actif', true)->count(),
@@ -264,6 +298,7 @@ class AnalyticsController extends Controller
             ] : null,
             'kpis' => $this->kpis($start, $previousStart, $departmentIds),
             'charts' => $this->charts($start, $days, $departmentIds),
+            'sections' => (new AnalyticsReport($departmentIds, $start, $days, $isAdmin))->sections(),
         ];
     }
 
