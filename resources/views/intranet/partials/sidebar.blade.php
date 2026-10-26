@@ -4,7 +4,7 @@
 <aside
     id="intranet-sidebar"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-    class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col border-r border-graphite-200 bg-white transition-transform duration-200 lg:static lg:z-0 lg:translate-x-0"
+    class="intranet-sidebar fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col border-r border-graphite-200 bg-white transition-transform duration-200 lg:static lg:z-0 lg:translate-x-0"
     aria-label="Navigation principale"
 >
     <div class="flex h-16 items-center justify-between gap-3 border-b border-graphite-200 px-4">

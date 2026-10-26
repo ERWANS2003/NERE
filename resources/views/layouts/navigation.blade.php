@@ -4,7 +4,7 @@
 
 <nav x-data="{ ouvert: false }"
      x-on:keydown.escape.window="ouvert = false"
-     class="border-b border-graphite-900 bg-graphite-950">
+     class="app-navigation border-b border-graphite-900 bg-graphite-950">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center gap-8">

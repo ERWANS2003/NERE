@@ -26,7 +26,7 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-semibold focus:text-nere-700 focus:shadow-lg">
         Aller au contenu principal
     </a>
-    <div class="flex h-screen overflow-hidden">
+    <div class="intranet-shell flex h-screen overflow-hidden">
         
         <!-- Sidebar -->
         @include('intranet.partials.sidebar')

@@ -6,7 +6,7 @@
         $headerFirstName = auth()->user()->first_name ?? explode(' ', auth()->user()->name)[0];
     @endphp
     <section
-        class="relative isolate -mx-6 -mt-6 mb-6 overflow-hidden text-white"
+        class="relative isolate -mx-4 -mt-4 mb-6 overflow-hidden text-white sm:-mx-6 sm:-mt-6"
         style="background: linear-gradient(135deg, #3d0f0e 0%, #6b1d1a 55%, #c83530 100%);"
     >
         <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-32 h-80 w-80 rounded-full border border-white/10"></div>

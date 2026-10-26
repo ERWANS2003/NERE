@@ -23,7 +23,7 @@
             Aller au contenu principal
         </a>
 
-        <div class="min-h-screen bg-graphite-50">
+        <div class="app-shell min-h-screen bg-graphite-50">
             @include('layouts.navigation')
 
             <main id="contenu" class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
