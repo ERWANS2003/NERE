@@ -6,12 +6,12 @@
 <div class="max-w-3xl">
     <div class="mb-6">
         <a href="{{ route('admin.roles.index') }}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour à la liste
+            <x-icone nom="arrow-left" class="mr-2" />Retour à la liste
         </a>
     </div>
 
     <div class="mb-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-        <p><i class="fas fa-circle-info mr-2" aria-hidden="true"></i>Un rôle regroupe des permissions réutilisables. Les droits d’administrateur système et les responsabilités propres à un département restent gérés séparément.</p>
+        <p><x-icone nom="info" class="mr-2" />Un rôle regroupe des permissions réutilisables. Les droits d’administrateur système et les responsabilités propres à un département restent gérés séparément.</p>
     </div>
 
     <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-200">
@@ -67,7 +67,7 @@
                     Annuler
                 </a>
                 <button type="submit" class="inline-flex items-center justify-center rounded bg-nere-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
-                    <i class="fas fa-check mr-2"></i>Créer le rôle
+                    <x-icone nom="check" class="mr-2" />Créer le rôle
                 </button>
             </div>
         </form>

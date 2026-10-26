@@ -6,7 +6,7 @@
 <div class="max-w-3xl">
     <div class="mb-6">
         <a href="{{ route('admin.users.index') }}" class="text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour à la liste
+            <x-icone nom="arrow-left" class="mr-2" />Retour à la liste
         </a>
     </div>
 
@@ -126,7 +126,7 @@
                     <input type="checkbox" name="is_super_admin" value="1"
                            class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
                     <span class="ml-2 text-sm text-gray-700">
-                        <i class="fas fa-shield-alt text-nere-600"></i> Administrateur système global
+                        <x-icone nom="shield" class="text-nere-600" /> Administrateur système global
                     </span>
                 </label>
                 <p class="ml-6 text-xs text-gray-500">Droit transversal, indépendant de tout département métier.</p>
@@ -138,7 +138,7 @@
                     Annuler
                 </a>
                 <button type="submit" class="px-4 py-2 bg-nere-600 text-white rounded hover:bg-nere-700">
-                    <i class="fas fa-save mr-2"></i>Créer l'utilisateur
+                    <x-icone nom="save" class="mr-2" />Créer l'utilisateur
                 </button>
             </div>
         </form>

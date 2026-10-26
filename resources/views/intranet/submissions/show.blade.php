@@ -120,7 +120,7 @@
                     <form method="POST" action="{{ route('intranet.submissions.take', $submission) }}" class="mt-4">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
-                            <i class="fas fa-hand" aria-hidden="true"></i>
+                            <x-icone nom="hand" />
                             {{ $submission->assigned_to === auth()->id() ? 'Confirmer ma prise en charge' : 'Prendre en charge' }}
                         </button>
                     </form>
@@ -153,10 +153,10 @@
                     @enderror
                     <div class="flex flex-wrap gap-3">
                         <button type="submit" name="status" value="approved" class="inline-flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">
-                            <i class="fas fa-check" aria-hidden="true"></i>Approuver la demande
+                            <x-icone nom="check" />Approuver la demande
                         </button>
                         <button type="submit" name="status" value="rejected" class="inline-flex items-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800">
-                            <i class="fas fa-xmark" aria-hidden="true"></i>Rejeter la demande
+                            <x-icone nom="x" />Rejeter la demande
                         </button>
                     </div>
                 </form>

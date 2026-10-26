@@ -9,19 +9,19 @@
         <p class="mt-1 text-sm text-gray-600">Organisez les responsabilités et les permissions des utilisateurs.</p>
     </div>
     <a href="{{ route('admin.roles.create') }}" class="inline-flex items-center justify-center rounded-md bg-nere-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
-        <i class="fas fa-plus mr-2"></i>Nouveau rôle
+        <x-icone nom="plus" class="mr-2" />Nouveau rôle
     </a>
 </div>
 
 @if(session('success'))
 <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded text-green-700">
-    <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+    <x-icone nom="circle-check" class="mr-2" />{{ session('success') }}
 </div>
 @endif
 
 @if(session('error'))
 <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">
-    <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+    <x-icone nom="circle-alert" class="mr-2" />{{ session('error') }}
 </div>
 @endif
 
@@ -38,11 +38,11 @@
                    class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-nere-500 focus:outline-none focus:ring-2 focus:ring-nere-500">
         </div>
         <button type="submit" class="inline-flex items-center justify-center rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
-            <i class="fas fa-search mr-2"></i>Rechercher
+            <x-icone nom="search" class="mr-2" />Rechercher
         </button>
         @if(request()->hasAny(['search']))
         <a href="{{ route('admin.roles.index') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <i class="fas fa-times mr-2"></i>Réinitialiser
+            <x-icone nom="x" class="mr-2" />Réinitialiser
         </a>
         @endif
     </form>
@@ -93,13 +93,13 @@
                     <a href="{{ route('admin.roles.show', $role) }}" 
                        class="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900"
                        aria-label="Voir le rôle {{ $role->nom }}">
-                        <i class="fas fa-eye"></i>
+                        <x-icone nom="eye" />
                         <span class="sr-only">Voir</span>
                     </a>
                     <a href="{{ route('admin.roles.edit', $role) }}" 
                        class="inline-flex items-center gap-1 text-amber-700 hover:text-amber-900"
                        aria-label="Modifier le rôle {{ $role->nom }}">
-                        <i class="fas fa-edit"></i>
+                        <x-icone nom="pencil" />
                         <span class="sr-only">Modifier</span>
                     </a>
                 </td>
@@ -107,11 +107,11 @@
             @empty
             <tr>
                 <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                    <i class="fas fa-user-tag text-4xl mb-2 text-gray-300"></i>
+                    <x-icone nom="user-cog" class="text-4xl mb-2 text-gray-300" />
                     <p class="font-medium text-gray-700">{{ request('search') ? 'Aucun rôle ne correspond à votre recherche.' : 'Aucun rôle n’a encore été créé.' }}</p>
                     @unless(request('search'))
                         <a href="{{ route('admin.roles.create') }}" class="mt-4 inline-flex items-center rounded-md bg-nere-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-700">
-                            <i class="fas fa-plus mr-2"></i>Créer le premier rôle
+                            <x-icone nom="plus" class="mr-2" />Créer le premier rôle
                         </a>
                     @endunless
                 </td>

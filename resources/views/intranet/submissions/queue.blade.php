@@ -11,7 +11,7 @@
     >
         <x-slot:actions>
             <x-button :href="route('intranet.submissions.index')" variant="secondary">
-                <i class="fas fa-list-check" aria-hidden="true"></i>
+                <x-icone nom="list-checks" />
                 Voir mes demandes
             </x-button>
         </x-slot:actions>
@@ -62,7 +62,7 @@
         </div>
         <div class="flex flex-wrap gap-2 sm:col-span-3">
             <x-button type="submit">
-                <i class="fas fa-filter" aria-hidden="true"></i>Filtrer
+                <x-icone nom="filter" />Filtrer
             </x-button>
             <x-button :href="route('intranet.submissions.queue')" variant="secondary">
                 Effacer les filtres
@@ -101,7 +101,7 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-graphite-600">{{ $submission->created_at?->format('d/m/Y H:i') }}</td>
                                 <td class="px-4 py-3 text-right">
                                     <a href="{{ route('intranet.submissions.show', $submission) }}" class="inline-flex items-center gap-1 font-semibold text-nere-700 hover:text-nere-900">
-                                        Ouvrir <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                                        Ouvrir <x-icone nom="arrow-right" class="text-xs" />
                                     </a>
                                 </td>
                             </tr>
@@ -112,7 +112,7 @@
         @else
             <div class="px-6 py-14 text-center">
                 <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-graphite-50 text-graphite-400">
-                    <i class="fas fa-inbox text-2xl" aria-hidden="true"></i>
+                    <x-icone nom="inbox" class="text-2xl" />
                 </div>
                 <h2 class="mt-4 text-lg font-semibold text-graphite-900">Aucune demande trouvée</h2>
                 <p class="mt-1 text-sm text-graphite-600">

@@ -72,7 +72,7 @@
 
             <div class="flex justify-end">
                 <button type="submit" class="rounded bg-nere-600 px-4 py-2 font-medium text-white hover:bg-nere-700">
-                    <i class="fas fa-save mr-2"></i>Enregistrer les paramètres
+                    <x-icone nom="save" class="mr-2" />Enregistrer les paramètres
                 </button>
             </div>
         </form>
@@ -86,7 +86,7 @@
                 @csrf
                 <button type="submit" @disabled(!$ldapEnabled)
                         class="w-full rounded bg-nere-600 px-4 py-2 font-medium text-white hover:bg-nere-700 disabled:cursor-not-allowed disabled:bg-gray-400">
-                    <i class="fas fa-sync mr-2"></i>Lancer la synchronisation
+                    <x-icone nom="refresh-cw" class="mr-2" />Lancer la synchronisation
                 </button>
             </form>
             @if($lastSyncError)

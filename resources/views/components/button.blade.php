@@ -18,7 +18,7 @@
 
 <{{ $tag }} {{ $attributes->merge(['class' => $classes] + $extraAttrs) }}>
     @if($icon)
-        <i class="fas fa-{{ $icon }} mr-2"></i>
+        <x-icone :nom="$icon" class="mr-2" />
     @endif
     {{ $slot }}
 </{{ $tag }}>

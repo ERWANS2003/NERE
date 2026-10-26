@@ -14,7 +14,7 @@
         <div>
             <a href="{{ route('intranet.departments.manage.create') }}" 
                class="inline-flex items-center rounded bg-nere-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
-                <i class="fas fa-plus mr-2"></i>
+                <x-icone nom="plus" class="mr-2" />
                 Nouveau département
             </a>
         </div>
@@ -55,7 +55,7 @@
             <div class="flex items-end">
                 <button type="submit" 
                         class="w-full inline-flex items-center justify-center rounded bg-gray-800 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                    <i class="fas fa-search mr-2"></i>
+                    <x-icone nom="search" class="mr-2" />
                     Filtrer
                 </button>
             </div>
@@ -69,7 +69,7 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-nere-50 text-nere-600">
-                            <i class="fas fa-sitemap text-sm"></i>
+                            <x-icone nom="network" class="text-sm" />
                         </div>
                     </div>
                     <div class="ml-5 w-0 flex-1">
@@ -91,7 +91,7 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-600">
-                            <i class="fas fa-check-circle text-sm"></i>
+                            <x-icone nom="circle-check" class="text-sm" />
                         </div>
                     </div>
                     <div class="ml-5 w-0 flex-1">
@@ -113,7 +113,7 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                            <i class="fas fa-users text-sm"></i>
+                            <x-icone nom="users" class="text-sm" />
                         </div>
                     </div>
                     <div class="ml-5 w-0 flex-1">
@@ -141,7 +141,7 @@
                         <div class="flex items-center flex-1">
                             <div class="flex-shrink-0">
                                 <div class="w-12 h-12 rounded-full {{ $department->is_active ? 'bg-green-100' : 'bg-gray-100' }} flex items-center justify-center">
-                                    <i class="fas fa-sitemap text-{{ $department->is_active ? 'green' : 'gray' }}-600"></i>
+                                    <x-icone nom="network" class="text-{{ $department->is_active ? 'green' : 'gray' }}-600" />
                                 </div>
                             </div>
                             <div class="ml-4 flex-1">
@@ -162,11 +162,11 @@
                                         </span>
                                         <div class="text-sm text-gray-500">
                                             <div class="flex items-center">
-                                                <i class="fas fa-users mr-1"></i>
+                                                <x-icone nom="users" class="mr-1" />
                                                 {{ $department->users_count ?? 0 }} utilisateur(s)
                                             </div>
                                             <div class="flex items-center mt-1">
-                                                <i class="fas fa-calendar mr-1"></i>
+                                                <x-icone nom="calendar" class="mr-1" />
                                                 {{ $department->created_at->format('d/m/Y') }}
                                             </div>
                                         </div>
@@ -177,13 +177,13 @@
                         <div class="flex items-center space-x-2 ml-4">
                             <a href="{{ route('intranet.departments.manage.show', $department) }}" 
                                class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-eye"></i>
+                                <x-icone nom="eye" />
                                 <span class="sr-only">Voir</span>
                             </a>
                             @can('update', $department)
                             <a href="{{ route('intranet.departments.manage.edit', $department) }}" 
                                class="text-yellow-600 hover:text-yellow-800">
-                                <i class="fas fa-edit"></i>
+                                <x-icone nom="pencil" />
                                 <span class="sr-only">Modifier</span>
                             </a>
                             @endcan
@@ -191,7 +191,7 @@
                             <button type="button" 
                                     onclick="deleteDepartment({{ $department->id }})"
                                     class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
+                                <x-icone nom="trash-2" />
                                 <span class="sr-only">Supprimer</span>
                             </button>
                             @endcan
@@ -207,7 +207,7 @@
             </div>
         @else
             <div class="text-center py-12">
-                <i class="fas fa-sitemap text-4xl text-gray-400 mb-4"></i>
+                <x-icone nom="network" class="text-4xl text-gray-400 mb-4" />
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun département trouvé</h3>
                 <p class="text-gray-500 mb-6">
                     @if(request()->hasAny(['search', 'status']))
@@ -219,13 +219,13 @@
                 @if(request()->hasAny(['search', 'status']))
                     <a href="{{ route('intranet.departments.manage.index') }}" 
                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <i class="fas fa-times mr-2"></i>
+                        <x-icone nom="x" class="mr-2" />
                         Effacer les filtres
                     </a>
                 @elseif(auth()->user()->can('create', App\Models\Department::class))
                     <a href="{{ route('intranet.departments.manage.create') }}" 
                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        <i class="fas fa-plus mr-2"></i>
+                        <x-icone nom="plus" class="mr-2" />
                         Créer le premier département
                     </a>
                 @endif
@@ -240,7 +240,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                <x-icone nom="triangle-alert" class="text-red-600" />
             </div>
             <h3 class="text-lg font-medium text-gray-900 mt-2">Supprimer le département</h3>
             <div class="mt-2 px-7 py-3">

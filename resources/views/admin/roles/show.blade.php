@@ -6,11 +6,11 @@
 <div class="max-w-4xl">
     <div class="mb-6 flex items-center justify-between">
         <a href="{{ route('admin.roles.index') }}" class="text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour à la liste
+            <x-icone nom="arrow-left" class="mr-2" />Retour à la liste
         </a>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.roles.edit', $role) }}" class="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
-                <i class="fas fa-edit mr-2"></i>Modifier
+                <x-icone nom="pencil" class="mr-2" />Modifier
             </a>
             <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" class="inline">
                 @csrf
@@ -19,7 +19,7 @@
                         onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?')"
                         class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                         {{ $role->users()->count() > 0 ? 'disabled' : '' }}>
-                    <i class="fas fa-trash mr-2"></i>Supprimer
+                    <x-icone nom="trash-2" class="mr-2" />Supprimer
                 </button>
             </form>
         </div>
@@ -27,13 +27,13 @@
 
     @if(session('success'))
     <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded text-green-700">
-        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        <x-icone nom="circle-check" class="mr-2" />{{ session('success') }}
     </div>
     @endif
 
     @if(session('error'))
     <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">
-        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+        <x-icone nom="circle-alert" class="mr-2" />{{ session('error') }}
     </div>
     @endif
 
@@ -85,7 +85,7 @@
         <div class="grid grid-cols-2 gap-2">
             @foreach($role->permissions as $permission)
             <div class="flex items-center text-sm text-gray-700">
-                <i class="fas fa-check text-green-500 mr-2"></i>
+                <x-icone nom="check" class="text-green-500 mr-2" />
                 <span>
                     <span class="block font-medium">{{ $permission->nom }}</span>
                     @if($permission->description)
@@ -135,7 +135,7 @@
                         </td>
                         <td class="px-4 py-2 text-right text-sm">
                             <a href="{{ route('admin.users.show', $user) }}" class="text-blue-600 hover:text-blue-900">
-                                <i class="fas fa-eye"></i>
+                                <x-icone nom="eye" />
                             </a>
                         </td>
                     </tr>

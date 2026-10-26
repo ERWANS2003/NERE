@@ -6,7 +6,7 @@
 <div class="max-w-3xl">
     <div class="mb-6">
         <a href="{{ route('admin.roles.show', $role) }}" class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour aux détails
+            <x-icone nom="arrow-left" class="mr-2" />Retour aux détails
         </a>
     </div>
 
@@ -64,7 +64,7 @@
                     Annuler
                 </a>
                 <button type="submit" class="inline-flex items-center justify-center rounded bg-nere-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
-                    <i class="fas fa-save mr-2"></i>Enregistrer les modifications
+                    <x-icone nom="save" class="mr-2" />Enregistrer les modifications
                 </button>
             </div>
         </form>

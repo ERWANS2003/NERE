@@ -6,7 +6,7 @@
 <div class="max-w-3xl">
     <div class="mb-6">
         <a href="{{ route('admin.users.show', $user) }}" class="text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour aux détails
+            <x-icone nom="arrow-left" class="mr-2" />Retour aux détails
         </a>
     </div>
 
@@ -63,7 +63,7 @@
             <!-- Mot de passe -->
             <div class="space-y-4 mb-6 pb-6 border-b border-gray-200">
                 <p class="text-sm text-gray-600 mb-3">
-                    <i class="fas fa-info-circle mr-1"></i>Laissez vide pour conserver le mot de passe actuel
+                    <x-icone nom="info" class="mr-1" />Laissez vide pour conserver le mot de passe actuel
                 </p>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
@@ -173,7 +173,7 @@
                            {{ old('is_super_admin', $user->is_super_admin) ? 'checked' : '' }}
                            class="rounded border-gray-300 text-nere-600 focus:ring-nere-500">
                     <span class="ml-2 text-sm text-gray-700">
-                        <i class="fas fa-shield-alt text-nere-600"></i> Administrateur système global
+                        <x-icone nom="shield" class="text-nere-600" /> Administrateur système global
                     </span>
                 </label>
                 <p class="ml-6 text-xs text-gray-500">Droit transversal, indépendant de tout département métier.</p>
@@ -185,7 +185,7 @@
                     Annuler
                 </a>
                 <button type="submit" class="px-4 py-2 bg-nere-600 text-white rounded hover:bg-nere-700">
-                    <i class="fas fa-save mr-2"></i>Mettre à jour
+                    <x-icone nom="save" class="mr-2" />Mettre à jour
                 </button>
             </div>
         </form>

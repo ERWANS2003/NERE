@@ -10,13 +10,13 @@
             <ol class="flex items-center space-x-4">
                 <li>
                     <a href="{{ route('intranet.dashboard') }}" class="text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-home"></i>
+                        <x-icone nom="house" />
                         <span class="sr-only">Tableau de bord</span>
                     </a>
                 </li>
                 <li>
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <x-icone nom="chevron-right" class="text-gray-400 mr-4" />
                         <a href="{{ route('intranet.departments.manage.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                             Départements
                         </a>
@@ -24,7 +24,7 @@
                 </li>
                 <li>
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <x-icone nom="chevron-right" class="text-gray-400 mr-4" />
                         <a href="{{ route('intranet.departments.manage.show', $department) }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                             {{ $department->name }}
                         </a>
@@ -32,7 +32,7 @@
                 </li>
                 <li>
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <x-icone nom="chevron-right" class="text-gray-400 mr-4" />
                         <span class="text-sm font-medium text-gray-500">Modifier</span>
                     </div>
                 </li>
@@ -284,7 +284,7 @@
                         <div class="bg-red-50 border border-red-200 rounded-md p-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
-                                    <i class="fas fa-exclamation-triangle text-red-400"></i>
+                                    <x-icone nom="triangle-alert" class="text-red-400" />
                                 </div>
                                 <div class="ml-3">
                                     <h3 class="text-sm font-medium text-red-800">
@@ -312,12 +312,12 @@
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
                 <a href="{{ route('intranet.departments.manage.show', $department) }}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-times mr-2"></i>
+                    <x-icone nom="x" class="mr-2" />
                     Annuler
                 </a>
                 <button type="submit" 
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-save mr-2"></i>
+                    <x-icone nom="save" class="mr-2" />
                     Enregistrer les modifications
                 </button>
             </div>
@@ -331,7 +331,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                <x-icone nom="triangle-alert" class="text-red-600" />
             </div>
             <h3 class="text-lg font-medium text-gray-900 mt-2">Confirmer la suppression</h3>
             <div class="mt-2 px-7 py-3">

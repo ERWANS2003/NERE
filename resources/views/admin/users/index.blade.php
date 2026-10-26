@@ -9,7 +9,7 @@
         <p class="text-sm text-gray-600">Gérez les comptes utilisateurs de l'intranet</p>
     </div>
     <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-nere-600 text-white rounded hover:bg-nere-700">
-        <i class="fas fa-plus mr-2"></i>Nouvel utilisateur
+        <x-icone nom="plus" class="mr-2" />Nouvel utilisateur
     </a>
 </div>
 
@@ -40,10 +40,10 @@
         </div>
         <div class="flex space-x-2">
             <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-                <i class="fas fa-search"></i>
+                <x-icone nom="search" />
             </button>
             <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                <i class="fas fa-times"></i>
+                <x-icone nom="x" />
             </a>
         </div>
     </form>
@@ -74,7 +74,7 @@
                             <div class="font-medium text-gray-900">{{ $user->name }}</div>
                             @if($user->is_super_admin)
                             <span class="text-xs text-nere-600">
-                                <i class="fas fa-shield-alt"></i> Admin système
+                                <x-icone nom="shield" /> Admin système
                             </span>
                             @endif
                         </div>
@@ -94,10 +94,10 @@
                 </td>
                 <td class="px-6 py-4 text-right space-x-2">
                     <a href="{{ route('admin.users.show', $user) }}" class="text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-eye"></i>
+                        <x-icone nom="eye" />
                     </a>
                     <a href="{{ route('admin.users.edit', $user) }}" class="text-yellow-600 hover:text-yellow-800">
-                        <i class="fas fa-edit"></i>
+                        <x-icone nom="pencil" />
                     </a>
                 </td>
             </tr>

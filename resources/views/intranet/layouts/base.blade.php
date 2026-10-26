@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-32.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#b91c1c">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
@@ -15,7 +17,6 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

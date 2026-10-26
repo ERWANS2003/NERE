@@ -6,11 +6,11 @@
 <div class="max-w-4xl">
     <div class="mb-6 flex items-center justify-between">
         <a href="{{ route('admin.users.index') }}" class="text-gray-600 hover:text-gray-900">
-            <i class="fas fa-arrow-left mr-2"></i>Retour à la liste
+            <x-icone nom="arrow-left" class="mr-2" />Retour à la liste
         </a>
         <div class="space-x-2">
             <a href="{{ route('admin.users.edit', $user) }}" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                <i class="fas fa-edit mr-2"></i>Modifier
+                <x-icone nom="pencil" class="mr-2" />Modifier
             </a>
             @if($user->actif)
             <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="inline">
@@ -18,7 +18,7 @@
                 @method('DELETE')
                 <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" 
                         onclick="return confirm('Désactiver cet utilisateur?')">
-                    <i class="fas fa-ban mr-2"></i>Désactiver
+                    <x-icone nom="ban" class="mr-2" />Désactiver
                 </button>
             </form>
             @endif
@@ -37,7 +37,7 @@
                     <p class="text-gray-600">{{ $user->email }}</p>
                     @if($user->is_super_admin)
                     <span class="inline-block mt-1 px-2 py-1 text-xs bg-nere-100 text-nere-700 rounded">
-                        <i class="fas fa-shield-alt"></i> Administrateur système global
+                        <x-icone nom="shield" /> Administrateur système global
                     </span>
                     @endif
                 </div>

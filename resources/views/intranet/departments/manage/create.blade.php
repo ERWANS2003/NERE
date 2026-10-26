@@ -10,13 +10,13 @@
             <ol class="flex items-center space-x-4">
                 <li>
                     <a href="{{ route('intranet.dashboard') }}" class="text-gray-400 hover:text-gray-500">
-                        <i class="fas fa-home"></i>
+                        <x-icone nom="house" />
                         <span class="sr-only">Tableau de bord</span>
                     </a>
                 </li>
                 <li>
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <x-icone nom="chevron-right" class="text-gray-400 mr-4" />
                         <a href="{{ route('intranet.departments.manage.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                             Départements
                         </a>
@@ -24,7 +24,7 @@
                 </li>
                 <li>
                     <div class="flex items-center">
-                        <i class="fas fa-chevron-right text-gray-400 mr-4"></i>
+                        <x-icone nom="chevron-right" class="text-gray-400 mr-4" />
                         <span class="text-sm font-medium text-gray-500">Créer</span>
                     </div>
                 </li>
@@ -272,12 +272,12 @@
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
                 <a href="{{ route('intranet.departments.manage.index') }}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-times mr-2"></i>
+                    <x-icone nom="x" class="mr-2" />
                     Annuler
                 </a>
                 <button type="submit" 
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-save mr-2"></i>
+                    <x-icone nom="save" class="mr-2" />
                     Créer le département
                 </button>
             </div>

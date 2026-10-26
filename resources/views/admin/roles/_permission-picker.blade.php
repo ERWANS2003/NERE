@@ -14,7 +14,7 @@
     <div class="mt-4 flex flex-col gap-3 sm:flex-row">
         <label class="relative flex-1">
             <span class="sr-only">Rechercher une permission</span>
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true"></i>
+            <x-icone nom="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="search" data-permission-search placeholder="Rechercher par nom ou description…"
                    class="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-nere-500 focus:outline-none focus:ring-2 focus:ring-nere-500">
         </label>
@@ -31,7 +31,7 @@
     @if($permissionGroups->isEmpty())
         <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
             <div class="flex gap-3">
-                <i class="fas fa-circle-info mt-0.5" aria-hidden="true"></i>
+                <x-icone nom="info" class="mt-0.5" />
                 <div>
                     <p class="font-semibold">Le catalogue des permissions est vide.</p>
                     <p class="mt-1">Relancez les migrations de l’application pour initialiser les permissions disponibles.</p>
