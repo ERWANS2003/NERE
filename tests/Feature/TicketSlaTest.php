@@ -161,3 +161,35 @@ it('backfills deadlines for open tickets created before SLA tracking was enabled
         ->and($ticket->fresh()->resolution_due_at->toDateTimeString())
         ->toBe('2026-10-26 16:00:00');
 });
+
+it('restarts the resolution SLA when a director takes back a resolved ticket', function () {
+    Notification::fake();
+    $this->travelTo(CarbonImmutable::parse('2026-10-26 10:00:00', 'Africa/Ouagadougou'));
+    $department = Department::factory()->create(['code' => 'IT', 'is_active' => true]);
+    $director = User::factory()->withRole($department, DepartmentRole::Director)->create();
+    $ticket = Ticket::create([
+        'number' => 'IT-000204',
+        'department_id' => $department->id,
+        'requester_id' => User::factory()->create()->id,
+        'subject' => 'Ticket repris',
+        'description' => 'Le problème est revenu.',
+        'category' => 'software',
+        'priority' => 'normal',
+        'status' => 'resolved',
+        'resolved_at' => now()->subHour(),
+    ]);
+    $ticket->forceFill([
+        'created_at' => CarbonImmutable::parse('2026-10-26 08:00:00', 'Africa/Ouagadougou'),
+    ])->saveQuietly();
+
+    app(TicketSlaService::class)->setDeadlines($ticket);
+    $ticket->forceFill(['resolution_breached_at' => now()])->save();
+    $previousDeadline = $ticket->fresh()->resolution_due_at;
+
+    $this->actingAs($director)
+        ->post(route('intranet.tickets.take', $ticket))
+        ->assertRedirect(route('intranet.tickets.show', $ticket));
+
+    expect($ticket->fresh()->resolution_due_at->greaterThan($previousDeadline))->toBeTrue()
+        ->and($ticket->fresh()->resolution_breached_at)->toBeNull();
+});

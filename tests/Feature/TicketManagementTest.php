@@ -576,3 +576,74 @@ it('stores ticket attachments privately and enforces ticket access on downloads'
         ->get(route('intranet.tickets.attachments.download', $attachment))
         ->assertForbidden();
 });
+
+it('keeps a deactivated assignee when the IT director saves the ticket', function () {
+    Notification::fake();
+    $it = departementIt();
+    $director = User::factory()->withRole($it, DepartmentRole::Director)->create();
+    $former = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create(['name' => 'Technicien Parti']);
+    $ticket = Ticket::create([
+        'number' => 'IT-000105',
+        'department_id' => $it->id,
+        'requester_id' => User::factory()->create()->id,
+        'subject' => 'Imprimante bloquée',
+        'description' => 'Bourrage papier.',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'in_progress',
+        'assignee_id' => $former->id,
+    ]);
+    $former->update(['actif' => false]);
+
+    $this->actingAs($director)
+        ->get(route('intranet.tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('Technicien Parti');
+
+    $this->put(route('intranet.tickets.update', $ticket), [
+        'status' => 'waiting',
+        'priority' => 'normal',
+        'assignee_id' => $former->id,
+    ])->assertSessionHasNoErrors();
+
+    expect($ticket->fresh()->assignee_id)->toBe($former->id)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::Waiting);
+});
+
+it('searches tickets by subject regardless of case', function () {
+    $it = departementIt();
+    $requester = User::factory()->create();
+    Ticket::create([
+        'number' => 'IT-000106',
+        'department_id' => $it->id,
+        'requester_id' => $requester->id,
+        'subject' => 'Imprimante du bureau 3',
+        'description' => 'Ne répond plus.',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+
+    $this->actingAs($requester)
+        ->get(route('intranet.tickets.index', ['search' => 'imprimante']))
+        ->assertOk()
+        ->assertSee('IT-000106');
+});
+
+it('numbers each new ticket from its id', function () {
+    Notification::fake();
+    $it = departementIt();
+    $requester = User::factory()->create();
+
+    foreach (['Premier', 'Second'] as $subject) {
+        $this->actingAs($requester)->post(route('intranet.tickets.store'), [
+            'subject' => $subject,
+            'description' => 'Description.',
+            'category' => 'software',
+            'priority' => 'normal',
+        ])->assertSessionHasNoErrors();
+    }
+
+    expect(Ticket::orderBy('id')->get()->map(fn (Ticket $t) => $t->number === 'IT-'.str_pad((string) $t->id, 6, '0', STR_PAD_LEFT))->all())
+        ->toBe([true, true]);
+});

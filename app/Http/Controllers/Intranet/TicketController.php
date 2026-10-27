@@ -22,6 +22,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -47,9 +48,10 @@ class TicketController extends Controller
 
         if ($request->filled('search')) {
             $search = trim($request->string('search')->toString());
+            // whereLike : insensible a la casse sur PostgreSQL (ilike), comme en SQLite.
             $query->where(fn ($tickets) => $tickets
-                ->where('number', 'like', "%{$search}%")
-                ->orWhere('subject', 'like', "%{$search}%"));
+                ->whereLike('number', "%{$search}%")
+                ->orWhereLike('subject', "%{$search}%"));
         }
 
         $tickets = $query->latest()->paginate(20)->withQueryString();
@@ -104,7 +106,9 @@ class TicketController extends Controller
 
         $ticket = DB::transaction(function () use ($request, $department, $validated, $ticketSlaService) {
             $ticket = Ticket::create([
-                'number' => 'pending',
+                // Provisoire et unique : deux creations simultanees ne se heurtent
+                // plus sur la contrainte d'unicite du numero.
+                'number' => 'tmp-'.Str::uuid(),
                 'department_id' => $department->id,
                 'requester_id' => $request->user()->id,
                 'subject' => $validated['subject'],
@@ -167,7 +171,13 @@ class TicketController extends Controller
             'canAssign' => $canAssign,
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
-            'agents' => $this->itAgents($department)->sortBy('name')->values(),
+            // Le technicien affecte reste dans la liste meme desactive, sinon
+            // enregistrer le formulaire retirerait l'affectation sans le dire.
+            'agents' => $this->itAgents($department)
+                ->when($ticket->assignee, fn (Collection $agents) => $agents->push($ticket->assignee))
+                ->unique('id')
+                ->sortBy('name')
+                ->values(),
         ]);
     }
 
@@ -189,7 +199,9 @@ class TicketController extends Controller
                 'present',
                 'nullable',
                 'integer',
-                Rule::in($this->itAgents($department)->modelKeys()),
+                // Le technicien deja affecte reste acceptable meme s'il a ete
+                // desactive, sinon plus personne ne peut enregistrer le ticket.
+                Rule::in([...$this->itAgents($department)->modelKeys(), $ticket->assignee_id]),
             ];
         }
 
@@ -269,7 +281,7 @@ class TicketController extends Controller
             ->with('success', 'Le ticket a été mis à jour.');
     }
 
-    public function take(Request $request, Ticket $ticket): RedirectResponse
+    public function take(Request $request, Ticket $ticket, TicketSlaService $ticketSlaService): RedirectResponse
     {
         $this->authorizeAgent($request->user(), $ticket);
         abort_unless($request->user()->canValidateIn($ticket->department_id), 403);
@@ -286,12 +298,18 @@ class TicketController extends Controller
             'assignee_id' => $ticket->assignee_id,
         ];
 
+        $reopened = $ticket->status === TicketStatus::Resolved;
+
         $ticket->update([
             'assignee_id' => $request->user()->id,
             'status' => TicketStatus::InProgress,
             'resolved_at' => null,
             'closed_at' => null,
         ]);
+
+        if ($reopened) {
+            $ticketSlaService->restartResolutionDeadline($ticket);
+        }
 
         TicketActivity::create([
             'ticket_id' => $ticket->id,
@@ -399,9 +417,7 @@ class TicketController extends Controller
     {
         return User::query()
             ->where('actif', true)
-            ->whereHas('departments', fn ($query) => $query
-                ->where('departments.id', $department->id)
-                ->whereIn('department_user.role', [DepartmentRole::Technician->value, DepartmentRole::Director->value]))
+            ->handlersOf($department->id)
             ->get();
     }
 
