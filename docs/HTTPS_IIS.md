@@ -16,7 +16,10 @@ Appliqué sur `OUA-NM-INTRANET` (192.168.10.206), site IIS `ITSM Neré Mining`, 
 - `.env` : `APP_URL=https://OUA-NM-INTRANET.neremining.com`, `SESSION_SECURE_COOKIE=true` ;
 - sauvegardes : `appcmd restore backup avant-https-20261027-111159` et `.env.avant-https-20261027-111159`.
 
-Reste à faire : approuver le certificat sur les postes (étape 4).
+Durcissement appliqué le 27/10/2026 (après redémarrage) : TLS 1.0 et 1.1 désactivés, HSTS, version PHP masquée.
+Sauvegardes : `C:Installsauvegardes-durcissement-20261027-112421` et `appcmd restore backup avant-durcissement-20261027-112421`.
+
+Reste à faire : approuver le certificat sur les postes par GPO (étape 4).
 
 Scripts : `scripts/https/` (PowerShell 5.1, à lancer **en administrateur**).
 
@@ -24,7 +27,8 @@ Scripts : `scripts/https/` (PowerShell 5.1, à lancer **en administrateur**).
 | --- | --- | --- |
 | `Activer-HTTPS.ps1` | serveur | importe le certificat, ajoute la liaison 443, ouvre le pare-feu, redirige HTTP vers HTTPS, met à jour `.env` |
 | `Desactiver-HTTPS.ps1` | serveur | retour arrière complet en cas de problème |
-| `Installer-CertificatClient.ps1` | poste client | fait approuver le certificat par un poste (si pas de GPO) |
+| `Deployer-CertificatGPO.ps1` | contrôleur de domaine | fait approuver le certificat par tous les PC du domaine (GPO) |
+| `Installer-CertificatClient.ps1` | poste client | fait approuver le certificat par un poste hors domaine |
 
 ## 1. Prérequis sur le serveur
 
@@ -64,18 +68,46 @@ s'affiche, `http://...` redirige vers `https://...`.
 
 ## 4. Faire approuver le certificat par les postes
 
-Recommandé, une fois pour tout le domaine (contrôleur de domaine, Gestion des stratégies de groupe) :
+Le certificat public est dans le dépôt : `scripts/https/certificats/intranet-nere-mining.cer`
+(empreinte `DDFE6E8545A4CA68510CB68D248E6D5679611831`, valable jusqu'au 23/10/2027).
 
-1. Créer ou modifier une GPO liée à l'OU des ordinateurs.
-2. Configuration ordinateur > Stratégies > Paramètres Windows > Paramètres de sécurité >
-   Stratégies de clé publique > **Autorités de certification racines de confiance**.
-3. Clic droit > Importer > `intranet-nere-mining.cer`.
-4. Sur un poste : `gpupdate /force`, puis redémarrer le navigateur.
+### Tous les PC du domaine (recommandé)
 
-Poste isolé (hors domaine), en administrateur :
+Par un **administrateur du domaine `neremining.com`**, sur un contrôleur de domaine
+(serveurs DNS `10.226.70.31` / `10.226.70.32`) ou un poste avec les outils RSAT,
+dans PowerShell en administrateur, à la racine d'une copie du dépôt :
 
 ```powershell
-.\scripts\https\Installer-CertificatClient.ps1 -CerPath "\\serveur\partage\intranet-nere-mining.cer"
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\https\Deployer-CertificatGPO.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining.cer
+```
+
+Le script crée la GPO `NERE - Certificat intranet HTTPS`, y place le certificat dans
+« Autorités de certification racines de confiance » et la lie à la racine du domaine.
+Pour ne cibler qu'une OU : `-Cible "OU=Postes,DC=neremining,DC=com"`.
+
+Équivalent manuel dans la console GPMC : Configuration ordinateur > Stratégies >
+Paramètres Windows > Paramètres de sécurité > Stratégies de clé publique >
+Autorités de certification racines de confiance > Importer.
+
+Les postes l'appliquent au prochain rafraîchissement (environ 90 min) ou tout de suite avec :
+
+```powershell
+gpupdate /force
+```
+
+Vérification sur un poste (doit afficher une ligne) :
+
+```powershell
+Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq 'DDFE6E8545A4CA68510CB68D248E6D5679611831'
+```
+
+### Poste hors domaine
+
+En administrateur :
+
+```powershell
+.\scripts\https\Installer-CertificatClient.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining.cer
 ```
 
 Diffuser uniquement le `.cer`, jamais le `.pfx` (il contient la clé privée).
