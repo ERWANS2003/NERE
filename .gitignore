@@ -41,3 +41,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Certificats et cles privees : jamais dans le depot
+*.pfx
+*.p12
+*.key
