@@ -11,9 +11,10 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$SiteName = 'ITSM-NERE-Mining',
+    # Par defaut : le site IIS dont le dossier contient "itsm-nere-mining".
+    [string]$SiteName,
 
-    [string]$HostName = 'UA-NM-INTRANET.neremining.com',
+    [string]$HostName = 'OUA-NM-INTRANET.neremining.com',
 
     [int]$Port = 443,
 
@@ -28,6 +29,9 @@ if (-not $identite.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrat
     throw 'Lancez ce script dans une console PowerShell ouverte en tant qu''administrateur.'
 }
 Import-Module WebAdministration
+if (-not $SiteName) {
+    $SiteName = @(Get-Website | Where-Object { $_.physicalPath -like '*itsm-nere-mining*' })[0].Name
+}
 
 Write-Host '==> Suppression de la redirection HTTP vers HTTPS' -ForegroundColor Cyan
 Clear-WebConfiguration -PSPath 'MACHINE/WEBROOT/APPHOST' -Location $SiteName `

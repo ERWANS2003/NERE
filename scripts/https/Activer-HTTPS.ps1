@@ -20,16 +20,17 @@
     .\Activer-HTTPS.ps1 -PfxPath "C:\Install\intranet-cert.pfx"
 
 .EXAMPLE
-    .\Activer-HTTPS.ps1 -PfxPath "C:\Install\intranet-cert.pfx" -SiteName "ITSM-NERE-Mining" -HostName "UA-NM-INTRANET.neremining.com"
+    .\Activer-HTTPS.ps1 -PfxPath "C:\Install\intranet-cert.pfx" -SiteName "ITSM Nere Mining" -HostName "OUA-NM-INTRANET.neremining.com"
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
     [string]$PfxPath,
 
-    [string]$SiteName = 'ITSM-NERE-Mining',
+    # Par defaut : le site IIS dont le dossier contient "itsm-nere-mining" (son nom porte un accent).
+    [string]$SiteName,
 
-    [string]$HostName = 'UA-NM-INTRANET.neremining.com',
+    [string]$HostName = 'OUA-NM-INTRANET.neremining.com',
 
     [int]$Port = 443,
 
@@ -55,7 +56,10 @@ if (-not (Test-Path -LiteralPath $PfxPath)) {
     throw "Certificat introuvable : $PfxPath"
 }
 Import-Module WebAdministration
-$site = Get-Website -Name $SiteName
+if (-not $SiteName) {
+    $SiteName = @(Get-Website | Where-Object { $_.physicalPath -like '*itsm-nere-mining*' })[0].Name
+}
+$site = Get-Website | Where-Object { $_.Name -eq $SiteName }
 if (-not $site) {
     throw "Site IIS '$SiteName' introuvable. Sites existants : $((Get-Website).Name -join ', ')"
 }
@@ -111,6 +115,11 @@ $liaisonHttpAvecHote = Get-WebBinding -Name $SiteName -Protocol http | Where-Obj
 if (-not $liaisonHttpAvecHote) {
     Attention "Aucune liaison HTTP n'utilise le nom '$HostName' : les anciens liens http://<IP> continueront de fonctionner puis seront rediriges."
 }
+
+# Ne pas demander de certificat client : ce reglage ("Accepter") declenche une
+# renegociation TLS que les navigateurs recents refusent (connexion coupee).
+Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Location $SiteName -Filter 'system.webServer/security/access' -Name sslFlags -Value 'None'
+Ok 'Certificats clients ignores (pas de renegociation TLS)'
 
 # --- 3. Pare-feu ------------------------------------------------------------
 Etape "Pare-feu : port $Port"

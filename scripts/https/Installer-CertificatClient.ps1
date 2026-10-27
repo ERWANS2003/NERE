@@ -11,7 +11,7 @@
     ne diffusez jamais le .pfx, qui contient la cle privee.
 
 .EXAMPLE
-    .\Installer-CertificatClient.ps1 -CerPath "\\UA-NM-INTRANET\partage\intranet-nere-mining.cer"
+    .\Installer-CertificatClient.ps1 -CerPath "\\OUA-NM-INTRANET\partage\intranet-nere-mining.cer"
 #>
 [CmdletBinding()]
 param(
