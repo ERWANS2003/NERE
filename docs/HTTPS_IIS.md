@@ -1,132 +1,118 @@
-# Passer l'intranet en HTTPS (IIS, Windows Server)
+# HTTPS de l'intranet (IIS, Windows Server)
 
-Certificat fourni : `intranet-cert.pfx`
-- Nom couvert : `OUA-NM-INTRANET.neremining.com`
-- Validité : 23/10/2026 au 23/10/2027
-- Auto-signé : les postes doivent l'approuver (étape 4), sinon le navigateur affiche une alerte.
+Adresse de l'intranet : **https://192.168.10.206**
 
-## État du serveur (27/10/2026)
+Certificat auto-signé créé sur le serveur le 27/10/2026 :
+- couvre l'IP `192.168.10.206` et les noms `OUA-NM-INTRANET.neremining.com` et `OUA-NM-INTRANET` ;
+- empreinte `C044B43D23054999374BAF109CBB1678AFC21EFF`, valable jusqu'au **26/10/2028** ;
+- certificat public : `scripts/https/certificats/intranet-nere-mining-ip.cer` (sans clé privée).
 
-Appliqué sur `OUA-NM-INTRANET` (192.168.10.206), site IIS `ITSM Neré Mining`, application
-`C:\inetpub\wwwroot\itsm-nere-mining` :
+Tant qu'un poste n'a pas approuvé ce certificat (étape 2), le navigateur affiche
+« Votre connexion n'est pas privée ».
 
-- certificat déjà importé (magasin `WebHosting`) et lié à `*:443` ;
+## 1. État du serveur
+
+`OUA-NM-INTRANET` (192.168.10.206), Windows Server 2016, site IIS `ITSM Neré Mining`,
+application `C:\inetpub\wwwroot\itsm-nere-mining` :
+
+- port 443 lié au certificat ci-dessus ;
+- toute adresse (HTTP, ou un nom au lieu de l'IP) redirige en 301 vers `https://192.168.10.206/`
+  (règle `NERE - Forcer HTTPS` dans `applicationHost.config`, non écrasée par un `git pull`) ;
 - certificats clients ignorés (ils provoquaient une renégociation TLS refusée par les navigateurs) ;
-- redirection HTTP vers HTTPS (règle `NERE - Forcer HTTPS` dans `applicationHost.config`) ;
-- `.env` : `APP_URL=https://OUA-NM-INTRANET.neremining.com`, `SESSION_SECURE_COOKIE=true` ;
-- sauvegardes : `appcmd restore backup avant-https-20261027-111159` et `.env.avant-https-20261027-111159`.
+- TLS 1.0 et 1.1 désactivés, TLS 1.2 seul ; en-tête HSTS ; version PHP masquée ;
+- `.env` : `APP_ENV=production`, `APP_URL=https://192.168.10.206`, `SESSION_SECURE_COOKIE=true`.
 
-Durcissement appliqué le 27/10/2026 (après redémarrage) : TLS 1.0 et 1.1 désactivés, HSTS, version PHP masquée.
-Sauvegardes : `C:Installsauvegardes-durcissement-20261027-112421` et `appcmd restore backup avant-durcissement-20261027-112421`.
+Sauvegardes (restauration en administrateur sur le serveur) :
 
-Reste à faire : approuver le certificat sur les postes par GPO (étape 4).
-
-Scripts : `scripts/https/` (PowerShell 5.1, à lancer **en administrateur**).
-
-| Script | Où | Rôle |
+| Étape | IIS | Autre |
 | --- | --- | --- |
-| `Activer-HTTPS.ps1` | serveur | importe le certificat, ajoute la liaison 443, ouvre le pare-feu, redirige HTTP vers HTTPS, met à jour `.env` |
-| `Desactiver-HTTPS.ps1` | serveur | retour arrière complet en cas de problème |
-| `Deployer-CertificatGPO.ps1` | contrôleur de domaine | fait approuver le certificat par tous les PC du domaine (GPO) |
-| `Installer-CertificatClient.ps1` | poste client | fait approuver le certificat par un poste hors domaine |
+| Passage en HTTPS | `appcmd restore backup avant-https-20261027-111159` | `.env.avant-https-20261027-111159` |
+| Durcissement TLS | `appcmd restore backup avant-durcissement-20261027-112421` | `C:\Install\sauvegardes-durcissement-20261027-112421\` (registre TLS, `php.ini`) |
+| Certificat IP | `appcmd restore backup avant-cert-ip-20261027-113820` | `.env.avant-cert-ip-20261027-113820` |
 
-## 1. Prérequis sur le serveur
+`appcmd` se trouve dans `C:\Windows\System32\inetsrv\`.
 
-- Module **IIS URL Rewrite** installé (déjà requis par le `web.config` de Laravel).
-- Le nom `OUA-NM-INTRANET.neremining.com` résolu vers l'IP du serveur dans le **DNS interne**
-  (enregistrement A). Sans DNS, pour un test sur un poste : ajouter la ligne
-  `<IP du serveur>  OUA-NM-INTRANET.neremining.com` dans `C:\Windows\System32\drivers\etc\hosts`.
-- Copier `intranet-cert.pfx` sur le serveur hors du dossier du site, par exemple `C:\Install\`.
-  Ne jamais le placer dans le dépôt Git ni dans `public\`.
+## 2. Faire approuver le certificat par les postes
 
-## 2. Activer le HTTPS
+Diffuser uniquement le `.cer`, jamais une clé privée.
 
-Dans une console PowerShell **Exécuter en tant qu'administrateur**, à la racine de l'application
-(après `git pull`) :
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\https\Activer-HTTPS.ps1 -PfxPath "C:\Install\intranet-cert.pfx"
-```
-
-Le script demande le mot de passe du `.pfx`. Paramètres facultatifs :
-`-SiteName` (par défaut, détecté automatiquement : le site dont le dossier contient `itsm-nere-mining`), `-HostName "OUA-NM-INTRANET.neremining.com"`,
-`-AppPath "E:\web\itsm-nere-mining"`, `-SansRedirection`.
-
-Il affiche à la fin le chemin de la sauvegarde du `.env` et du certificat public exporté
-(`intranet-nere-mining.cer`, à côté du `.pfx`).
-
-## 3. Vérifier
-
-```powershell
-Get-WebBinding | Format-Table protocol, bindingInformation
-Get-ChildItem IIS:\SslBindings
-```
-
-Puis ouvrir `https://OUA-NM-INTRANET.neremining.com` depuis un poste : la page de connexion
-s'affiche, `http://...` redirige vers `https://...`.
-
-## 4. Faire approuver le certificat par les postes
-
-Le certificat public est dans le dépôt : `scripts/https/certificats/intranet-nere-mining.cer`
-(empreinte `DDFE6E8545A4CA68510CB68D248E6D5679611831`, valable jusqu'au 23/10/2027).
-
-### Tous les PC du domaine (recommandé)
+### Tous les PC du domaine (GPO)
 
 Par un **administrateur du domaine `neremining.com`**, sur un contrôleur de domaine
-(serveurs DNS `10.226.70.31` / `10.226.70.32`) ou un poste avec les outils RSAT,
-dans PowerShell en administrateur, à la racine d'une copie du dépôt :
+(`10.226.70.31` / `10.226.70.32`) ou un poste avec les outils RSAT, dans PowerShell en
+administrateur, à la racine d'une copie du dépôt :
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\https\Deployer-CertificatGPO.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining.cer
+.\scripts\https\Deployer-CertificatGPO.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining-ip.cer
 ```
 
 Le script crée la GPO `NERE - Certificat intranet HTTPS`, y place le certificat dans
-« Autorités de certification racines de confiance » et la lie à la racine du domaine.
-Pour ne cibler qu'une OU : `-Cible "OU=Postes,DC=neremining,DC=com"`.
+« Autorités de certification racines de confiance » et la lie à la racine du domaine
+(ou à une OU avec `-Cible "OU=Postes,DC=neremining,DC=com"`).
 
 Équivalent manuel dans la console GPMC : Configuration ordinateur > Stratégies >
 Paramètres Windows > Paramètres de sécurité > Stratégies de clé publique >
 Autorités de certification racines de confiance > Importer.
 
-Les postes l'appliquent au prochain rafraîchissement (environ 90 min) ou tout de suite avec :
+Les postes l'appliquent sous 90 minutes environ, ou tout de suite avec `gpupdate /force`.
+
+### Poste par poste (script)
+
+Le plus simple : copier `scripts/https/poste/Securiser-Intranet.cmd` sur le poste (clé USB,
+partage, e-mail) et double-cliquer dessus, puis accepter la demande administrateur. Le
+certificat est intégré au fichier. Le script l'installe, retire l'ancien certificat
+(`DDFE6E85...`), configure Firefox s'il est présent et teste la connexion à l'intranet.
+
+Avec le dépôt, dans PowerShell en administrateur :
 
 ```powershell
-gpupdate /force
+.\scripts\https\Installer-CertificatClient.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining-ip.cer
 ```
 
-Vérification sur un poste (doit afficher une ligne) :
+Sans le dépôt, la même chose en une ligne (en administrateur, avec le `.cer` copié sur le poste) :
 
 ```powershell
-Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq 'DDFE6E8545A4CA68510CB68D248E6D5679611831'
+Import-Certificate -FilePath .\intranet-nere-mining-ip.cer -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
-### Poste hors domaine
+### Vérification sur un poste
 
-En administrateur :
+Doit afficher une ligne, puis redémarrer le navigateur :
 
 ```powershell
-.\scripts\https\Installer-CertificatClient.ps1 -CerPath .\scripts\https\certificats\intranet-nere-mining.cer
+Get-ChildItem Cert:\LocalMachine\Root | Where-Object Thumbprint -eq 'C044B43D23054999374BAF109CBB1678AFC21EFF'
 ```
 
-Diffuser uniquement le `.cer`, jamais le `.pfx` (il contient la clé privée).
+Firefox utilise son propre magasin : activer `security.enterprise_roots.enabled` (about:config)
+pour qu'il reprenne les certificats approuvés par Windows.
 
-## 5. En cas de problème
+## 3. Renouvellement (avant le 26/10/2028)
+
+Sur le serveur, en administrateur, à la racine de l'application :
 
 ```powershell
-.\scripts\https\Desactiver-HTTPS.ps1 -EnvBackup "<chemin affiché par Activer-HTTPS.ps1>"
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\https\Creer-CertificatAutoSigne.ps1
 ```
+
+Le script sauvegarde IIS et `.env`, crée un nouveau certificat de 2 ans, le lie au port 443,
+remet la redirection vers l'IP et exporte `C:\Install\intranet-nere-mining-ip.cer`.
+Redéployer ensuite ce nouveau `.cer` sur les postes (étape 2) : l'ancien ne sera plus présenté.
+
+## 4. En cas de problème
 
 | Symptôme | Cause probable |
 | --- | --- |
-| Alerte « connexion non privée » | certificat pas encore approuvé sur le poste (étape 4) |
-| Alerte « nom non valide » | accès par l'IP ou un autre nom que `OUA-NM-INTRANET.neremining.com` |
-| Déconnexion en boucle | `APP_URL` en `http` ou cache de config ancien : `php artisan config:cache` |
-| Page inaccessible sur 443 | pare-feu réseau entre les postes et le serveur, ou DNS absent |
-| Connexion coupée pendant la négociation TLS | site réglé sur « Accepter les certificats clients » : IIS > site > Paramètres SSL > Certificats clients : **Ignorer** (le script le fait) |
+| Alerte « connexion non privée » | certificat pas encore approuvé sur le poste (étape 2) |
+| Déconnexion en boucle | `APP_URL` en `http` ou ancien cache : `php artisan config:cache` |
+| Page inaccessible sur 443 | pare-feu réseau entre le poste et le serveur |
+| Connexion coupée pendant la négociation TLS | IIS > site > Paramètres SSL > Certificats clients : **Ignorer** |
+| Vieux logiciel qui n'arrive plus à se connecter | il ne gère que TLS 1.0/1.1, désactivés volontairement |
 
-## 6. Renouvellement (avant le 23/10/2027)
+## Autres scripts de `scripts/https/`
 
-Relancer `Activer-HTTPS.ps1` avec le nouveau `.pfx`, puis redistribuer le nouveau `.cer`
-si le certificat reste auto-signé.
+| Script | Rôle |
+| --- | --- |
+| `Activer-HTTPS.ps1` | installer un certificat fourni en `.pfx` (ex. certificat d'une autorité) |
+| `Desactiver-HTTPS.ps1` | retirer liaison HTTPS et redirection, restaurer un `.env` sauvegardé |

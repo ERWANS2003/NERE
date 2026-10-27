@@ -14,10 +14,10 @@
     "gpupdate /force". Seul le certificat public (.cer) est utilise, jamais le .pfx.
 
 .EXAMPLE
-    .\Deployer-CertificatGPO.ps1 -CerPath .\certificats\intranet-nere-mining.cer
+    .\Deployer-CertificatGPO.ps1 -CerPath .\certificats\intranet-nere-mining-ip.cer
 
 .EXAMPLE
-    .\Deployer-CertificatGPO.ps1 -CerPath .\certificats\intranet-nere-mining.cer -Cible "OU=Postes,DC=neremining,DC=com"
+    .\Deployer-CertificatGPO.ps1 -CerPath .\certificats\intranet-nere-mining-ip.cer -Cible "OU=Postes,DC=neremining,DC=com"
 #>
 [CmdletBinding()]
 param(

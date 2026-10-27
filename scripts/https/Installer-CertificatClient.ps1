@@ -7,11 +7,11 @@
     "Votre connexion n'est pas privee". A lancer en administrateur sur chaque poste, ou mieux,
     a deployer une seule fois pour tout le domaine par strategie de groupe (voir docs/HTTPS_IIS.md).
 
-    Seule la partie publique (.cer, exportee par Activer-HTTPS.ps1) est utilisee :
-    ne diffusez jamais le .pfx, qui contient la cle privee.
+    Seule la partie publique (.cer) est utilisee : ne diffusez jamais le .pfx, qui contient la cle privee.
+    Sans fichier .cer a cote : utiliser poste\Securiser-Intranet.cmd (certificat integre).
 
 .EXAMPLE
-    .\Installer-CertificatClient.ps1 -CerPath "\\OUA-NM-INTRANET\partage\intranet-nere-mining.cer"
+    .\Installer-CertificatClient.ps1 -CerPath .\certificats\intranet-nere-mining-ip.cer
 #>
 [CmdletBinding()]
 param(
