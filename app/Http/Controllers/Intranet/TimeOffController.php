@@ -39,19 +39,13 @@ class TimeOffController extends Controller
             ->latest('start_date')
             ->paginate(10);
 
-        // Un manager (collaborateurs directs) ou un admin accède à l'écran d'approbation.
-        $estApprobateur = $user->is_super_admin
-            || User::where('manager_id', $user->id)->exists();
+        // Manager, directeur de département ou admin : accès à l'écran d'approbation.
+        $estApprobateur = $user->canApproveTimeOff();
 
         // Nombre de demandes en attente dans son périmètre (badge sur le lien).
-        $enAttente = 0;
-        if ($estApprobateur) {
-            $q = TimeOffRequest::where('status', 'pending');
-            if (! $user->is_super_admin) {
-                $q->whereHas('user', fn ($sub) => $sub->where('manager_id', $user->id));
-            }
-            $enAttente = $q->count();
-        }
+        $enAttente = $estApprobateur
+            ? TimeOffRequest::where('status', 'pending')->approvableBy($user)->count()
+            : 0;
 
         return view('intranet.time-off.index', compact('balances', 'requests', 'estApprobateur', 'enAttente'));
     }

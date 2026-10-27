@@ -87,11 +87,16 @@
             @if($user->departments->count() > 0)
             <div class="mb-5 flex flex-wrap gap-2">
                 @foreach($user->departments as $dept)
+                @php
+                    $effectiveRole = $user->elevatedDepartmentRole(\App\Enums\DepartmentRole::tryFrom($dept->pivot->role) ?? \App\Enums\DepartmentRole::User);
+                    $effectiveLevel = $user->elevatedTechLevel($effectiveRole, $dept->pivot->tech_level);
+                @endphp
                 <span class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
                     {{ $dept->name }}
                     <span class="text-xs text-blue-700">
-                        {{ $departmentRoles[$dept->pivot->role] ?? 'Utilisateur' }}
-                        @if($dept->pivot->tech_level) · N{{ $dept->pivot->tech_level }} @endif
+                        {{ $effectiveRole->label() }}
+                        @if($effectiveLevel && $effectiveRole === \App\Enums\DepartmentRole::Technician) · N{{ $effectiveLevel }} @endif
+                        @if($effectiveRole->value !== $dept->pivot->role) (rôle système) @endif
                     </span>
                 </span>
                 @endforeach

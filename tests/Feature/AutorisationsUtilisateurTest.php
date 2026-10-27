@@ -126,7 +126,7 @@ it('accepte plusieurs roles attendus', function () {
         ->and($directeur->hasRoleIn($departement->id, DepartmentRole::User, DepartmentRole::Technician))->toBeFalse();
 });
 
-it('charge tous les droits en une seule requete', function () {
+it('charge tous les droits en un nombre fixe de requetes', function () {
     $departementA = Department::factory()->create();
     $departementB = Department::factory()->create();
 
@@ -140,6 +140,7 @@ it('charge tous les droits en une seule requete', function () {
     $utilisateur = User::find($utilisateur->id);
 
     // Sans ce cache, une grille de neuf cartes declencherait neuf requetes de plus.
+    // Deux requetes fixes : le pivot et les roles systeme qui l'elevent.
     $requetes = 0;
     DB::listen(function () use (&$requetes) {
         $requetes++;
@@ -150,7 +151,7 @@ it('charge tous les droits en une seule requete', function () {
     $utilisateur->roleIn($departementB->id);
     $utilisateur->canHandleIn($departementA->id);
 
-    expect($requetes)->toBe(1);
+    expect($requetes)->toBe(2);
 });
 
 it('ne recharge pas les droits si on les a deja charges', function () {

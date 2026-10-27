@@ -47,6 +47,18 @@
                         <span>Mes demandes</span>
                     </a>
                 </li>
+                @if($enabledModules['time_off']['enabled'])
+                <li>
+                    <a id="intranet-time-off-link" href="{{ route('intranet.time-off.index') }}"
+                       @if(request()->routeIs('intranet.time-off.index', 'intranet.time-off.create')) aria-current="page" @endif
+                       class="sidebar-link {{ request()->routeIs('intranet.time-off.index', 'intranet.time-off.create') ? 'active' : '' }}">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Mes congés</span>
+                    </a>
+                </li>
+                @endif
             </ul>
         </section>
 
@@ -176,6 +188,28 @@
                             <span>Analytics</span>
                         </a>
                     </li>
+                    <li>
+                        <a id="intranet-department-management-link" href="{{ route('intranet.departments.manage.index') }}"
+                           @if(request()->routeIs('intranet.departments.manage.*')) aria-current="page" @endif
+                           class="sidebar-link {{ request()->routeIs('intranet.departments.manage.*') ? 'active' : '' }}">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>{{ $currentUser->is_super_admin ? 'Gestion des départements' : 'Mon département' }}</span>
+                        </a>
+                    </li>
+                    @if($enabledModules['time_off']['enabled'])
+                    <li>
+                        <a id="intranet-time-off-approvals-link" href="{{ route('intranet.time-off.approvals') }}"
+                           @if(request()->routeIs('intranet.time-off.approvals')) aria-current="page" @endif
+                           class="sidebar-link {{ request()->routeIs('intranet.time-off.approvals') ? 'active' : '' }}">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            <span>Approbation des congés</span>
+                        </a>
+                    </li>
+                    @endif
                     @if($currentUser->is_super_admin)
                         <li>
                             <a href="{{ route('admin.settings') }}"

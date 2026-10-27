@@ -54,8 +54,8 @@ class DepartmentShowController extends Controller
 
     /**
      * Équipe du département, triée par niveau hiérarchique (directeur, puis
-     * technicien, puis utilisateur) et par nom. Le rôle et le niveau technique
-     * sont lus sur le pivot department_user.
+     * technicien, puis utilisateur) et par nom. Le rôle du pivot department_user
+     * est élevé par les rôles système (Chef de département, Technicien).
      *
      * @return \Illuminate\Support\Collection<int, array<string, mixed>>
      */
@@ -69,16 +69,17 @@ class DepartmentShowController extends Controller
 
         return $department->users()
             ->where('actif', true)
+            ->with('roles.permissions')
             ->orderBy('name')
             ->get()
             ->map(function ($user) {
-                $role = DepartmentRole::tryFrom($user->pivot->role);
+                $role = $user->elevatedDepartmentRole(DepartmentRole::tryFrom($user->pivot->role) ?? DepartmentRole::User);
 
                 return [
                     'user' => $user,
                     'role' => $role,
                     'roleLabel' => $role?->label() ?? 'Membre',
-                    'techLevel' => $user->pivot->tech_level,
+                    'techLevel' => $user->elevatedTechLevel($role, $user->pivot->tech_level),
                     'isHead' => $role === DepartmentRole::Director,
                 ];
             })

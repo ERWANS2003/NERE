@@ -16,7 +16,8 @@ use Illuminate\View\View;
  * Workflow d'approbation des congés (côté manager).
  *
  * Un manager voit les demandes en attente de ses collaborateurs directs
- * (users.manager_id). Le super-admin voit toutes les demandes en attente.
+ * (users.manager_id), un directeur celles des membres de ses departements.
+ * Le super-admin voit toutes les demandes en attente.
  * L'approbation décrémente le solde en transaction ; le refus ne touche pas
  * au solde.
  */
@@ -26,17 +27,9 @@ class TimeOffApprovalController extends Controller
     {
         $this->authorizeApprover($request);
 
-        $user = $request->user();
-
-        $query = TimeOffRequest::with(['user', 'policy'])
-            ->where('status', 'pending');
-
-        if (! $user->is_super_admin) {
-            // Seulement les demandes des collaborateurs directs du manager.
-            $query->whereHas('user', fn ($q) => $q->where('manager_id', $user->id));
-        }
-
-        $requests = $query->orderBy('start_date')->paginate(15);
+        $requests = TimeOffRequest::with(['user', 'policy'])
+            ->where('status', 'pending')
+            ->approvableBy($request->user())->orderBy('start_date')->paginate(15);
 
         return view('intranet.time-off.approvals', compact('requests'));
     }
@@ -100,18 +93,12 @@ class TimeOffApprovalController extends Controller
 
     private function authorizeApprover(Request $request): void
     {
-        $user = $request->user();
-        // Un manager est quelqu'un qui a au moins un collaborateur direct.
-        $estManager = $user->is_super_admin
-            || User::where('manager_id', $user->id)->exists();
-
-        abort_unless($estManager, 403, "Vous n'avez pas de demandes à approuver.");
+        abort_unless($request->user()->canApproveTimeOff(), 403, "Vous n'avez pas de demandes à approuver.");
     }
 
     private function authorizeManages(Request $request, TimeOffRequest $req): void
     {
-        $user = $request->user();
-        $autorise = $user->is_super_admin || $req->user?->manager_id === $user->id;
+        $autorise = TimeOffRequest::query()->approvableBy($request->user())->whereKey($req->getKey())->exists();
 
         abort_unless($autorise, 403, "Cette demande n'est pas de votre ressort.");
     }

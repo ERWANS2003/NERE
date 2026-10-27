@@ -96,6 +96,7 @@
             <!-- Rôles -->
             <div class="mb-6 pb-6 border-b border-gray-200">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Rôles système</label>
+                <p class="mb-3 text-xs text-gray-500">« Chef de département » donne les droits de directeur et « Technicien de département » ceux de technicien (niveau 1 par défaut) dans chacun des départements de l’utilisateur.</p>
                 <input type="hidden" name="roles_present" value="1">
                 <div class="grid grid-cols-2 gap-2">
                     @foreach($roles as $role)

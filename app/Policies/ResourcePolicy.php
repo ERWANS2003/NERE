@@ -14,8 +14,8 @@ use App\Models\User;
  *    département qu'il dirige) et ne peut retirer que celles de ses
  *    départements.
  *
- * Même modèle de droits que les annonces : pas de rôle « contributeur »
- * intermédiaire dans App\Enums\DepartmentRole, donc admin + directeur.
+ * Pas de rôle « contributeur » intermédiaire dans App\Enums\DepartmentRole,
+ * donc admin + directeur (les annonces, elles, sont réservées à l'admin).
  */
 class ResourcePolicy
 {

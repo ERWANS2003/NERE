@@ -31,6 +31,16 @@ class User extends Authenticatable implements LdapAuthenticatable
 
     public const HIGHEST_TECH_LEVEL = 3;
 
+    /**
+     * Permissions de role systeme qui elevent le role dans chacun des
+     * departements de l'utilisateur (profils Chef de departement et
+     * Technicien de departement). Le plus haut role l'emporte sur le pivot.
+     */
+    public const DEPARTMENT_ROLE_PERMISSIONS = [
+        'departments.manage' => DepartmentRole::Director,
+        'tickets.update' => DepartmentRole::Technician,
+    ];
+
     protected $fillable = [
         'matricule',
         'name',
@@ -206,6 +216,14 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $ids->isEmpty() ? collect() : Department::whereKey($ids)->active()->get();
     }
 
+    /** Responsable direct d'au moins un collaborateur, directeur de departement ou admin. */
+    public function canApproveTimeOff(): bool
+    {
+        return $this->is_super_admin
+            || $this->isDepartmentHead()
+            || self::query()->where('manager_id', $this->getKey())->exists();
+    }
+
     public function isDepartmentHead(): bool
     {
         $this->loadAuthorisations();
@@ -259,6 +277,9 @@ class User extends Authenticatable implements LdapAuthenticatable
      */
     private ?array $memberships = null;
 
+    /** Role donne par les roles systeme ; false tant qu'il n'est pas calcule. */
+    private DepartmentRole|false|null $systemRole = false;
+
     /**
      * Charge en une seule requete tous les droits de l'utilisateur.
      */
@@ -275,13 +296,92 @@ class User extends Authenticatable implements LdapAuthenticatable
         $this->memberships = [];
 
         foreach ($rows as $row) {
+            $role = $this->elevatedDepartmentRole(DepartmentRole::tryFrom($row->role) ?? DepartmentRole::User);
+
             $this->memberships[(int) $row->department_id] = [
-                'role' => $row->role,
-                'tech_level' => $row->tech_level === null ? null : (int) $row->tech_level,
+                'role' => $role->value,
+                'tech_level' => $this->elevatedTechLevel($role, $row->tech_level === null ? null : (int) $row->tech_level),
             ];
         }
 
         return $this;
+    }
+
+    /**
+     * Role de departement donne par les roles systeme, ou null.
+     * Utilise la relation roles.permissions si elle est deja chargee.
+     */
+    public function systemDepartmentRole(): ?DepartmentRole
+    {
+        if ($this->systemRole !== false) {
+            return $this->systemRole;
+        }
+
+        $slugs = $this->relationLoaded('roles')
+            ? $this->roles->loadMissing('permissions')->flatMap->permissions->pluck('slug')
+            : Permission::query()
+                ->whereIn('slug', array_keys(self::DEPARTMENT_ROLE_PERMISSIONS))
+                ->whereHas('roles.users', fn (Builder $query) => $query->whereKey($this->getKey()))
+                ->pluck('slug');
+
+        $this->systemRole = null;
+        foreach (self::DEPARTMENT_ROLE_PERMISSIONS as $slug => $role) {
+            if ($slugs->contains($slug)) {
+                $this->systemRole = $role;
+                break;
+            }
+        }
+
+        return $this->systemRole;
+    }
+
+    /** Le plus haut entre le role du pivot et celui des roles systeme. */
+    public function elevatedDepartmentRole(DepartmentRole $pivotRole): DepartmentRole
+    {
+        $systemRole = $this->systemDepartmentRole();
+        $rang = fn (?DepartmentRole $role): int => match ($role) {
+            DepartmentRole::Director => 2,
+            DepartmentRole::Technician => 1,
+            default => 0,
+        };
+
+        return $rang($systemRole) > $rang($pivotRole) ? $systemRole : $pivotRole;
+    }
+
+    /** Un technicien sans niveau sur le pivot (eleve par son role systeme) traite le niveau 1. */
+    public function elevatedTechLevel(DepartmentRole $role, ?int $pivotLevel): ?int
+    {
+        return $role === DepartmentRole::Technician ? ($pivotLevel ?? self::LOWEST_TECH_LEVEL) : $pivotLevel;
+    }
+
+    /**
+     * Utilisateurs qui traitent les demandes d'un departement :
+     * technicien ou directeur sur le pivot, ou membre eleve par un role systeme.
+     */
+    public function scopeHandlersOf(Builder $query, int $departmentId): Builder
+    {
+        return $query
+            ->whereHas('departments', fn (Builder $departments) => $departments->where('departments.id', $departmentId))
+            ->where(fn (Builder $handlers) => $handlers
+                ->whereHas('departments', fn (Builder $departments) => $departments
+                    ->where('departments.id', $departmentId)
+                    ->whereIn('department_user.role', [DepartmentRole::Technician->value, DepartmentRole::Director->value]))
+                ->orWhereHas('roles.permissions', fn (Builder $permissions) => $permissions
+                    ->whereIn('slug', array_keys(self::DEPARTMENT_ROLE_PERMISSIONS))));
+    }
+
+    /** @return list<int> departements ou l'utilisateur traite les demandes */
+    public function handledDepartmentIds(): array
+    {
+        $this->loadAuthorisations();
+
+        return collect($this->memberships)
+            ->filter(fn (array $membership) => in_array($membership['role'], [
+                DepartmentRole::Technician->value,
+                DepartmentRole::Director->value,
+            ], true))
+            ->keys()
+            ->all();
     }
 
     /**
@@ -291,6 +391,7 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function refreshAuthorisations(): static
     {
         $this->memberships = null;
+        $this->systemRole = false;
 
         return $this->loadAuthorisations();
     }

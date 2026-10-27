@@ -200,12 +200,7 @@ class TicketSlaService
                     $query->whereKey($ticket->assignee_id);
                 }
 
-                $query->orWhereHas('departments', fn ($departments) => $departments
-                    ->where('departments.id', $departmentId)
-                    ->whereIn('department_user.role', [
-                        DepartmentRole::Technician->value,
-                        DepartmentRole::Director->value,
-                    ]));
+                $query->orWhere(fn ($handlers) => $handlers->handlersOf($departmentId));
             })
             ->get();
     }

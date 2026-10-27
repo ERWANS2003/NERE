@@ -41,9 +41,7 @@ class SubmissionController extends Controller
 
         $departmentIds = $user->is_super_admin
             ? Department::query()->pluck('id')
-            : $user->departments()
-                ->wherePivotIn('role', ['technician', 'director'])
-                ->pluck('departments.id');
+            : collect($user->handledDepartmentIds());
 
         $query = FormSubmission::with(['form.department', 'user', 'assignee'])
             ->whereHas('form', fn ($forms) => $forms->whereIn('department_id', $departmentIds));
