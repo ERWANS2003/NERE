@@ -1,9 +1,9 @@
 @echo off
-rem Fait approuver le certificat HTTPS de l'intranet NERE Mining (https://192.168.10.206) par ce poste.
+rem Fait approuver le certificat HTTPS de l'intranet NERE Mining (https://OUA-NM-INTRANET.neremining.com) par ce poste.
 rem Copier ce fichier sur le poste et double-cliquer dessus (accepter la demande administrateur).
 rem Le certificat public est integre ci-dessous : aucun autre fichier n'est necessaire.
 setlocal
-set "URL=https://192.168.10.206/"
+set "URL=https://OUA-NM-INTRANET.neremining.com/"
 set "EMPREINTE=C044B43D23054999374BAF109CBB1678AFC21EFF"
 set "ANCIENNE=DDFE6E8545A4CA68510CB68D248E6D5679611831"
 set "CER=%TEMP%\intranet-nere-mining-ip.cer"
@@ -73,7 +73,7 @@ for /f %%c in ('curl.exe -s -o NUL -w "%%{http_code}" --ssl-no-revoke --max-time
 if "%CODE%"=="200" (
     echo [OK] Connexion securisee a l'intranet.
 ) else (
-    echo [ATTENTION] Pas de reponse securisee ^(code "%CODE%"^) : verifier le reseau vers 192.168.10.206.
+    echo [ATTENTION] Pas de reponse securisee ^(code "%CODE%"^) : verifier le reseau et que le poste utilise le DNS du domaine.
 )
 echo.
 echo Fermez puis rouvrez le navigateur, puis ouvrez %URL%

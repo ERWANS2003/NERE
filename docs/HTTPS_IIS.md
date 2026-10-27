@@ -1,6 +1,10 @@
 # HTTPS de l'intranet (IIS, Windows Server)
 
-Adresse de l'intranet : **https://192.168.10.206**
+Adresse de l'intranet : **https://OUA-NM-INTRANET.neremining.com**
+
+Le nom est résolu par le DNS du domaine (enregistrement A `OUA-NM-INTRANET` -> `192.168.10.206`
+sur les contrôleurs `10.226.70.31` / `10.226.70.32`). Un poste qui utilise un autre DNS
+(8.8.8.8, box) ne trouve pas l'intranet, même par l'IP, qui redirige vers le nom.
 
 Certificat auto-signé créé sur le serveur le 27/10/2026 :
 - couvre l'IP `192.168.10.206` et les noms `OUA-NM-INTRANET.neremining.com` et `OUA-NM-INTRANET` ;
@@ -16,11 +20,11 @@ Tant qu'un poste n'a pas approuvé ce certificat (étape 2), le navigateur affic
 application `C:\inetpub\wwwroot\itsm-nere-mining` :
 
 - port 443 lié au certificat ci-dessus ;
-- toute adresse (HTTP, ou un nom au lieu de l'IP) redirige en 301 vers `https://192.168.10.206/`
+- toute adresse (HTTP, IP ou nom court) redirige en 301 vers `https://OUA-NM-INTRANET.neremining.com/`
   (règle `NERE - Forcer HTTPS` dans `applicationHost.config`, non écrasée par un `git pull`) ;
 - certificats clients ignorés (ils provoquaient une renégociation TLS refusée par les navigateurs) ;
 - TLS 1.0 et 1.1 désactivés, TLS 1.2 seul ; en-tête HSTS ; version PHP masquée ;
-- `.env` : `APP_ENV=production`, `APP_URL=https://192.168.10.206`, `SESSION_SECURE_COOKIE=true`.
+- `.env` : `APP_ENV=production`, `APP_URL=https://OUA-NM-INTRANET.neremining.com`, `SESSION_SECURE_COOKIE=true`.
 
 Sauvegardes (restauration en administrateur sur le serveur) :
 
@@ -29,6 +33,7 @@ Sauvegardes (restauration en administrateur sur le serveur) :
 | Passage en HTTPS | `appcmd restore backup avant-https-20261027-111159` | `.env.avant-https-20261027-111159` |
 | Durcissement TLS | `appcmd restore backup avant-durcissement-20261027-112421` | `C:\Install\sauvegardes-durcissement-20261027-112421\` (registre TLS, `php.ini`) |
 | Certificat IP | `appcmd restore backup avant-cert-ip-20261027-113820` | `.env.avant-cert-ip-20261027-113820` |
+| Passage au nom | `appcmd restore backup avant-nom-20261027-122853` | `.env.avant-nom-20261027-122853` |
 
 `appcmd` se trouve dans `C:\Windows\System32\inetsrv\`.
 
@@ -97,7 +102,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 Le script sauvegarde IIS et `.env`, crée un nouveau certificat de 2 ans, le lie au port 443,
-remet la redirection vers l'IP et exporte `C:\Install\intranet-nere-mining-ip.cer`.
+remet la redirection vers le premier nom de `-Noms` et exporte `C:\Install\intranet-nere-mining-ip.cer`.
 Redéployer ensuite ce nouveau `.cer` sur les postes (étape 2) : l'ancien ne sera plus présenté.
 
 ## 4. En cas de problème
@@ -107,6 +112,7 @@ Redéployer ensuite ce nouveau `.cer` sur les postes (étape 2) : l'ancien ne se
 | Alerte « connexion non privée » | certificat pas encore approuvé sur le poste (étape 2) |
 | Déconnexion en boucle | `APP_URL` en `http` ou ancien cache : `php artisan config:cache` |
 | Page inaccessible sur 443 | pare-feu réseau entre le poste et le serveur |
+| « Adresse introuvable » | le poste n'utilise pas le DNS du domaine : `Resolve-DnsName OUA-NM-INTRANET.neremining.com` |
 | Connexion coupée pendant la négociation TLS | IIS > site > Paramètres SSL > Certificats clients : **Ignorer** |
 | Vieux logiciel qui n'arrive plus à se connecter | il ne gère que TLS 1.0/1.1, désactivés volontairement |
 
