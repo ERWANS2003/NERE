@@ -5,7 +5,7 @@
         @csrf
 
         <div class="input-group">
-            <label for="identifiant">Nom d’utilisateur ou e-mail</label>
+            <label for="identifiant">Nom d’utilisateur</label>
             <input id="identifiant" 
                    type="text" 
                    name="identifiant" 
