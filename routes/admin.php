@@ -59,6 +59,7 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::get('announcements/{announcement}/edit', [ContentManagementController::class, 'editAnnouncement'])->name('announcements.edit');
     Route::put('announcements/{announcement}', [ContentManagementController::class, 'updateAnnouncement'])->name('announcements.update');
     Route::delete('announcements/{announcement}', [ContentManagementController::class, 'destroyAnnouncement'])->name('announcements.destroy');
+    Route::delete('announcements/{announcement}/definitif', [ContentManagementController::class, 'deleteAnnouncement'])->name('announcements.delete');
     Route::get('calendar', [ContentManagementController::class, 'calendar'])->name('calendar.index');
     Route::get('calendar/create', [ContentManagementController::class, 'createEvent'])->name('calendar.create');
     Route::post('calendar', [ContentManagementController::class, 'storeEvent'])->name('calendar.store');

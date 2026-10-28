@@ -45,3 +45,41 @@ it('uses the Active Directory description as a fallback when title is not set', 
     expect($attributes['position_title'])->toBe('Directeur des Systèmes d’Information')
         ->and($attributes['poste'])->toBe('Directeur des Systèmes d’Information');
 });
+
+it('keeps a job title edited in the intranet when Active Directory has another one', function () {
+    $localUser = User::factory()->make([
+        'poste' => 'Chef de quart',
+        'position_title' => 'Chef de quart',
+        'poste_modifie_localement' => true,
+    ]);
+    $ldapUser = new LdapUser;
+    $ldapUser->setAttribute('title', 'Ancien poste AD');
+
+    $attributes = app(LdapUserSynchronizer::class)($localUser, $ldapUser);
+
+    expect($attributes)->not->toHaveKey('poste')
+        ->and($attributes)->not->toHaveKey('position_title');
+});
+
+it('marks a job title changed by an administrator as owned by the intranet', function () {
+    $user = User::factory()->create(['poste' => 'Ancien poste AD', 'position_title' => 'Ancien poste AD']);
+    $admin = User::factory()->superAdmin()->create();
+    $payload = fn (string $poste) => [
+        'name' => $user->name,
+        'email' => $user->email,
+        'matricule' => $user->matricule,
+        'actif' => '1',
+        'poste' => $poste,
+    ];
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), $payload('Ancien poste AD'));
+    expect($user->fresh()->poste_modifie_localement)->toBeFalse();
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), $payload('Chef de quart'));
+    expect($user->fresh())
+        ->poste_modifie_localement->toBeTrue()
+        ->job_title->toBe('Chef de quart');
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), $payload(''));
+    expect($user->fresh()->poste_modifie_localement)->toBeFalse();
+});

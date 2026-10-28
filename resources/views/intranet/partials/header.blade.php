@@ -28,9 +28,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <span class="flex-1 truncate text-left text-sm text-graphite-500">Rechercher dans l’intranet...</span>
-                <kbd class="hidden items-center gap-1 rounded-md border border-graphite-200 bg-white px-2 py-1 text-xs font-semibold text-graphite-600 sm:inline-flex">
-                    Ctrl / ⌘ K
-                </kbd>
             </button>
         </div>
 

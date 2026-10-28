@@ -80,6 +80,7 @@ class UserManagementController extends Controller
         ]);
 
         $validated['position_title'] = $validated['poste'] ?? null;
+        $validated['poste_modifie_localement'] = filled($validated['position_title']);
         $validated['password'] = Hash::make($validated['password']);
         $validated['actif'] = $request->boolean('actif', true);
         $validated['is_super_admin'] = $request->boolean('is_super_admin', false);
@@ -210,6 +211,10 @@ class UserManagementController extends Controller
 
         if (array_key_exists('poste', $validated)) {
             $validated['position_title'] = $validated['poste'];
+            // Un poste changé ici prime sur l'AD ; vidé, il redevient alimenté par l'AD.
+            if ($validated['poste'] !== $user->poste) {
+                $validated['poste_modifie_localement'] = filled($validated['poste']);
+            }
         }
 
         $departmentIds = $validated['departments'] ?? [];

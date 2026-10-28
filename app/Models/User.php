@@ -58,6 +58,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         // Organigramme
         'manager_id',
         'position_title',
+        'poste_modifie_localement',
         'org_level',
         'hire_date',
         'birth_date',
@@ -78,6 +79,7 @@ class User extends Authenticatable implements LdapAuthenticatable
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
             'actif' => 'boolean',
+            'poste_modifie_localement' => 'boolean',
             'est_technicien' => 'boolean',
             'disponible' => 'boolean',
             'failed_attempts' => 'integer',

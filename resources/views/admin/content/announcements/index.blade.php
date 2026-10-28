@@ -45,9 +45,14 @@
                                     <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" onsubmit="return confirm('Archiver cette annonce ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="font-medium text-red-700 hover:underline">Archiver</button>
+                                        <button class="font-medium text-gray-700 hover:underline">Archiver</button>
                                     </form>
                                 @endif
+                                <form method="POST" action="{{ route('admin.announcements.delete', $announcement) }}" onsubmit="return confirm('Supprimer définitivement cette annonce ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="font-medium text-red-700 hover:underline">Supprimer</button>
+                                </form>
                             </div>
                         </td>
                     </tr>

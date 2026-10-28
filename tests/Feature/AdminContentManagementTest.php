@@ -138,3 +138,24 @@ it('rejects invalid announcement priorities and calendar event types', function 
         'all_day' => '1',
     ])->assertSessionHasErrors('type');
 });
+
+it('allows administrators to permanently delete an announcement and its notifications', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $reader = User::factory()->create();
+    $attributes = ['body' => 'Texte', 'priority' => 'info', 'created_by' => $admin->id, 'is_active' => true, 'published_at' => now()];
+    $announcement = Announcement::create(['title' => 'Annonce a supprimer'] + $attributes);
+    $other = Announcement::create(['title' => 'Annonce conservee'] + $attributes);
+    $reader->notify(new AnnouncementPublished($announcement));
+    $reader->notify(new AnnouncementPublished($other));
+
+    $this->actingAs($admin)
+        ->get(route('admin.announcements.index'))
+        ->assertSee(route('admin.announcements.delete', $announcement));
+
+    $this->delete(route('admin.announcements.delete', $announcement))
+        ->assertRedirect(route('admin.announcements.index'));
+
+    expect(Announcement::find($announcement->id))->toBeNull()
+        ->and(Announcement::find($other->id))->not->toBeNull()
+        ->and($reader->notifications()->pluck('data')->pluck('announcement_id')->all())->toBe([$other->id]);
+});

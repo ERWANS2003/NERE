@@ -8,6 +8,7 @@ use App\Models\CalendarEvent;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
@@ -83,6 +84,17 @@ class ContentManagementController extends Controller
         $announcement->update(['is_active' => false, 'published_at' => null]);
 
         return redirect()->route('admin.announcements.index')->with('success', 'Annonce archivée.');
+    }
+
+    public function deleteAnnouncement(Announcement $announcement): RedirectResponse
+    {
+        // Retire aussi les notifications qui pointeraient vers l'annonce supprimée.
+        DatabaseNotification::where('type', AnnouncementPublished::class)
+            ->whereLike('data', '%"announcement_id":'.$announcement->id.',%')
+            ->delete();
+        $announcement->delete();
+
+        return redirect()->route('admin.announcements.index')->with('success', 'Annonce supprimée.');
     }
 
     public function calendar(): View
