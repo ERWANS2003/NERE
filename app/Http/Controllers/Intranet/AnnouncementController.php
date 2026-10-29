@@ -9,7 +9,9 @@ use App\Notifications\AnnouncementPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnnouncementController extends Controller
 {
@@ -50,6 +52,18 @@ class AnnouncementController extends Controller
         $announcement->load(['department', 'creator']);
 
         return view('intranet.announcements.show', compact('announcement'));
+    }
+
+    public function attachment(Request $request, Announcement $announcement): StreamedResponse
+    {
+        $this->authorize('view', $announcement);
+
+        abort_unless(
+            $announcement->attachment_path && Storage::disk('local')->exists($announcement->attachment_path),
+            404,
+        );
+
+        return Storage::disk('local')->download($announcement->attachment_path, $announcement->attachment_name);
     }
 
     public function create(Request $request): View

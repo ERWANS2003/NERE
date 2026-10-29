@@ -140,6 +140,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
         Route::post('/', [AnnouncementController::class, 'store'])->name('store');
         Route::get('/{announcement}', [AnnouncementController::class, 'show'])->name('show');
+        Route::get('/{announcement}/piece-jointe', [AnnouncementController::class, 'attachment'])->name('attachment');
         Route::get('/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('edit');
         Route::put('/{announcement}', [AnnouncementController::class, 'update'])->name('update');
         Route::delete('/{announcement}', [AnnouncementController::class, 'destroy'])->name('destroy');

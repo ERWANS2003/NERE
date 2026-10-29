@@ -6,7 +6,9 @@ use App\Models\Department;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -158,4 +160,48 @@ it('allows administrators to permanently delete an announcement and its notifica
     expect(Announcement::find($announcement->id))->toBeNull()
         ->and(Announcement::find($other->id))->not->toBeNull()
         ->and($reader->notifications()->pluck('data')->pluck('announcement_id')->all())->toBe([$other->id]);
+});
+
+it('attaches a file to an announcement and lets employees download it', function () {
+    Storage::fake('local');
+    Notification::fake();
+    $admin = User::factory()->superAdmin()->create();
+    $employee = User::factory()->create();
+    $payload = ['title' => 'Note de service', 'body' => 'Voir le document joint.', 'priority' => 'info', 'is_active' => '1'];
+
+    $this->actingAs($admin)
+        ->post(route('admin.announcements.store'), $payload + [
+            'attachment' => UploadedFile::fake()->create('note-service.pdf', 120, 'application/pdf'),
+        ])
+        ->assertRedirect(route('admin.announcements.index'));
+
+    $announcement = Announcement::firstOrFail();
+    Storage::disk('local')->assertExists($announcement->attachment_path);
+    expect($announcement->attachment_name)->toBe('note-service.pdf');
+
+    $this->actingAs($employee)
+        ->get(route('intranet.announcements.show', $announcement))
+        ->assertOk()
+        ->assertSee('note-service.pdf');
+    $this->actingAs($employee)
+        ->get(route('intranet.announcements.attachment', $announcement))
+        ->assertOk()
+        ->assertDownload('note-service.pdf');
+
+    $this->actingAs($admin)
+        ->post(route('admin.announcements.store'), $payload + [
+            'attachment' => UploadedFile::fake()->create('script.exe', 10),
+        ])
+        ->assertSessionHasErrors('attachment');
+
+    $oldPath = $announcement->attachment_path;
+    $this->actingAs($admin)
+        ->put(route('admin.announcements.update', $announcement), $payload + ['remove_attachment' => '1'])
+        ->assertRedirect(route('admin.announcements.index'));
+
+    Storage::disk('local')->assertMissing($oldPath);
+    expect($announcement->fresh()->attachment_path)->toBeNull();
+    $this->actingAs($employee)
+        ->get(route('intranet.announcements.attachment', $announcement))
+        ->assertNotFound();
 });

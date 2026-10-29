@@ -15,6 +15,10 @@ class Announcement extends Model
         'created_by',
         'is_active',
         'published_at',
+        'attachment_path',
+        'attachment_name',
+        'attachment_mime',
+        'attachment_size',
     ];
 
     protected $casts = [
