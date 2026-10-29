@@ -166,6 +166,12 @@ class User extends Authenticatable implements LdapAuthenticatable
         return $this->belongsToMany(Role::class);
     }
 
+    /** Employés actifs cochés pour choisir leurs plats (destinataires des notifications). */
+    public function scopeMenuChoosers(Builder $query): void
+    {
+        $query->where('actif', true)->where('menu_eligible', true);
+    }
+
     /** Employé coché dans l'admin, ou gestionnaire du menu. */
     public function canChooseMenu(): bool
     {

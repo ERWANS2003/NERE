@@ -76,7 +76,9 @@ Route::middleware(['auth', 'active'])
             Route::get('/', [CampaignController::class, 'index'])->name('campaigns');
             Route::get('/creer', [CampaignController::class, 'create'])->name('create');
             Route::post('/', [CampaignController::class, 'store'])->name('store');
+            Route::post('/campagnes/{campaign}/publier', [CampaignController::class, 'publish'])->name('publish');
             Route::post('/campagnes/{campaign}/cloturer', [CampaignController::class, 'close'])->name('close');
+            Route::get('/campagnes/{campaign}/suivi', [CampaignController::class, 'tracking'])->name('tracking');
             Route::get('/campagnes/{campaign}/exporter', MenuExportController::class)->name('export');
         });
 

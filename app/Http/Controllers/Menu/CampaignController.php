@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\MenuCampaign;
+use App\Models\User;
+use App\Notifications\MenuCampaignNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -88,10 +91,39 @@ class CampaignController extends Controller
             return $campaign;
         });
 
+        if ($campaign->status === 'open') {
+            $this->notifyChoosers($campaign);
+        }
+
         return redirect()
             ->route('menu.manager.campaigns')
             ->with('success', 'La semaine de menus a été créée.')
             ->with('createdCampaign', $campaign->id);
+    }
+
+    public function publish(MenuCampaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === 'draft', 409, 'Cette semaine est déjà publiée.');
+
+        $campaign->update(['status' => 'open']);
+        $this->notifyChoosers($campaign);
+
+        return back()->with('success', 'La semaine de menus est publiée : les employés désignés sont notifiés.');
+    }
+
+    public function tracking(MenuCampaign $campaign): View
+    {
+        abort_if($campaign->status === 'draft', 404);
+
+        $registeredUserIds = $campaign->registrations()->whereNotNull('user_id')->pluck('user_id');
+        [$chosen, $pending] = User::query()
+            ->menuChoosers()
+            ->with('departments:id,name')
+            ->orderBy('name')
+            ->get()
+            ->partition(fn (User $user) => $registeredUserIds->contains($user->id));
+
+        return view('menu.manager.tracking', compact('campaign', 'chosen', 'pending'));
     }
 
     public function close(MenuCampaign $campaign): RedirectResponse
@@ -101,5 +133,10 @@ class CampaignController extends Controller
         $campaign->update(['status' => 'closed']);
 
         return back()->with('success', 'Les inscriptions à cette campagne sont clôturées.');
+    }
+
+    private function notifyChoosers(MenuCampaign $campaign): void
+    {
+        Notification::send(User::query()->menuChoosers()->get(), new MenuCampaignNotification($campaign));
     }
 }

@@ -17,6 +17,7 @@ class MenuCampaign extends Model
         'registration_closes_at',
         'status',
         'created_by',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class MenuCampaign extends Model
             'starts_on' => 'date',
             'ends_on' => 'date',
             'registration_closes_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

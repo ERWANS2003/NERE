@@ -103,6 +103,11 @@
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.settings*', 'admin.ldap.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                     <x-icone nom="settings" class="mr-2" /> Paramètres
                 </a>
+
+                <a href="{{ route('admin.health') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.health*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <x-icone nom="gauge" class="mr-2" /> Santé du serveur
+                </a>
                 @endif
             </nav>
         </aside>

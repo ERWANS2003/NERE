@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ContentManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\Admin\ResourceManagementController;
 use App\Http\Controllers\Admin\RoleManagementController;
+use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\TicketManagementController;
 use App\Http\Controllers\Admin\TimeOffManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -24,6 +25,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
+    Route::get('/sante', [SystemHealthController::class, 'index'])->name('health');
+    Route::post('/sante/jobs/relancer', [SystemHealthController::class, 'retryAll'])->name('health.retry-all');
+    Route::post('/sante/jobs/{uuid}/relancer', [SystemHealthController::class, 'retry'])->name('health.retry');
+    Route::delete('/sante/jobs/{uuid}', [SystemHealthController::class, 'forget'])->name('health.forget');
     Route::get('/modules', [ModuleManagementController::class, 'index'])->name('modules.index');
     Route::put('/modules/{module}', [ModuleManagementController::class, 'update'])->name('modules.update');
     Route::get('/time-off', [TimeOffManagementController::class, 'index'])->name('time-off.index');
@@ -45,6 +50,7 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     // Gestion des utilisateurs
     Route::post('users/{user}/departments', [UserManagementController::class, 'assignDepartment'])
         ->name('users.departments.assign');
+    Route::patch('users/{user}/menu', [UserManagementController::class, 'toggleMenu'])->name('users.menu.toggle');
     Route::resource('users', UserManagementController::class);
     Route::post('users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])
         ->name('users.reset-password');

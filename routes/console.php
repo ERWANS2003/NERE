@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\SystemHealthController;
 use App\Models\AppSetting;
 use App\Services\TicketSlaService;
 use App\Services\TimeOffReminderService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 use Minishlink\WebPush\VAPID;
@@ -33,9 +35,15 @@ Artisan::command('webpush:generate-vapid-keys', function () {
     $this->warn('Conservez la clé privée dans un gestionnaire de secrets; ne la versionnez jamais.');
 })->purpose('Générer une paire de clés VAPID pour les notifications push navigateur');
 
+// Témoin affiché sur la page Santé du serveur de l'admin.
+Schedule::call(fn () => Cache::forever(SystemHealthController::SCHEDULER_HEARTBEAT_KEY, now()->toIso8601String()))
+    ->everyMinute()
+    ->name('sante-scheduler');
+
 // Rappels des événements du calendrier prévus le lendemain, chaque jour à 7h.
 Schedule::command('intranet:rappels-evenements')->dailyAt('07:00');
 Schedule::command('intranet:check-ticket-slas')->everyMinute()->withoutOverlapping();
+Schedule::command('intranet:rappels-menus')->hourly()->withoutOverlapping();
 Schedule::command('intranet:remind-pending-time-off')->everyFifteenMinutes()->withoutOverlapping();
 
 Schedule::command('ldap:sync')

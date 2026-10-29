@@ -42,10 +42,26 @@ class UserManagementController extends Controller
             });
         }
 
-        $users = $query->paginate(20);
+        if ($request->filled('menu')) {
+            $query->where('menu_eligible', $request->menu === 'yes');
+        }
+
+        $users = $query->paginate(20)->withQueryString();
         $departments = Department::active()->orderBy('name')->get();
 
         return view('admin.users.index', compact('users', 'departments'));
+    }
+
+    /**
+     * Coche ou décoche « Choisit ses plats au menu du personnel » depuis la liste.
+     */
+    public function toggleMenu(User $user)
+    {
+        $user->update(['menu_eligible' => ! $user->menu_eligible]);
+
+        return back()->with('success', $user->menu_eligible
+            ? "{$user->name} choisit désormais ses plats au menu du personnel."
+            : "{$user->name} ne choisit plus ses plats au menu du personnel.");
     }
 
     /**

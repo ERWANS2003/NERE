@@ -59,6 +59,14 @@
                                 Export Excel
                             </a>
                         @endif
+                        @if($campaign->status === 'draft')
+                            <form method="POST" action="{{ route('menu.manager.publish', $campaign) }}" onsubmit="return confirm('Publier cette semaine ? Les employés désignés seront notifiés.')">
+                                @csrf
+                                <button class="inline-flex min-h-10 items-center justify-center rounded-md bg-nere-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-nere-700">Publier</button>
+                            </form>
+                        @else
+                            <a href="{{ route('menu.manager.tracking', $campaign) }}" class="inline-flex min-h-10 items-center justify-center rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">Suivi des choix</a>
+                        @endif
                         @if($campaign->status === 'open')
                             <form method="POST" action="{{ route('menu.manager.close', $campaign) }}" onsubmit="return confirm('Clôturer les inscriptions ?')">
                                 @csrf

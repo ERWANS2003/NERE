@@ -490,3 +490,91 @@ it('shows only published menus open for registration on the dashboard', function
         ->assertDontSee('Semaine brouillon')
         ->assertDontSee('Semaine close');
 });
+
+it('notifies designated employees when a menu week is published', function () {
+    $manager = createMenuManager();
+    $chooser = User::factory()->create(['menu_eligible' => true]);
+    $other = User::factory()->create();
+    $inactive = User::factory()->create(['menu_eligible' => true, 'actif' => false]);
+    $days = collect(range(0, 4))->map(fn (int $offset) => [
+        'menu_one' => 'Plat '.$offset, 'menu_two' => 'Autre '.$offset, 'dessert' => 'Fruit',
+    ])->all();
+
+    $this->actingAs($manager)->post(route('menu.manager.store'), [
+        'week' => now()->startOfWeek()->addWeek()->format('o-\WW'),
+        'status' => 'draft',
+        'days' => $days,
+    ])->assertRedirect(route('menu.manager.campaigns'));
+
+    $campaign = MenuCampaign::firstOrFail();
+    expect($chooser->notifications()->count())->toBe(0);
+
+    $this->actingAs($manager)->post(route('menu.manager.publish', $campaign))->assertRedirect();
+
+    expect($campaign->fresh()->status)->toBe('open')
+        ->and($chooser->notifications()->count())->toBe(1)
+        ->and($chooser->notifications()->first()->data['url'])->toBe(route('menu.registration.show', $campaign->link_token))
+        ->and($other->notifications()->count())->toBe(0)
+        ->and($inactive->notifications()->count())->toBe(0);
+
+    $this->actingAs($manager)->post(route('menu.manager.publish', $campaign))->assertStatus(409);
+    $this->actingAs($chooser)->post(route('menu.manager.publish', $campaign))->assertForbidden();
+});
+
+it('reminds only employees who have not chosen, once, the day before closure', function () {
+    $campaign = createOpenMenuCampaign(['registration_closes_at' => now()->addHours(10)]);
+    $later = createOpenMenuCampaign(['registration_closes_at' => now()->addDays(3), 'link_token' => str_repeat('l', 64)]);
+    $pending = User::factory()->create(['menu_eligible' => true]);
+    $done = User::factory()->create(['menu_eligible' => true]);
+    MenuRegistration::create([
+        'campaign_id' => $campaign->id, 'user_id' => $done->id, 'employee_name' => $done->name,
+        'employee_identifier' => 'local|'.$done->id, 'department' => 'Finance',
+    ]);
+
+    $this->artisan('intranet:rappels-menus')->assertSuccessful();
+    $this->artisan('intranet:rappels-menus')->assertSuccessful();
+
+    expect($pending->notifications()->count())->toBe(1)
+        ->and($pending->notifications()->first()->data['menu_campaign_id'])->toBe($campaign->id)
+        ->and($done->notifications()->count())->toBe(0)
+        ->and($campaign->fresh()->reminder_sent_at)->not->toBeNull()
+        ->and($later->fresh()->reminder_sent_at)->toBeNull();
+});
+
+it('shows managers who among designated employees has chosen', function () {
+    $campaign = createOpenMenuCampaign();
+    $done = User::factory()->create(['menu_eligible' => true, 'name' => 'Awa Choisi']);
+    User::factory()->create(['menu_eligible' => true, 'name' => 'Ibrahim Attente']);
+    User::factory()->create(['name' => 'Paul Non Concerne']);
+    MenuRegistration::create([
+        'campaign_id' => $campaign->id, 'user_id' => $done->id, 'employee_name' => $done->name,
+        'employee_identifier' => 'local|'.$done->id, 'department' => 'Finance',
+    ]);
+
+    $this->actingAs(createMenuManager())->get(route('menu.manager.tracking', $campaign))
+        ->assertOk()
+        ->assertSee('1 / 2')
+        ->assertSeeInOrder(['Pas encore choisi', 'Ibrahim Attente', 'Choix enregistrés', 'Awa Choisi'])
+        ->assertDontSee('Paul Non Concerne');
+
+    $this->actingAs($done)->get(route('menu.manager.tracking', $campaign))->assertForbidden();
+});
+
+it('lets administrators filter and toggle menu employees from the user list', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $employee = User::factory()->create(['name' => 'Salif Cantine']);
+    User::factory()->create(['name' => 'Mariam Bureau']);
+
+    $this->actingAs($admin)->patch(route('admin.users.menu.toggle', $employee))->assertRedirect();
+    expect($employee->fresh()->menu_eligible)->toBeTrue();
+
+    $this->actingAs($admin)->get(route('admin.users.index', ['menu' => 'yes']))
+        ->assertOk()
+        ->assertSee('Salif Cantine')
+        ->assertDontSee('Mariam Bureau');
+
+    $this->actingAs($admin)->patch(route('admin.users.menu.toggle', $employee));
+    expect($employee->fresh()->menu_eligible)->toBeFalse();
+
+    $this->actingAs($employee)->patch(route('admin.users.menu.toggle', $employee))->assertForbidden();
+});

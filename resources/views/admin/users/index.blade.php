@@ -15,7 +15,7 @@
 
 <!-- Filtres -->
 <div class="bg-white rounded-lg shadow p-4 mb-6">
-    <form method="GET" data-live-search class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <form method="GET" data-live-search class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
             <input type="text" name="search" value="{{ request('search') }}" 
                    placeholder="Rechercher..." 
@@ -36,6 +36,13 @@
                     {{ $dept->name }}
                 </option>
                 @endforeach
+            </select>
+        </div>
+        <div>
+            <select name="menu" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-nere-500 focus:border-nere-500">
+                <option value="">Menu : tous</option>
+                <option value="yes" {{ request('menu') === 'yes' ? 'selected' : '' }}>Choisit ses plats</option>
+                <option value="no" {{ request('menu') === 'no' ? 'selected' : '' }}>Ne choisit pas</option>
             </select>
         </div>
         <div class="flex space-x-2">
@@ -59,6 +66,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Matricule</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Départements</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">Menu</th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Actions</th>
             </tr>
         </thead>
@@ -92,6 +100,16 @@
                     <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">Inactif</span>
                     @endif
                 </td>
+                <td class="px-6 py-4">
+                    <form method="POST" action="{{ route('admin.users.menu.toggle', $user) }}">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" title="{{ $user->menu_eligible ? 'Ne plus choisir ses plats' : 'Choisit ses plats au menu' }}"
+                                class="px-2 py-1 text-xs font-medium rounded {{ $user->menu_eligible ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
+                            {{ $user->menu_eligible ? 'Oui' : 'Non' }}
+                        </button>
+                    </form>
+                </td>
                 <td class="px-6 py-4 text-right space-x-2">
                     <a href="{{ route('admin.users.show', $user) }}" class="text-blue-600 hover:text-blue-800">
                         <x-icone nom="eye" />
@@ -103,7 +121,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                     Aucun utilisateur trouvé
                 </td>
             </tr>
