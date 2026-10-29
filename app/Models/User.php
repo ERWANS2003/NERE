@@ -59,6 +59,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         'manager_id',
         'position_title',
         'poste_modifie_localement',
+        'menu_eligible',
         'org_level',
         'hire_date',
         'birth_date',
@@ -80,6 +81,7 @@ class User extends Authenticatable implements LdapAuthenticatable
             'is_super_admin' => 'boolean',
             'actif' => 'boolean',
             'poste_modifie_localement' => 'boolean',
+            'menu_eligible' => 'boolean',
             'est_technicien' => 'boolean',
             'disponible' => 'boolean',
             'failed_attempts' => 'integer',
@@ -162,6 +164,12 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
+    }
+
+    /** Employé coché dans l'admin, ou gestionnaire du menu. */
+    public function canChooseMenu(): bool
+    {
+        return $this->menu_eligible || $this->hasPermission('menu.manage');
     }
 
     public function hasPermission(string $permission): bool

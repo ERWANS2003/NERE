@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Department;
 use App\Models\FormSubmission;
+use App\Models\MenuCampaign;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Intranet\CalendarFeed;
@@ -65,6 +66,16 @@ class DashboardController extends Controller
             ->latest('published_at')
             ->limit(3)
             ->get();
+
+        // Menus du personnel publiés, pour les employés qui choisissent leurs plats.
+        $openMenuCampaigns = collect();
+        if ($user->canChooseMenu()) {
+            $openMenuCampaigns = MenuCampaign::query()
+                ->openForRegistration()
+                ->withExists(['registrations as already_chosen' => fn ($query) => $query->where('user_id', $user->id)])
+                ->orderBy('starts_on')
+                ->get();
+        }
 
         // Widget : 4 prochains événements de l'agenda, jours fériés compris.
         $upcomingEvents = array_slice($upcomingCalendarEvents, 0, 4);
@@ -133,6 +144,7 @@ class DashboardController extends Controller
             'recentAnnouncements',
             'upcomingEvents',
             'recentRequests',
+            'openMenuCampaigns',
             'enabledModules'
         ));
     }

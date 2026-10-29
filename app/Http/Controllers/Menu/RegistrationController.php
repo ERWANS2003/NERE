@@ -14,14 +14,12 @@ use Illuminate\View\View;
 
 class RegistrationController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $this->ensureCanChoose($request);
+
         $campaigns = MenuCampaign::query()
-            ->where('status', 'open')
-            ->where(function ($query): void {
-                $query->whereNull('registration_closes_at')
-                    ->orWhere('registration_closes_at', '>', now());
-            })
+            ->openForRegistration()
             ->with('days')
             ->latest('starts_on')
             ->paginate(20);
@@ -31,6 +29,7 @@ class RegistrationController extends Controller
 
     public function show(MenuCampaign $campaign, Request $request): View
     {
+        $this->ensureCanChoose($request);
         abort_if($campaign->status === 'draft', 404);
 
         $employeeIdentifier = $this->employeeIdentifier($request);
@@ -50,6 +49,7 @@ class RegistrationController extends Controller
 
     public function store(MenuCampaign $campaign, Request $request): RedirectResponse
     {
+        $this->ensureCanChoose($request);
         abort_unless(
             $campaign->status === 'open'
                 && ($campaign->registration_closes_at === null || $campaign->registration_closes_at->isFuture()),
@@ -103,6 +103,15 @@ class RegistrationController extends Controller
         return redirect()
             ->route('menu.registration.show', $campaign->link_token)
             ->with('success', 'Vos choix de menus ont été enregistrés.');
+    }
+
+    private function ensureCanChoose(Request $request): void
+    {
+        abort_unless(
+            $request->user()->canChooseMenu(),
+            403,
+            'Le choix des menus est réservé aux employés désignés par l’administration.'
+        );
     }
 
     private function employeeIdentifier(Request $request): string

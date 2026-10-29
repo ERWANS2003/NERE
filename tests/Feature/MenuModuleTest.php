@@ -49,6 +49,7 @@ it('allows local and Active Directory employees to use menus but denies employee
         'status' => 'closed',
     ]);
     $employee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => 'employee-guid',
         'domain' => 'default',
     ]);
@@ -91,6 +92,7 @@ it('allows local and Active Directory employees to use menus but denies employee
 
 it('allows local password sessions to register independently for the menu', function () {
     $employee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => null,
         'domain' => null,
         'password' => 'Password123!',
@@ -119,7 +121,7 @@ it('allows local password sessions to register independently for the menu', func
     expect($registration->employee_identifier)->toBe('local|'.$employee->id)
         ->and($registration->user_id)->toBe($employee->id);
 
-    $secondEmployee = User::factory()->create();
+    $secondEmployee = User::factory()->create(['menu_eligible' => true]);
     $this->actingAs($secondEmployee)
         ->withSession(['auth_provider' => 'local'])
         ->post(route('menu.registration.store', $campaign->link_token), [
@@ -227,6 +229,7 @@ it('saves optional choices independently by day without exposing other employees
     $firstDay = $campaign->days()->orderBy('date')->firstOrFail();
     $secondDay = $campaign->days()->orderBy('date')->skip(1)->firstOrFail();
     $employee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => 'employee-one-guid',
         'domain' => 'default',
     ]);
@@ -256,6 +259,7 @@ it('saves optional choices independently by day without exposing other employees
         ->and($registration->choices->first()->selected_menu)->toBe(2);
 
     $otherEmployee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => 'employee-two-guid',
         'domain' => 'default',
     ]);
@@ -287,6 +291,7 @@ it('rejects menu choices from other campaigns and prevents registrations after c
     ]);
     $foreignDay = $otherCampaign->days()->firstOrFail();
     $employee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => 'employee-guid',
         'domain' => 'default',
     ]);
@@ -327,11 +332,13 @@ it('exports daily menus grouped by department with totals and two unexpected mea
     $campaign = createOpenMenuCampaign();
     $monday = $campaign->days()->orderBy('date')->firstOrFail();
     $financeEmployee = User::factory()->create([
+        'menu_eligible' => true,
         'name' => 'Awa Finance',
         'guid' => 'finance-guid',
         'domain' => 'default',
     ]);
     $adminEmployee = User::factory()->create([
+        'menu_eligible' => true,
         'name' => 'Bala Administration',
         'guid' => 'admin-guid',
         'domain' => 'default',
@@ -368,6 +375,7 @@ it('exports daily menus grouped by department with totals and two unexpected mea
     ]);
 
     $employee = User::factory()->create([
+        'menu_eligible' => true,
         'guid' => 'ordinary-employee-guid',
         'domain' => 'default',
     ]);
@@ -434,4 +442,51 @@ it('exports daily menus grouped by department with totals and two unexpected mea
     } finally {
         unlink($path);
     }
+});
+
+it('limits menu choices to employees ticked by an administrator', function () {
+    $campaign = createOpenMenuCampaign();
+    $employee = User::factory()->create();
+
+    $this->actingAs($employee)->get(route('menu.portal'))->assertForbidden();
+    $this->actingAs($employee)->get(route('menu.registration.show', $campaign->link_token))->assertForbidden();
+    $this->actingAs($employee)->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => 'Finance',
+        'choices' => [],
+    ])->assertForbidden();
+    $this->actingAs($employee)->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertDontSee('intranet-menu-campaigns', false);
+
+    $admin = User::factory()->superAdmin()->create();
+    $this->actingAs($admin)->put(route('admin.users.update', $employee), [
+        'name' => $employee->name,
+        'email' => $employee->email,
+        'matricule' => $employee->matricule,
+        'actif' => '1',
+        'menu_eligible' => '1',
+    ])->assertRedirect(route('admin.users.show', $employee));
+
+    expect($employee->fresh()->menu_eligible)->toBeTrue();
+
+    $this->actingAs($employee->fresh())->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('intranet-menu-campaigns', false)
+        ->assertSee($campaign->title)
+        ->assertSee(route('menu.registration.show', $campaign->link_token))
+        ->assertSee('Choisir mes plats');
+    $this->actingAs($employee->fresh())->get(route('menu.registration.show', $campaign->link_token))->assertOk();
+});
+
+it('shows only published menus open for registration on the dashboard', function () {
+    $open = createOpenMenuCampaign(['title' => 'Semaine ouverte']);
+    $draft = createOpenMenuCampaign(['title' => 'Semaine brouillon', 'status' => 'draft', 'link_token' => str_repeat('d', 64)]);
+    $closed = createOpenMenuCampaign(['title' => 'Semaine close', 'registration_closes_at' => now()->subHour(), 'link_token' => str_repeat('c', 64)]);
+    $employee = User::factory()->create(['menu_eligible' => true]);
+
+    $this->actingAs($employee)->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Semaine ouverte')
+        ->assertDontSee('Semaine brouillon')
+        ->assertDontSee('Semaine close');
 });

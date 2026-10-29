@@ -27,6 +27,39 @@
         <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
     </section>
 
+    @if($openMenuCampaigns->isNotEmpty())
+    <section id="intranet-menu-campaigns" class="mb-7" aria-labelledby="menu-campaigns-heading">
+        <div class="mb-3">
+            <h2 id="menu-campaigns-heading" class="text-lg font-bold text-graphite-900">Menu de la semaine</h2>
+            <p class="mt-1 text-sm text-graphite-600">Choisissez vos plats avant la clôture des inscriptions.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach($openMenuCampaigns as $menuCampaign)
+            <a href="{{ route('menu.registration.show', $menuCampaign->link_token) }}"
+               class="group flex items-center gap-4 rounded-xl border border-or-300 bg-linear-to-br from-white to-or-50 p-4 transition hover:-translate-y-0.5 hover:border-nere-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-nere-600">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-or-400 text-graphite-900 shadow-sm">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zm3 10h3m-3 3h6"/>
+                    </svg>
+                </span>
+                <span class="min-w-0">
+                    <span class="block truncate font-semibold text-graphite-900 group-hover:text-nere-700">{{ $menuCampaign->title }}</span>
+                    <span class="mt-0.5 block text-xs text-graphite-600">
+                        Du {{ $menuCampaign->starts_on->format('d/m') }} au {{ $menuCampaign->ends_on->format('d/m') }}
+                        @if($menuCampaign->registration_closes_at)
+                            · clôture le {{ $menuCampaign->registration_closes_at->format('d/m à H:i') }}
+                        @endif
+                    </span>
+                    <span class="mt-1 block text-xs font-semibold {{ $menuCampaign->already_chosen ? 'text-green-700' : 'text-nere-700' }}">
+                        {{ $menuCampaign->already_chosen ? 'Choix enregistrés, modifier' : 'Choisir mes plats' }}
+                    </span>
+                </span>
+            </a>
+            @endforeach
+        </div>
+    </section>
+    @endif
+
     <section id="intranet-quick-actions" class="mb-7" aria-labelledby="quick-actions-heading">
         <div class="mb-3">
             <h2 id="quick-actions-heading" class="text-lg font-bold text-graphite-900">Accès rapides</h2>

@@ -63,6 +63,10 @@
                     </dd>
                 </div>
                 <div>
+                    <dt class="text-sm font-medium text-gray-500">Menu du personnel</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ $user->menu_eligible ? 'Choisit ses plats' : 'Non concerné' }}</dd>
+                </div>
+                <div>
                     <dt class="text-sm font-medium text-gray-500">Téléphone</dt>
                     <dd class="mt-1 text-sm text-gray-900">{{ $user->telephone ?: '-' }}</dd>
                 </div>

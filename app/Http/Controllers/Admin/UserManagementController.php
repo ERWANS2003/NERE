@@ -73,6 +73,7 @@ class UserManagementController extends Controller
             'poste' => 'nullable|string|max:100',
             'actif' => 'boolean',
             'is_super_admin' => 'boolean',
+            'menu_eligible' => 'boolean',
             'departments' => 'array',
             'departments.*' => 'exists:departments,id',
             'roles' => 'array',
@@ -84,6 +85,7 @@ class UserManagementController extends Controller
         $validated['password'] = Hash::make($validated['password']);
         $validated['actif'] = $request->boolean('actif', true);
         $validated['is_super_admin'] = $request->boolean('is_super_admin', false);
+        $validated['menu_eligible'] = $request->boolean('menu_eligible');
         $departmentIds = $validated['departments'] ?? [];
         $roleIds = $validated['roles'] ?? [];
         unset($validated['departments'], $validated['roles']);
@@ -181,6 +183,7 @@ class UserManagementController extends Controller
             'poste' => 'nullable|string|max:100',
             'actif' => 'boolean',
             'is_super_admin' => 'boolean',
+            'menu_eligible' => 'boolean',
             'departments' => 'array',
             'departments.*' => 'exists:departments,id',
             'department_roles' => 'sometimes|array',
@@ -243,6 +246,7 @@ class UserManagementController extends Controller
 
         $validated['actif'] = $request->boolean('actif');
         $validated['is_super_admin'] = $request->boolean('is_super_admin');
+        $validated['menu_eligible'] = $request->boolean('menu_eligible');
 
         $user->update($validated);
 

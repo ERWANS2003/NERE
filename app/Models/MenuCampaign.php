@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,6 +26,16 @@ class MenuCampaign extends Model
             'ends_on' => 'date',
             'registration_closes_at' => 'datetime',
         ];
+    }
+
+    /** Semaines publiées dont les inscriptions ne sont pas encore closes. */
+    public function scopeOpenForRegistration(Builder $query): void
+    {
+        $query->where('status', 'open')
+            ->where(function (Builder $query): void {
+                $query->whereNull('registration_closes_at')
+                    ->orWhere('registration_closes_at', '>', now());
+            });
     }
 
     public function creator(): BelongsTo
