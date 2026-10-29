@@ -118,5 +118,34 @@ it('queues browser push after saving an in-app notification', function () {
 
     Queue::assertPushed(SendWebPushNotification::class, fn (SendWebPushNotification $job): bool => $job->subscriptionId > 0
         && $job->payload['title'] === 'Alerte de test'
-        && $job->payload['url'] === '/intranet/notifications');
+        && $job->payload['url'] === '/intranet/notifications'
+        && $job->payload['urgent'] === false);
+});
+
+it('marks server health alerts as urgent push notifications', function () {
+    Queue::fake();
+    $admin = User::factory()->superAdmin()->create();
+    $endpoint = pushSubscriptionPayload()['endpoint'];
+    PushSubscription::create([
+        'user_id' => $admin->id,
+        'endpoint' => $endpoint,
+        'endpoint_hash' => hash('sha256', $endpoint),
+        'public_key' => str_repeat('a', 65),
+        'auth_token' => str_repeat('b', 22),
+    ]);
+
+    $admin->notify(new \App\Notifications\SystemHealthAlert(['backup' => 'Aucune sauvegarde.']));
+
+    Queue::assertPushed(SendWebPushNotification::class, fn (SendWebPushNotification $job): bool => $job->payload['urgent'] === true
+        && $job->payload['url'] === '/admin/sante');
+});
+
+it('invites users to enable Windows notifications when push is configured', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('intranet.dashboard'))->assertOk()->assertSee('data-push-banner', false);
+    $this->actingAs($user)->get(route('intranet.notifications.index'))->assertOk()->assertDontSee('data-push-banner', false);
+
+    config(['webpush.enabled' => false]);
+    $this->actingAs($user)->get(route('intranet.dashboard'))->assertOk()->assertDontSee('data-push-banner', false);
 });

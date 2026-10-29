@@ -67,6 +67,16 @@
                     </nav>
                 @endif
 
+                @if(config('webpush.enabled') && ! request()->routeIs('intranet.notifications.index'))
+                    <div data-push-banner hidden class="mb-4 flex flex-col gap-3 rounded-lg border border-nere-200 bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                        <p class="text-graphite-700">Recevez les alertes de l’intranet en notification Windows, avec un son, même onglet fermé.</p>
+                        <div class="flex shrink-0 items-center gap-3">
+                            <a href="{{ route('intranet.notifications.index') }}" class="font-semibold text-nere-700 hover:underline">Activer</a>
+                            <button type="button" data-push-banner-dismiss class="text-graphite-500 hover:text-graphite-800">Plus tard</button>
+                        </div>
+                    </div>
+                @endif
+
                 @isset($slot)
                     {{ $slot }}
                 @else

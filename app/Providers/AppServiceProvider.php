@@ -93,6 +93,9 @@ class AppServiceProvider extends ServiceProvider
                 'body' => is_string($data['message'] ?? null) ? $data['message'] : '',
                 'url' => $this->notificationPath($data['url'] ?? null),
                 'tag' => (string) ($event->notification->id ?? ''),
+                // Alertes qui restent affichées jusqu'au clic, avec un son plus insistant.
+                'urgent' => in_array($data['category'] ?? null, ['system_health', 'ticket_sla'], true)
+                    || ($data['priority'] ?? null) === 'urgent',
             ];
 
             foreach ($event->notifiable->pushSubscriptions()->pluck('id') as $subscriptionId) {

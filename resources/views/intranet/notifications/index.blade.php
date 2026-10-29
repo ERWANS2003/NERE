@@ -45,7 +45,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 id="push-notifications-heading" class="font-semibold text-graphite-900">Notifications navigateur</h2>
-                    <p class="mt-1 text-sm text-graphite-600">Recevez les alertes de l’intranet sur cet appareil, même lorsque l’onglet est fermé.</p>
+                    <p class="mt-1 text-sm text-graphite-600">Recevez les alertes de l’intranet en notification Windows sur cet appareil, même lorsque l’onglet est fermé. Les alertes urgentes restent affichées jusqu’à ce que vous cliquiez dessus.</p>
                 </div>
                 <button type="button" class="bouton-secondaire" data-web-push-toggle disabled aria-pressed="false">
                     Activer les notifications push

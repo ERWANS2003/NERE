@@ -17,13 +17,23 @@ self.addEventListener('push', (event) => {
         ? data.title
         : 'Intranet NÉRÉ Mining';
 
-    event.waitUntil(self.registration.showNotification(title, {
-        body: typeof data.body === 'string' ? data.body : '',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: typeof data.tag === 'string' ? data.tag : undefined,
-        data: { url: typeof data.url === 'string' ? data.url : '/' },
-    }));
+    const urgent = data.urgent === true;
+
+    event.waitUntil(Promise.all([
+        self.registration.showNotification(title, {
+            body: typeof data.body === 'string' ? data.body : '',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: typeof data.tag === 'string' ? data.tag : undefined,
+            requireInteraction: urgent,
+            silent: false,
+            data: { url: typeof data.url === 'string' ? data.url : '/' },
+        }),
+        // Les onglets ouverts de l'intranet jouent le son de l'intranet.
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            windowClients.forEach((client) => client.postMessage({ type: 'intranet-notification', urgent }));
+        }),
+    ]));
 });
 
 self.addEventListener('notificationclick', (event) => {
