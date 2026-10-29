@@ -22,8 +22,22 @@ Pour lancer une sauvegarde à la main, dans PowerShell en administrateur sur le 
 powershell -ExecutionPolicy Bypass -File C:\inetpub\wwwroot\itsm-nere-mining\scripts\sauvegarde\Sauvegarder-Intranet.ps1
 ```
 
-Les sauvegardes restent sur le disque du serveur : si ce disque est perdu, elles le sont aussi.
-Copiez régulièrement `C:\Backups\ITSM` sur un autre support (partage réseau, disque externe).
+## Copie hors du serveur
+
+Par défaut, les sauvegardes restent sur le disque du serveur : si ce disque est perdu,
+elles le sont aussi. Le lecteur `E:` ne suffit pas, car c'est une partition du même
+disque virtuel que `C:`.
+
+Pour copier chaque archive sur un partage réseau, ajoutez `-Copie` aux arguments de la
+tâche planifiée. Le compte ordinateur du serveur (`NEREMINING\OUA-NM-INTRANET$`, utilisé
+par SYSTEM sur le réseau) doit avoir le droit d'écriture sur ce partage.
+
+```
+-NoProfile -ExecutionPolicy Bypass -File "C:\inetpub\wwwroot\itsm-nere-mining\scripts\sauvegarde\Sauvegarder-Intranet.ps1" -Copie "\\serveur\sauvegardes\intranet"
+```
+
+La même durée de conservation (14 jours) s'applique à la copie. La page Santé indique
+si une copie est configurée.
 
 ## Restauration
 

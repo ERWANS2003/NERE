@@ -46,6 +46,9 @@
                     @isset($backup['status']['taille_mo']) · {{ $backup['status']['taille_mo'] }} Mo @endisset
                     @isset($backup['status']['nombre']) · {{ $backup['status']['nombre'] }} copie(s) conservée(s) @endisset
                 </p>
+                <p class="mt-1 text-xs {{ empty($backup['status']['copie']) ? 'text-amber-700' : 'text-gray-500' }}">
+                    {{ empty($backup['status']['copie']) ? 'Aucune copie hors du serveur : une panne du disque ferait tout perdre.' : 'Copie : '.$backup['status']['copie'] }}
+                </p>
                 @if(! empty($backup['status']['erreur']))
                     <p class="mt-1 text-xs text-red-700">{{ $backup['status']['erreur'] }}</p>
                 @endif
@@ -85,7 +88,7 @@
         <section class="rounded-lg border border-gray-200 bg-white p-5" id="sante-file">
             <div class="mb-2 flex items-center justify-between">
                 <h2 class="font-semibold text-gray-900">File d’attente</h2>
-                {!! $badge($queue['failed_total'] === 0 && ($queue['oldest'] === null || $queue['oldest']->gt(now()->subMinutes(10))), 'OK', 'À vérifier') !!}
+                {!! $badge($queue['ok'], 'OK', 'À vérifier') !!}
             </div>
             <p class="text-sm text-gray-600">
                 {{ $queue['pending'] }} en attente

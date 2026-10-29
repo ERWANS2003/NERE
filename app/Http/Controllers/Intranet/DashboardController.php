@@ -7,6 +7,8 @@ use App\Models\Announcement;
 use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\MenuCampaign;
+use App\Models\MenuChoice;
+use App\Models\MenuDay;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Intranet\CalendarFeed;
@@ -77,6 +79,26 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // Plat choisi pour aujourd'hui, et récapitulatif du jour pour la restauration.
+        $publishedToday = fn ($query) => $query->whereDate('date', today())
+            ->whereHas('campaign', fn ($campaign) => $campaign->where('status', '!=', 'draft'));
+        $todayMenuChoice = $user->canChooseMenu()
+            ? MenuChoice::query()
+                ->whereHas('registration', fn ($query) => $query->where('user_id', $user->id))
+                ->whereHas('day', $publishedToday)
+                ->with('day')
+                ->first()
+            : null;
+        $todayMenuSummary = $user->hasPermission('menu.manage')
+            ? MenuDay::query()
+                ->where($publishedToday)
+                ->withCount([
+                    'choices as menu_one_count' => fn ($query) => $query->where('selected_menu', 1),
+                    'choices as menu_two_count' => fn ($query) => $query->where('selected_menu', 2),
+                ])
+                ->get()
+            : collect();
+
         // Widget : 4 prochains événements de l'agenda, jours fériés compris.
         $upcomingEvents = array_slice($upcomingCalendarEvents, 0, 4);
 
@@ -145,6 +167,8 @@ class DashboardController extends Controller
             'upcomingEvents',
             'recentRequests',
             'openMenuCampaigns',
+            'todayMenuChoice',
+            'todayMenuSummary',
             'enabledModules'
         ));
     }

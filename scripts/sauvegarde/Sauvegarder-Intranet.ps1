@@ -13,11 +13,15 @@
       contient des secrets) ;
     - etat ecrit dans storage\app\sauvegarde-statut.json, affiche sur la page
       "Sante du serveur" de l'admin.
+    - avec -Copie (ex. partage reseau \\serveur\sauvegardes\intranet), l'archive
+      y est aussi copiee, avec la meme duree de conservation : une panne du
+      disque du serveur ne fait alors pas tout perdre.
     Restauration : voir docs/SAUVEGARDE.md.
 #>
 param(
     [string]$App = 'C:\inetpub\wwwroot\itsm-nere-mining',
     [string]$Destination = 'C:\Backups\ITSM',
+    [string]$Copie = '',
     [int]$Jours = 14
 )
 
@@ -58,15 +62,24 @@ try {
     $archive = Join-Path $Destination "intranet_$horodatage.zip"
     Compress-Archive -Path (Join-Path $travail '*') -DestinationPath $archive
 
-    Get-ChildItem $Destination -Filter 'intranet_*.zip' |
-        Where-Object LastWriteTime -lt (Get-Date).AddDays(-$Jours) |
-        Remove-Item
+    $dossiers = @($Destination)
+    if ($Copie) {
+        if (-not (Test-Path $Copie)) { New-Item -ItemType Directory -Path $Copie | Out-Null }
+        Copy-Item $archive $Copie
+        $dossiers += $Copie
+    }
+    foreach ($dossier in $dossiers) {
+        Get-ChildItem $dossier -Filter 'intranet_*.zip' |
+            Where-Object LastWriteTime -lt (Get-Date).AddDays(-$Jours) |
+            Remove-Item
+    }
 
     Ecrire-Statut @{
         ok = $true
         fichier = $archive
         taille_mo = [math]::Round((Get-Item $archive).Length / 1MB, 1)
         nombre = @(Get-ChildItem $Destination -Filter 'intranet_*.zip').Count
+        copie = $Copie
     }
     "Sauvegarde OK : $archive"
 }

@@ -578,3 +578,31 @@ it('lets administrators filter and toggle menu employees from the user list', fu
 
     $this->actingAs($employee)->patch(route('admin.users.menu.toggle', $employee))->assertForbidden();
 });
+
+it('shows the employee their dish of the day and the kitchen its daily summary', function () {
+    $this->travelTo(now()->parse('2026-10-21 08:00'));
+    $campaign = createOpenMenuCampaign();
+    $today = $campaign->days()->whereDate('date', '2026-10-21')->firstOrFail();
+    $employee = User::factory()->create(['menu_eligible' => true]);
+    foreach ([[$employee, 2], [User::factory()->create(), 2], [User::factory()->create(), 1]] as [$person, $menu]) {
+        $registration = MenuRegistration::create([
+            'campaign_id' => $campaign->id, 'user_id' => $person->id, 'employee_name' => $person->name,
+            'employee_identifier' => 'local|'.$person->id, 'department' => 'Finance',
+        ]);
+        $registration->choices()->create(['menu_day_id' => $today->id, 'selected_menu' => $menu]);
+    }
+
+    $this->actingAs($employee)->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Mon plat du jour')
+        ->assertSee('Menu deux du jour 3')
+        ->assertDontSee('Récapitulatif restauration');
+
+    $this->actingAs(createMenuManager())->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('Récapitulatif restauration')
+        ->assertSeeInOrder(['Menu 1 · Menu un du jour 3', '1', 'Menu 2 · Menu deux du jour 3', '2', 'Total', '3']);
+
+    $this->travelTo(now()->parse('2026-10-25 08:00'));
+    $this->actingAs($employee)->get(route('intranet.dashboard'))->assertOk()->assertDontSee('Mon plat du jour');
+});

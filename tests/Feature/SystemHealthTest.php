@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\SystemHealthController;
+use App\Services\SystemHealth;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +27,7 @@ it('restricts the health page to system administrators', function () {
 
 it('reports scheduler, mail, backup and failed jobs', function () {
     config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.from.address' => 'hello@example.com']);
-    Cache::forever(SystemHealthController::SCHEDULER_HEARTBEAT_KEY, now()->subMinute()->toIso8601String());
+    Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, now()->subMinute()->toIso8601String());
     failedJob();
 
     $this->actingAs(User::factory()->superAdmin()->create())
@@ -41,7 +41,7 @@ it('reports scheduler, mail, backup and failed jobs', function () {
 });
 
 it('flags a stopped scheduler', function () {
-    Cache::forever(SystemHealthController::SCHEDULER_HEARTBEAT_KEY, now()->subHour()->toIso8601String());
+    Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, now()->subHour()->toIso8601String());
 
     $this->actingAs(User::factory()->superAdmin()->create())
         ->get(route('admin.health'))
@@ -61,4 +61,26 @@ it('retries and forgets failed jobs', function () {
         ->and(DB::table('jobs')->count())->toBe(1);
 
     $this->actingAs($admin)->post(route('admin.health.retry', 'inconnu'))->assertNotFound();
+});
+
+it('alerts administrators once per new problem', function () {
+    config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.from.address' => 'hello@example.com']);
+    Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, now()->toIso8601String());
+    $admin = User::factory()->superAdmin()->create();
+    $employee = User::factory()->create();
+
+    $this->artisan('intranet:alerte-sante')->assertSuccessful();
+    $first = $admin->notifications()->first();
+    expect($admin->notifications()->count())->toBe(1)
+        ->and($first->data['problems'])->toContain('mail', 'backup')
+        ->and($first->data['url'])->toBe(route('admin.health'))
+        ->and($employee->notifications()->count())->toBe(0);
+
+    $this->artisan('intranet:alerte-sante')->assertSuccessful();
+    expect($admin->notifications()->count())->toBe(1);
+
+    failedJob();
+    $this->artisan('intranet:alerte-sante')->assertSuccessful();
+    expect($admin->notifications()->count())->toBe(2)
+        ->and($admin->notifications()->get()->pluck('data.problems')->all())->toContain(['queue']);
 });
