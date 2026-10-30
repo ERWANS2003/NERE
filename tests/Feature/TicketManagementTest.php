@@ -739,7 +739,7 @@ it('does not let a technician take a ticket away from a peer or a higher level',
     expect($ticket->fresh()->assignee_id)->toBeNull();
 });
 
-it('lists only lower levels in the assignment field and keeps take for directors', function () {
+it('lists only lower levels in the assignment field', function () {
     $it = departementIt();
     $technician = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
     $junior = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create(['name' => 'Junior Niveau Un']);
@@ -752,6 +752,31 @@ it('lists only lower levels in the assignment field and keeps take for directors
         ->assertSee('id="assignee_id"', false)
         ->assertSee($junior->name)
         ->assertDontSee('Senior Niveau Trois')
-        ->assertDontSee('Pair Niveau Deux')
-        ->assertDontSee('Prendre en charge');
+        ->assertDontSee('Pair Niveau Deux');
+});
+
+it('lets every technician take a free ticket but not one held by a peer or a higher level', function () {
+    Notification::fake();
+    $it = departementIt();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+    $peer = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+    $senior = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $this->actingAs($technician);
+
+    $free = ticketAffectation($it);
+    $this->get(route('intranet.tickets.show', $free))->assertOk()->assertSee('Prendre en charge');
+    $this->post(route('intranet.tickets.take', $free))->assertRedirect(route('intranet.tickets.show', $free));
+    expect($free->fresh()->assignee_id)->toBe($technician->id)
+        ->and($free->fresh()->status)->toBe(TicketStatus::InProgress);
+
+    foreach ([$peer, $senior] as $holder) {
+        $held = ticketAffectation($it, $holder);
+        $this->get(route('intranet.tickets.show', $held))->assertOk()->assertDontSee('Prendre en charge');
+        $this->post(route('intranet.tickets.take', $held))->assertForbidden();
+        expect($held->fresh()->assignee_id)->toBe($holder->id);
+    }
+
+    $held = ticketAffectation($it, $technician);
+    $this->actingAs($senior)->post(route('intranet.tickets.take', $held))->assertRedirect();
+    expect($held->fresh()->assignee_id)->toBe($senior->id);
 });

@@ -169,7 +169,7 @@ class TicketController extends Controller
             'ticket' => $ticket,
             'isAgent' => $user->canHandleIn($department->id),
             'canAssign' => $assignable !== null,
-            'canTake' => $user->canValidateIn($department->id),
+            'canTake' => $this->canTake($user, $ticket),
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
             // Le technicien affecte reste dans la liste meme desactive, sinon
@@ -285,7 +285,7 @@ class TicketController extends Controller
     public function take(Request $request, Ticket $ticket, TicketSlaService $ticketSlaService): RedirectResponse
     {
         $this->authorizeAgent($request->user(), $ticket);
-        abort_unless($request->user()->canValidateIn($ticket->department_id), 403);
+        abort_unless($this->canTake($request->user(), $ticket), 403);
         abort_unless($ticket->status !== TicketStatus::Closed, 422, 'Un ticket fermé ne peut plus être pris en charge.');
 
         if ($ticket->assignee_id === $request->user()->id && $ticket->status === TicketStatus::InProgress) {
@@ -444,6 +444,21 @@ class TicketController extends Controller
         return $this->itAgents($department)
             ->filter(fn (User $agent) => $user->canAssignTo($agent, $department->id))
             ->values();
+    }
+
+    /**
+     * Tout agent peut prendre un ticket libre ; un technicien ne le retire pas
+     * à un collègue de même niveau ou de niveau supérieur.
+     */
+    private function canTake(User $user, Ticket $ticket): bool
+    {
+        if (! $user->canHandleIn($ticket->department_id)) {
+            return false;
+        }
+
+        $assignee = $ticket->assignee;
+
+        return ! $assignee || $assignee->is($user) || $user->canAssignTo($assignee, $ticket->department_id);
     }
 
     private function authorizeView(User $user, Ticket $ticket): void
