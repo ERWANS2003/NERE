@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Intranet;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Department;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -26,6 +29,7 @@ class AnnouncementController extends Controller
 
         $query = Announcement::query()
             ->with(['department', 'creator'])
+            ->visibleTo($request->user())
             ->where('is_active', true);
 
         if ($request->filled('priority') && in_array($request->priority, self::PRIORITIES, true)) {
@@ -70,7 +74,9 @@ class AnnouncementController extends Controller
     {
         $this->authorize('create', Announcement::class);
 
-        return view('intranet.announcements.create');
+        return view('intranet.announcements.create', [
+            'audienceDepartments' => $this->audienceDepartments($request->user()),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -81,11 +87,14 @@ class AnnouncementController extends Controller
 
         $announcement = Announcement::create([
             ...$validated,
-            'department_id' => null,
             'created_by' => $request->user()->id,
             'is_active' => true,
             'published_at' => now(),
         ]);
+
+        if ($request->hasFile('attachment')) {
+            $announcement->replaceAttachment($request->file('attachment'));
+        }
 
         $this->notifyAudience($announcement);
 
@@ -98,17 +107,24 @@ class AnnouncementController extends Controller
     {
         $this->authorize('update', $announcement);
 
-        return view('intranet.announcements.edit', compact('announcement'));
+        return view('intranet.announcements.edit', [
+            'announcement' => $announcement,
+            'audienceDepartments' => $this->audienceDepartments($request->user(), $announcement),
+        ]);
     }
 
     public function update(Request $request, Announcement $announcement): RedirectResponse
     {
         $this->authorize('update', $announcement);
 
-        $announcement->update([
-            ...$this->validatedData($request),
-            'department_id' => null,
-        ]);
+        $announcement->update($this->validatedData($request, $announcement));
+
+        if ($request->boolean('remove_attachment')) {
+            $announcement->removeAttachment();
+        }
+        if ($request->hasFile('attachment')) {
+            $announcement->replaceAttachment($request->file('attachment'));
+        }
 
         return redirect()
             ->route('intranet.announcements.show', $announcement)
@@ -146,28 +162,46 @@ class AnnouncementController extends Controller
     }
 
     /**
-     * @return array{title: string, body: string, priority: string}
+     * @return array{title: string, body: string, priority: string, department_id: ?int}
      */
-    private function validatedData(Request $request): array
+    private function validatedData(Request $request, ?Announcement $announcement = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:10000'],
             'priority' => ['required', 'in:'.implode(',', self::PRIORITIES)],
+            'department_id' => ['present', 'nullable', 'integer', Rule::in($this->audienceDepartments($request->user(), $announcement)->modelKeys())],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx,ppt,pptx'],
+            'remove_attachment' => ['nullable', 'boolean'],
         ]);
+
+        // Le fichier est enregistré à part.
+        unset($validated['attachment'], $validated['remove_attachment']);
+
+        return $validated;
     }
 
     /**
-     * Les annonces sont des communications globales. L'auteur est exclu de la
-     * notification : il vient de publier l'annonce.
+     * Départements que l'auteur peut viser, en plus de toute l'entreprise. Le
+     * public actuel reste proposé même si l'auteur ne dirige plus ce département.
+     *
+     * @return Collection<int, Department>
+     */
+    private function audienceDepartments(User $user, ?Announcement $announcement = null): Collection
+    {
+        return $user->directedDepartments()
+            ->when($announcement?->department, fn (Collection $departments) => $departments->push($announcement->department))
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+    }
+
+    /**
+     * L'auteur est exclu de la notification : il vient de publier l'annonce.
      */
     private function notifyAudience(Announcement $announcement): void
     {
-        $destinataires = User::where('actif', true)->get();
-
-        $destinataires = $destinataires->reject(
-            fn (User $u) => $u->id === $announcement->created_by
-        );
+        $destinataires = $announcement->audience();
 
         if ($destinataires->isNotEmpty()) {
             Notification::send($destinataires, new AnnouncementPublished($announcement));

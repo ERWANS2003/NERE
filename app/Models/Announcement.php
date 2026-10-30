@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class Announcement extends Model
 {
@@ -34,6 +38,60 @@ class Announcement extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** Annonces que cet utilisateur peut voir : celles de toute l'entreprise et de ses départements. */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->is_super_admin) {
+            return;
+        }
+
+        $query->where(fn (Builder $visible) => $visible
+            ->whereNull('department_id')
+            ->orWhere('created_by', $user->id)
+            ->orWhereIn('department_id', $user->departments()->pluck('departments.id')));
+    }
+
+    /**
+     * Destinataires de la notification de publication, sans l'auteur.
+     *
+     * @return Collection<int, User>
+     */
+    public function audience(): Collection
+    {
+        return User::query()
+            ->where('actif', true)
+            ->when($this->department_id, fn (Builder $users) => $users
+                ->whereHas('departments', fn (Builder $departments) => $departments->where('departments.id', $this->department_id)))
+            ->when($this->created_by, fn (Builder $users) => $users->whereKeyNot($this->created_by))
+            ->get();
+    }
+
+    public function replaceAttachment(UploadedFile $file): void
+    {
+        $this->removeAttachment();
+        $this->update([
+            'attachment_path' => $file->store('announcements/'.$this->id, 'local'),
+            'attachment_name' => $file->getClientOriginalName(),
+            'attachment_mime' => $file->getMimeType() ?: 'application/octet-stream',
+            'attachment_size' => $file->getSize(),
+        ]);
+    }
+
+    public function removeAttachment(): void
+    {
+        if (! $this->attachment_path) {
+            return;
+        }
+
+        Storage::disk('local')->delete($this->attachment_path);
+        $this->update([
+            'attachment_path' => null,
+            'attachment_name' => null,
+            'attachment_mime' => null,
+            'attachment_size' => null,
+        ]);
     }
 
     public function scopeActive($query)

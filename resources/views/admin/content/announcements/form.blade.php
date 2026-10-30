@@ -5,7 +5,7 @@
 @section('content')
     <div class="mx-auto max-w-3xl">
         <h1 class="mb-2 text-2xl font-bold text-gray-900">{{ $announcement->exists ? 'Modifier une annonce globale' : 'Nouvelle annonce globale' }}</h1>
-        <p class="mb-6 text-sm text-gray-600">Cette annonce sera visible par tous les utilisateurs actifs.</p>
+        <p class="mb-6 text-sm text-gray-600">{{ $announcement->department ? 'Cette annonce est réservée au département '.$announcement->department->name.'.' : 'Cette annonce sera visible par tous les utilisateurs actifs.' }}</p>
         <form method="POST" action="{{ $announcement->exists ? route('admin.announcements.update', $announcement) : route('admin.announcements.store') }}" enctype="multipart/form-data" class="space-y-5 rounded-lg border border-gray-200 bg-white p-6">
             @csrf
             @if($announcement->exists) @method('PUT') @endif

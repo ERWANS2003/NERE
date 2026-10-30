@@ -205,3 +205,104 @@ it('attaches a file to an announcement and lets employees download it', function
         ->get(route('intranet.announcements.attachment', $announcement))
         ->assertNotFound();
 });
+
+function chefDeDepartement(Department $department): User
+{
+    $chef = User::factory()->create();
+    $chef->departments()->attach($department, ['role' => 'director']);
+
+    return $chef->refresh();
+}
+
+function annoncePayload(?Department $department, string $title = 'Note du chef'): array
+{
+    return ['title' => $title, 'body' => 'Contenu de la note.', 'priority' => 'info', 'department_id' => $department?->id];
+}
+
+it('lets a department head publish to their department only that department sees', function () {
+    Notification::fake();
+    $department = Department::factory()->create();
+    $chef = chefDeDepartement($department);
+    $member = User::factory()->create();
+    $member->departments()->attach($department, ['role' => 'user']);
+    $outsider = User::factory()->create();
+
+    $this->actingAs($chef)->get(route('intranet.announcements.index'))->assertOk()->assertSee(route('intranet.announcements.create'));
+    $this->actingAs($chef)->get(route('intranet.announcements.create'))->assertOk()->assertSee($department->name);
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), annoncePayload($department))->assertRedirect();
+
+    $announcement = Announcement::firstOrFail();
+    expect($announcement->department_id)->toBe($department->id)
+        ->and($announcement->created_by)->toBe($chef->id);
+
+    Notification::assertSentTo($member, AnnouncementPublished::class);
+    Notification::assertNotSentTo($outsider, AnnouncementPublished::class);
+    Notification::assertNotSentTo($chef, AnnouncementPublished::class);
+
+    $this->actingAs($member)->get(route('intranet.announcements.show', $announcement))->assertOk()->assertSee($department->name);
+    $this->actingAs($member)->get(route('intranet.dashboard'))->assertSee('Note du chef');
+    $this->actingAs($outsider)->get(route('intranet.announcements.show', $announcement))->assertForbidden();
+    $this->actingAs($outsider)->get(route('intranet.announcements.index'))->assertOk()->assertDontSee('Note du chef');
+    $this->actingAs($outsider)->get(route('intranet.dashboard'))->assertDontSee('Note du chef');
+    $this->actingAs($outsider)->get(route('api.search.data'))->assertOk()->assertDontSee('Note du chef');
+});
+
+it('lets a department head choose a company-wide audience but no other department', function () {
+    Notification::fake();
+    $department = Department::factory()->create();
+    $chef = chefDeDepartement($department);
+    $outsider = User::factory()->create();
+
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), annoncePayload(Department::factory()->create()))
+        ->assertSessionHasErrors('department_id');
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), ['title' => 'Sans public', 'body' => 'x', 'priority' => 'info'])
+        ->assertSessionHasErrors('department_id');
+    expect(Announcement::count())->toBe(0);
+
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), annoncePayload(null))->assertRedirect();
+
+    expect(Announcement::firstOrFail()->department_id)->toBeNull();
+    Notification::assertSentTo($outsider, AnnouncementPublished::class);
+    $this->actingAs($outsider)->get(route('intranet.announcements.show', Announcement::firstOrFail()))->assertOk();
+});
+
+it('lets a department head manage only their own announcements', function () {
+    Notification::fake();
+    $department = Department::factory()->create();
+    $chef = chefDeDepartement($department);
+    $otherChef = chefDeDepartement($department);
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), annoncePayload($department));
+    $announcement = Announcement::firstOrFail();
+
+    $this->actingAs($otherChef)->get(route('intranet.announcements.edit', $announcement))->assertForbidden();
+    $this->actingAs($otherChef)->delete(route('intranet.announcements.destroy', $announcement))->assertForbidden();
+
+    $this->actingAs($chef)->put(route('intranet.announcements.update', $announcement), annoncePayload($department, 'Note corrigée'))->assertRedirect();
+    expect($announcement->fresh()->title)->toBe('Note corrigée');
+
+    $this->actingAs($chef)->delete(route('intranet.announcements.destroy', $announcement))->assertRedirect();
+    expect($announcement->fresh()->is_active)->toBeFalse();
+});
+
+it('refuses announcement creation to employees and keeps the audience on admin edits', function () {
+    Notification::fake();
+    $department = Department::factory()->create();
+    $employee = User::factory()->create();
+    $employee->departments()->attach($department, ['role' => 'technician', 'tech_level' => 3]);
+
+    $this->actingAs($employee->refresh())->get(route('intranet.announcements.create'))->assertForbidden();
+    $this->actingAs($employee)->post(route('intranet.announcements.store'), annoncePayload($department))->assertForbidden();
+
+    $chef = chefDeDepartement($department);
+    $this->actingAs($chef)->post(route('intranet.announcements.store'), annoncePayload($department));
+    $announcement = Announcement::firstOrFail();
+
+    $this->actingAs(User::factory()->superAdmin()->create())->put(route('admin.announcements.update', $announcement), [
+        'title' => 'Relue',
+        'body' => 'Contenu.',
+        'priority' => 'info',
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.announcements.index'));
+
+    expect($announcement->fresh()->department_id)->toBe($department->id);
+});

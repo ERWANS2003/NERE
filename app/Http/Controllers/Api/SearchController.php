@@ -57,7 +57,7 @@ class SearchController extends Controller
         });
 
         // Annonces actives
-        Announcement::where('is_active', true)->get()->each(function (Announcement $a) use ($resultats) {
+        Announcement::visibleTo($request->user())->where('is_active', true)->get()->each(function (Announcement $a) use ($resultats) {
             $resultats->push([
                 'id' => 'announcement-'.$a->id,
                 'type' => 'announcement',

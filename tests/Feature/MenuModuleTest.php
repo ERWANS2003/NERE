@@ -579,7 +579,7 @@ it('lets administrators filter and toggle menu employees from the user list', fu
     $this->actingAs($employee)->patch(route('admin.users.menu.toggle', $employee))->assertForbidden();
 });
 
-it('shows the employee their dish of the day and the kitchen its daily summary', function () {
+it('shows only the dish chosen by the employee for today', function () {
     $this->travelTo(now()->parse('2026-10-21 08:00'));
     $campaign = createOpenMenuCampaign();
     $today = $campaign->days()->whereDate('date', '2026-10-21')->firstOrFail();
@@ -600,8 +600,8 @@ it('shows the employee their dish of the day and the kitchen its daily summary',
 
     $this->actingAs(createMenuManager())->get(route('intranet.dashboard'))
         ->assertOk()
-        ->assertSee('Récapitulatif restauration')
-        ->assertSeeInOrder(['Menu 1 · Menu un du jour 3', '1', 'Menu 2 · Menu deux du jour 3', '2', 'Total', '3']);
+        ->assertDontSee('intranet-menu-today', false)
+        ->assertDontSee('Récapitulatif restauration');
 
     $this->travelTo(now()->parse('2026-10-25 08:00'));
     $this->actingAs($employee)->get(route('intranet.dashboard'))->assertOk()->assertDontSee('Mon plat du jour');

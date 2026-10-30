@@ -10,7 +10,7 @@
     <div class="max-w-2xl mx-auto">
         <h1 class="text-3xl font-bold text-graphite-900 mb-6">Nouvelle annonce</h1>
 
-        <form method="POST" action="{{ route('intranet.announcements.store') }}" class="bg-white rounded-xl border border-graphite-200 p-8 space-y-6">
+        <form method="POST" action="{{ route('intranet.announcements.store') }}" enctype="multipart/form-data" class="bg-white rounded-xl border border-graphite-200 p-8 space-y-6">
             @csrf
 
             @include('intranet.announcements.partials.form-fields')

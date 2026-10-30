@@ -11,7 +11,7 @@
     <div class="max-w-2xl mx-auto">
         <h1 class="text-3xl font-bold text-graphite-900 mb-6">Modifier l'annonce</h1>
 
-        <form method="POST" action="{{ route('intranet.announcements.update', $announcement) }}" class="bg-white rounded-xl border border-graphite-200 p-8 space-y-6">
+        <form method="POST" action="{{ route('intranet.announcements.update', $announcement) }}" enctype="multipart/form-data" class="bg-white rounded-xl border border-graphite-200 p-8 space-y-6">
             @csrf
             @method('PUT')
 

@@ -5,13 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\CalendarEvent;
-use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -69,12 +67,11 @@ class ContentManagementController extends Controller
         $active = $request->boolean('is_active');
         $announcement->update([
             ...$validated,
-            'department_id' => null,
             'is_active' => $active,
             'published_at' => $active ? ($announcement->published_at ?? now()) : null,
         ]);
         if ($request->boolean('remove_attachment')) {
-            $this->removeAttachment($announcement);
+            $announcement->removeAttachment();
         }
         $this->saveAttachment($request, $announcement);
 
@@ -98,7 +95,7 @@ class ContentManagementController extends Controller
         DatabaseNotification::where('type', AnnouncementPublished::class)
             ->whereLike('data', '%"announcement_id":'.$announcement->id.',%')
             ->delete();
-        $this->removeAttachment($announcement);
+        $announcement->removeAttachment();
         $announcement->delete();
 
         return redirect()->route('admin.announcements.index')->with('success', 'Annonce supprimée.');
@@ -167,33 +164,9 @@ class ContentManagementController extends Controller
 
     private function saveAttachment(Request $request, Announcement $announcement): void
     {
-        $file = $request->file('attachment');
-        if (! $file) {
-            return;
+        if ($request->hasFile('attachment')) {
+            $announcement->replaceAttachment($request->file('attachment'));
         }
-
-        $this->removeAttachment($announcement);
-        $announcement->update([
-            'attachment_path' => $file->store('announcements/'.$announcement->id, 'local'),
-            'attachment_name' => $file->getClientOriginalName(),
-            'attachment_mime' => $file->getMimeType() ?: 'application/octet-stream',
-            'attachment_size' => $file->getSize(),
-        ]);
-    }
-
-    private function removeAttachment(Announcement $announcement): void
-    {
-        if (! $announcement->attachment_path) {
-            return;
-        }
-
-        Storage::disk('local')->delete($announcement->attachment_path);
-        $announcement->update([
-            'attachment_path' => null,
-            'attachment_name' => null,
-            'attachment_mime' => null,
-            'attachment_size' => null,
-        ]);
     }
 
     private function validateEvent(Request $request): array
@@ -236,10 +209,7 @@ class ContentManagementController extends Controller
 
     private function notifyAudience(Announcement $announcement): void
     {
-        $recipients = User::query()
-            ->where('actif', true)
-            ->get()
-            ->reject(fn (User $user) => $user->is($announcement->creator));
+        $recipients = $announcement->audience();
 
         if ($recipients->isNotEmpty()) {
             Notification::send($recipients, new AnnouncementPublished($announcement));

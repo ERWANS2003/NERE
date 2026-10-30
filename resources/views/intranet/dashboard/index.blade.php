@@ -27,37 +27,12 @@
         <div aria-hidden="true" class="absolute bottom-0 left-0 h-px w-full bg-linear-to-r from-transparent via-or-400/80 to-transparent"></div>
     </section>
 
-    @if($todayMenuChoice || $todayMenuSummary->isNotEmpty())
-    <section id="intranet-menu-today" class="mb-7 grid grid-cols-1 gap-3 lg:grid-cols-2" aria-label="Repas du jour">
-        @if($todayMenuChoice)
-        <div class="rounded-xl border border-or-300 bg-linear-to-br from-white to-or-50 p-5">
-            <p class="text-xs font-semibold uppercase tracking-wider text-graphite-500">Mon plat du jour · {{ today()->locale('fr')->translatedFormat('l d F') }}</p>
-            <p class="mt-2 text-lg font-bold text-graphite-900">
-                {{ $todayMenuChoice->selected_menu === 1 ? $todayMenuChoice->day->menu_one : $todayMenuChoice->day->menu_two }}
-            </p>
-            <p class="mt-1 text-sm text-graphite-600">Menu {{ $todayMenuChoice->selected_menu }} · dessert : {{ $todayMenuChoice->day->dessert }}</p>
-        </div>
-        @endif
-
-        @foreach($todayMenuSummary as $summaryDay)
-        <div class="rounded-xl border border-graphite-200 bg-white p-5">
-            <p class="text-xs font-semibold uppercase tracking-wider text-graphite-500">Récapitulatif restauration · aujourd'hui</p>
-            <dl class="mt-3 space-y-2 text-sm">
-                <div class="flex items-start justify-between gap-4">
-                    <dt class="text-graphite-700">Menu 1 · {{ $summaryDay->menu_one }}</dt>
-                    <dd class="shrink-0 text-lg font-bold text-graphite-900">{{ $summaryDay->menu_one_count }}</dd>
-                </div>
-                <div class="flex items-start justify-between gap-4">
-                    <dt class="text-graphite-700">Menu 2 · {{ $summaryDay->menu_two }}</dt>
-                    <dd class="shrink-0 text-lg font-bold text-graphite-900">{{ $summaryDay->menu_two_count }}</dd>
-                </div>
-                <div class="flex items-start justify-between gap-4 border-t border-graphite-100 pt-2">
-                    <dt class="font-semibold text-graphite-900">Total · dessert : {{ $summaryDay->dessert }}</dt>
-                    <dd class="shrink-0 text-lg font-bold text-nere-700">{{ $summaryDay->menu_one_count + $summaryDay->menu_two_count }}</dd>
-                </div>
-            </dl>
-        </div>
-        @endforeach
+    @if($todayMenuChoice)
+    <section id="intranet-menu-today" class="mb-7 rounded-xl border border-or-300 bg-linear-to-br from-white to-or-50 p-5 lg:max-w-xl" aria-label="Mon plat du jour">
+        <p class="text-xs font-semibold uppercase tracking-wider text-graphite-500">Mon plat du jour · {{ today()->locale('fr')->translatedFormat('l d F') }}</p>
+        <p class="mt-2 text-lg font-bold text-graphite-900">
+            {{ $todayMenuChoice->selected_menu === 1 ? $todayMenuChoice->day->menu_one : $todayMenuChoice->day->menu_two }}
+        </p>
     </section>
     @endif
 

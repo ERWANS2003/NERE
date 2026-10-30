@@ -27,7 +27,7 @@
                         {{ ucfirst($announcement->priority) }}
                     </x-badge>
 
-                    <span class="text-sm text-graphite-600">Toute l'entreprise</span>
+                    <span class="text-sm text-graphite-600">{{ $announcement->department?->name ?? "Toute l'entreprise" }}</span>
 
                     <!-- Date -->
                     <span class="text-sm text-graphite-500">

@@ -19,12 +19,17 @@ class AnnouncementPolicy
             return false;
         }
 
-        return $announcement->is_active || $this->update($user, $announcement);
+        if ($this->update($user, $announcement)) {
+            return true;
+        }
+
+        return $announcement->is_active
+            && ($announcement->department_id === null || $user->roleIn($announcement->department_id) !== null);
     }
 
     public function create(User $user): bool
     {
-        return $user->is_active && $user->is_super_admin;
+        return $user->is_active && ($user->is_super_admin || $user->isDepartmentHead());
     }
 
     public function update(User $user, Announcement $announcement): bool
@@ -33,7 +38,8 @@ class AnnouncementPolicy
             return false;
         }
 
-        return $user->is_super_admin;
+        return $user->is_super_admin
+            || ($announcement->created_by === $user->id && $user->isDepartmentHead());
     }
 
     public function delete(User $user, Announcement $announcement): bool
