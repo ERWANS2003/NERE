@@ -163,17 +163,18 @@ class TicketController extends Controller
 
         $department = $this->itDepartment();
         $user = $request->user();
-        $canAssign = $user->canValidateIn($department->id);
+        $assignable = $this->assignableAgents($user, $ticket, $department);
 
         return view('intranet.tickets.show', [
             'ticket' => $ticket,
             'isAgent' => $user->canHandleIn($department->id),
-            'canAssign' => $canAssign,
+            'canAssign' => $assignable !== null,
+            'canTake' => $user->canValidateIn($department->id),
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
             // Le technicien affecte reste dans la liste meme desactive, sinon
             // enregistrer le formulaire retirerait l'affectation sans le dire.
-            'agents' => $this->itAgents($department)
+            'agents' => ($assignable ?? collect())
                 ->when($ticket->assignee, fn (Collection $agents) => $agents->push($ticket->assignee))
                 ->unique('id')
                 ->sortBy('name')
@@ -185,7 +186,8 @@ class TicketController extends Controller
     {
         $this->authorizeAgent($request->user(), $ticket);
         $department = $this->itDepartment();
-        $canAssign = $request->user()->canValidateIn($department->id);
+        $assignable = $this->assignableAgents($request->user(), $ticket, $department);
+        $canAssign = $assignable !== null;
 
         $rules = [
             'status' => ['required', Rule::enum(TicketStatus::class)],
@@ -193,15 +195,13 @@ class TicketController extends Controller
         ];
 
         if ($canAssign) {
-            // Techniciens et directeurs IT : un directeur qui a pris un ticket
-            // en charge doit pouvoir continuer à l'enregistrer.
             $rules['assignee_id'] = [
                 'present',
                 'nullable',
                 'integer',
                 // Le technicien deja affecte reste acceptable meme s'il a ete
                 // desactive, sinon plus personne ne peut enregistrer le ticket.
-                Rule::in([...$this->itAgents($department)->modelKeys(), $ticket->assignee_id]),
+                Rule::in([...$assignable->modelKeys(), $ticket->assignee_id]),
             ];
         }
 
@@ -228,6 +228,7 @@ class TicketController extends Controller
             'resolved_at' => $done ? ($ticket->resolved_at ?? now()) : null,
             'closed_at' => $status === TicketStatus::Closed ? ($ticket->closed_at ?? now()) : null,
         ]);
+        $ticket->unsetRelation('assignee');
 
         if ($priorityChanged) {
             $ticketSlaService->setDeadlines($ticket, resetAlerts: true);
@@ -419,6 +420,30 @@ class TicketController extends Controller
             ->where('actif', true)
             ->handlersOf($department->id)
             ->get();
+    }
+
+    /**
+     * Agents à qui cet utilisateur peut affecter ce ticket, ou null s'il ne peut
+     * pas en changer l'affectation : un technicien ne retire pas un ticket à un
+     * collègue de même niveau ou de niveau supérieur.
+     *
+     * @return Collection<int, User>|null
+     */
+    private function assignableAgents(User $user, Ticket $ticket, Department $department): ?Collection
+    {
+        if (! $user->canValidateIn($department->id)) {
+            $level = $user->effectiveTechLevel($department->id) ?? 0;
+            $assignee = $ticket->assignee;
+
+            if ($level <= User::LOWEST_TECH_LEVEL
+                || ($assignee && ! $assignee->is($user) && ! $user->canAssignTo($assignee, $department->id))) {
+                return null;
+            }
+        }
+
+        return $this->itAgents($department)
+            ->filter(fn (User $agent) => $user->canAssignTo($agent, $department->id))
+            ->values();
     }
 
     private function authorizeView(User $user, Ticket $ticket): void

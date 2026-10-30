@@ -499,6 +499,20 @@ class User extends Authenticatable implements LdapAuthenticatable
         };
     }
 
+    /**
+     * Un technicien n'affecte qu'aux niveaux strictement inférieurs au sien
+     * (N3 vers N2 et N1, N2 vers N1, N1 à personne). Le directeur et l'admin
+     * affectent à tout le monde.
+     */
+    public function canAssignTo(User $target, int $departmentId): bool
+    {
+        if ($this->canValidateIn($departmentId)) {
+            return true;
+        }
+
+        return ($this->effectiveTechLevel($departmentId) ?? 0) > ($target->effectiveTechLevel($departmentId) ?? 0);
+    }
+
     // ── Verrouillage de connexion ────────────────────────────────────────
 
     public function isLockedOut(): bool

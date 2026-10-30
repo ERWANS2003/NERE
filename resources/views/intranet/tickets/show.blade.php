@@ -103,7 +103,7 @@
             <section class="rounded-xl border border-graphite-200 bg-white p-6">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 class="text-lg font-semibold text-graphite-900">Traitement du ticket</h2>
-                    @if($canAssign && $ticket->status->value !== 'closed')
+                    @if($canTake && $ticket->status->value !== 'closed')
                         <form method="POST" action="{{ route('intranet.tickets.take', $ticket) }}">
                             @csrf
                             <button type="submit" class="rounded-lg border border-nere-700 px-4 py-2 text-sm font-semibold text-nere-700 hover:bg-nere-50">

@@ -325,7 +325,7 @@ it('allows IT technicians to update ticket status without changing its assignmen
     Notification::fake();
     $it = departementIt();
     $requester = User::factory()->create();
-    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
     $otherTechnician = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
     $ticket = Ticket::create([
         'number' => 'IT-000102',
@@ -646,4 +646,112 @@ it('numbers each new ticket from its id', function () {
 
     expect(Ticket::orderBy('id')->get()->map(fn (Ticket $t) => $t->number === 'IT-'.str_pad((string) $t->id, 6, '0', STR_PAD_LEFT))->all())
         ->toBe([true, true]);
+});
+
+function ticketAffectation(Department $it, ?User $assignee = null): Ticket
+{
+    return Ticket::create([
+        'number' => 'IT-'.fake()->unique()->numerify('######'),
+        'department_id' => $it->id,
+        'requester_id' => User::factory()->create()->id,
+        'assignee_id' => $assignee?->id,
+        'subject' => 'Poste en panne',
+        'description' => 'Le poste ne démarre plus.',
+        'category' => 'hardware',
+        'priority' => 'normal',
+        'status' => 'new',
+    ]);
+}
+
+function affecterTicket(Ticket $ticket, ?User $assignee)
+{
+    return test()->put(route('intranet.tickets.update', $ticket), [
+        'status' => 'in_progress',
+        'priority' => 'normal',
+        'assignee_id' => $assignee?->id,
+    ]);
+}
+
+it('lets technicians assign tickets only to strictly lower levels', function (int $level, array $allowed) {
+    Notification::fake();
+    $it = departementIt();
+    $assigner = User::factory()->withRole($it, DepartmentRole::Technician, $level)->create();
+    $targets = [
+        1 => User::factory()->withRole($it, DepartmentRole::Technician, 1)->create(),
+        2 => User::factory()->withRole($it, DepartmentRole::Technician, 2)->create(),
+        3 => User::factory()->withRole($it, DepartmentRole::Technician, 3)->create(),
+    ];
+    $this->actingAs($assigner);
+
+    foreach ($targets as $targetLevel => $target) {
+        $ticket = ticketAffectation($it);
+        $response = affecterTicket($ticket, $target);
+
+        if (in_array($targetLevel, $allowed, true)) {
+            $response->assertSessionHasNoErrors();
+            expect($ticket->fresh()->assignee_id)->toBe($target->id);
+            Notification::assertSentTo($target, TicketNotification::class);
+        } else {
+            // Un N1 n'a pas le champ : sa valeur est ignorée. Les autres sont refusés.
+            expect($ticket->fresh()->assignee_id)->toBeNull();
+        }
+    }
+})->with([
+    'niveau 3' => [3, [1, 2]],
+    'niveau 2' => [2, [1]],
+    'niveau 1' => [1, []],
+]);
+
+it('does not let a technician assign to a director or to themselves', function () {
+    $it = departementIt();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 3)->create();
+    $director = User::factory()->withRole($it, DepartmentRole::Director)->create();
+    $ticket = ticketAffectation($it);
+    $this->actingAs($technician);
+
+    affecterTicket($ticket, $director)->assertSessionHasErrors('assignee_id');
+    affecterTicket($ticket, $technician)->assertSessionHasErrors('assignee_id');
+
+    expect($ticket->fresh()->assignee_id)->toBeNull();
+});
+
+it('does not let a technician take a ticket away from a peer or a higher level', function () {
+    Notification::fake();
+    $it = departementIt();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $peer = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $senior = User::factory()->withRole($it, DepartmentRole::Technician, 3)->create();
+    $junior = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create();
+    $this->actingAs($technician);
+
+    foreach ([$peer, $senior] as $holder) {
+        $ticket = ticketAffectation($it, $holder);
+        $this->get(route('intranet.tickets.show', $ticket))->assertOk()->assertDontSee('id="assignee_id"', false);
+        affecterTicket($ticket, $junior)->assertRedirect();
+        expect($ticket->fresh()->assignee_id)->toBe($holder->id);
+    }
+
+    $ticket = ticketAffectation($it, $technician);
+    affecterTicket($ticket, $junior)->assertSessionHasNoErrors();
+    expect($ticket->fresh()->assignee_id)->toBe($junior->id);
+
+    affecterTicket($ticket, null)->assertSessionHasNoErrors();
+    expect($ticket->fresh()->assignee_id)->toBeNull();
+});
+
+it('lists only lower levels in the assignment field and keeps take for directors', function () {
+    $it = departementIt();
+    $technician = User::factory()->withRole($it, DepartmentRole::Technician, 2)->create();
+    $junior = User::factory()->withRole($it, DepartmentRole::Technician, 1)->create(['name' => 'Junior Niveau Un']);
+    User::factory()->withRole($it, DepartmentRole::Technician, 3)->create(['name' => 'Senior Niveau Trois']);
+    User::factory()->withRole($it, DepartmentRole::Technician, 2)->create(['name' => 'Pair Niveau Deux']);
+
+    $this->actingAs($technician)
+        ->get(route('intranet.tickets.show', ticketAffectation($it)))
+        ->assertOk()
+        ->assertSee('id="assignee_id"', false)
+        ->assertSee($junior->name)
+        ->assertDontSee('Senior Niveau Trois')
+        ->assertDontSee('Pair Niveau Deux')
+        ->assertDontSee('Prendre en charge');
 });
