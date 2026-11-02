@@ -97,7 +97,7 @@ class TicketController extends Controller
 
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:180'],
-            'description' => ['required', 'string', 'max:10000'],
+            'description' => ['nullable', 'string', 'max:10000'],
             'category' => ['required', Rule::enum(TicketCategory::class)],
             'priority' => ['required', Rule::enum(TicketPriority::class)],
             'attachments' => ['sometimes', 'array', 'max:5'],
@@ -112,7 +112,7 @@ class TicketController extends Controller
                 'department_id' => $department->id,
                 'requester_id' => $request->user()->id,
                 'subject' => $validated['subject'],
-                'description' => $validated['description'],
+                'description' => $validated['description'] ?? '',
                 'category' => $validated['category'],
                 'priority' => $validated['priority'],
                 'status' => TicketStatus::New,

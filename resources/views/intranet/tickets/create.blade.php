@@ -64,8 +64,8 @@
             </div>
 
             <div>
-                <label for="description" class="mb-1 block text-sm font-medium text-graphite-800">Description détaillée <span class="text-red-600">*</span></label>
-                <textarea id="description" name="description" rows="7" maxlength="10000" required class="w-full rounded-lg border border-graphite-300 px-3 py-2">{{ old('description') }}</textarea>
+                <label for="description" class="mb-1 block text-sm font-medium text-graphite-800">Description détaillée <span class="font-normal text-graphite-500">(facultatif)</span></label>
+                <textarea id="description" name="description" rows="7" maxlength="10000" class="w-full rounded-lg border border-graphite-300 px-3 py-2">{{ old('description') }}</textarea>
                 @error('description')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
 

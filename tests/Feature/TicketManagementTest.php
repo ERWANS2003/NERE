@@ -780,3 +780,27 @@ it('lets every technician take a free ticket but not one held by a peer or a hig
     $this->actingAs($senior)->post(route('intranet.tickets.take', $held))->assertRedirect();
     expect($held->fresh()->assignee_id)->toBe($senior->id);
 });
+
+it('accepts a ticket without description', function () {
+    Notification::fake();
+    departementIt();
+    $requester = User::factory()->create();
+
+    $this->actingAs($requester)->get(route('intranet.tickets.create'))
+        ->assertOk()
+        ->assertSee('(facultatif)');
+
+    $this->actingAs($requester)->post(route('intranet.tickets.store'), [
+        'subject' => 'Imprimante bloquée',
+        'description' => '',
+        'category' => 'hardware',
+        'priority' => 'normal',
+    ])->assertSessionHasNoErrors();
+
+    $ticket = Ticket::firstOrFail();
+    expect($ticket->description)->toBe('');
+
+    $this->actingAs($requester)->get(route('intranet.tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('Aucune description.');
+});

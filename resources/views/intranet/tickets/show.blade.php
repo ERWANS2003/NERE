@@ -46,7 +46,11 @@
             </div>
 
             <div class="space-y-5 p-6">
-                <div class="whitespace-pre-line break-words text-sm leading-6 text-graphite-800">{{ $ticket->description }}</div>
+                @if(filled($ticket->description))
+                    <div class="whitespace-pre-line break-words text-sm leading-6 text-graphite-800">{{ $ticket->description }}</div>
+                @else
+                    <p class="text-sm italic text-graphite-500">Aucune description.</p>
+                @endif
 
                 @if($ticket->attachments->isNotEmpty())
                     <div class="border-t border-graphite-100 pt-4">
