@@ -64,7 +64,17 @@ Les postes l'appliquent sous 90 minutes environ, ou tout de suite avec `gpupdate
 
 ### Poste par poste (script)
 
-Le plus simple : copier `scripts/https/poste/Securiser-Intranet.cmd` sur le poste (clé USB,
+Le plus simple : copier `scripts/https/poste/Installer-Intranet-NERE.exe` sur le poste, double-cliquer
+dessus et accepter la demande administrateur. L'assistant graphique approuve le certificat, crée
+l'icône « Intranet NÉRÉ Mining » (bureau et menu Démarrer, ouverture dans sa propre fenêtre Edge),
+configure Firefox s'il est présent, vérifie que le poste utilise le DNS de l'entreprise et teste la
+connexion. Ses sources sont dans `scripts/https/poste/installateur/`. Pour le recompiler après une
+modification (ex. nouveau certificat), dans PowerShell : `.\scripts\https\poste\installateur\Construire-Installateur.ps1`.
+Le fichier n'est pas signé : s'il est téléchargé depuis Internet ou un e-mail, Windows SmartScreen
+affiche « Windows a protégé votre ordinateur » (« Informations complémentaires » puis « Exécuter quand même ») ;
+copié depuis un partage réseau ou une clé USB, il s'ouvre normalement.
+
+Variante en ligne de commande : copier `scripts/https/poste/Securiser-Intranet.cmd` sur le poste (clé USB,
 partage, e-mail) et double-cliquer dessus, puis accepter la demande administrateur. Le
 certificat est intégré au fichier. Le script l'installe, retire l'ancien certificat
 (`DDFE6E85...`), configure Firefox s'il est présent et teste la connexion à l'intranet.
