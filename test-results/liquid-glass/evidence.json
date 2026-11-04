@@ -1,0 +1,53 @@
+{
+  "contract": "NÉRÉ Mining local intranet: use restrained frosted-glass treatments for navigation, cards, quick actions and form controls while preserving the daily-use dashboard hierarchy and a usable narrow-screen layout.",
+  "targetViewports": [
+    "1345x665",
+    "276x601"
+  ],
+  "accessibility": {
+    "status": "pass",
+    "evidence": "The intranet dashboard retains labeled search and profile controls, keyboard-visible focus, and a mobile menu that opens and closes with Escape. Reduced-motion preferences disable pointer-following highlights and surface transitions."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "The desktop and narrow-screen dashboard were rendered and reviewed. The mobile main content width equals its scroll width after aligning the hero margins with the page gutters; no horizontal overflow remains."
+  },
+  "contentStates": {
+    "loading": {
+      "status": "not-applicable",
+      "reason": "This task changes the presentation of the authenticated dashboard; its dashboard content is rendered directly without a pending-data state."
+    },
+    "empty": {
+      "status": "not-applicable",
+      "reason": "The populated local dashboard has no empty-list state in the captured view."
+    },
+    "error": {
+      "status": "untested",
+      "reason": "A server-rendered error or denied-permission state was not forced during this visual-only change."
+    },
+    "partial": {
+      "status": "not-applicable",
+      "reason": "The captured dashboard rendered all of its visible sections; no partial-data state was presented."
+    },
+    "success": {
+      "status": "pass",
+      "evidence": "The authenticated local intranet dashboard rendered successfully with five quick actions, the shared glass navigation and no horizontal overflow."
+    },
+    "permission": {
+      "status": "not-applicable",
+      "reason": "The authenticated dashboard did not display a permission-denied state."
+    }
+  },
+  "renderedEvidence": [
+    {
+      "viewport": "1345x665",
+      "artifact": "desktop-dashboard.png",
+      "observation": "Desktop intranet dashboard showing translucent sidebar and header surfaces, brand-colored welcome panel and glass quick-action tiles."
+    },
+    {
+      "viewport": "276x601",
+      "artifact": "mobile-dashboard.png",
+      "observation": "Narrow-screen dashboard with compact header and vertically stacked quick actions; the main content has no horizontal overflow."
+    }
+  ]
+}
