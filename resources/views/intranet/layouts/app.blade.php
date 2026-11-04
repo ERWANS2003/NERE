@@ -34,7 +34,7 @@
         @include('intranet.partials.sidebar')
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
             
             <!-- Header -->
             @include('intranet.partials.header')
@@ -43,7 +43,7 @@
             <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto bg-graphite-50 p-4 sm:p-6">
                 @if (! empty($breadcrumbs))
                     <nav class="mb-6" aria-label="Breadcrumb">
-                        <ol class="flex items-center space-x-2 text-sm text-graphite-600">
+                        <ol class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-graphite-600">
                             <li>
                                 <a href="{{ route('intranet.dashboard') }}" class="hover:text-nere-600 transition">
                                     Accueil

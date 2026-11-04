@@ -1,12 +1,6 @@
 /**
- * Liquid glass : comportements liés au pointeur et au défilement.
- *
- * - Marque les surfaces de verre (data-glass) pour le reflet qui suit le
- *   pointeur et l'éclat de survol.
- * - Fait apparaître en cascade les cartes visibles au chargement.
- * - Densifie l'en-tête dès que le contenu principal défile.
- *
- * Tout reste décoratif : sans ce script, les surfaces gardent leur verre fixe.
+ * Liquid glass : comportements décoratifs liés au pointeur et au défilement.
+ * L’interface reste entièrement fonctionnelle lorsque ce module est désactivé.
  */
 const SURFACES = [
     '.carte',
@@ -21,7 +15,7 @@ const SURFACES = [
 ].join(',');
 
 const CONTENEURS = '#main-content, .admin-shell main, .app-shell main';
-const MAX_CASCADE = 14;
+const MAX_CASCADE = 12;
 
 const reduireMouvement = window.matchMedia('(prefers-reduced-motion: reduce)');
 const pointeurFin = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -32,16 +26,37 @@ function estSurface(element) {
         && !element.closest('.fixed, [role="dialog"]');
 }
 
+function ajouterSurface(element, surfaces) {
+    if (!element.hasAttribute('data-glass') && estSurface(element)) {
+        element.setAttribute('data-glass', '');
+        surfaces.push(element);
+    }
+}
+
+/**
+ * Marque uniquement la branche reçue. Cette portée évite de reparcourir toute
+ * la page à chaque mise à jour Livewire.
+ */
 function marquerSurfaces(racine = document) {
     const surfaces = [];
 
-    racine.querySelectorAll(CONTENEURS).forEach((conteneur) => {
-        conteneur.querySelectorAll(SURFACES).forEach((element) => {
-            if (!element.hasAttribute('data-glass') && estSurface(element)) {
-                element.setAttribute('data-glass', '');
-                surfaces.push(element);
-            }
+    if (racine === document) {
+        document.querySelectorAll(CONTENEURS).forEach((conteneur) => {
+            conteneur.querySelectorAll(SURFACES).forEach((element) => ajouterSurface(element, surfaces));
         });
+        return surfaces;
+    }
+
+    if (!(racine instanceof Element)) return surfaces;
+
+    const dansContenu = racine.closest(CONTENEURS);
+    if (dansContenu) {
+        ajouterSurface(racine, surfaces);
+        racine.querySelectorAll(SURFACES).forEach((element) => ajouterSurface(element, surfaces));
+    }
+
+    racine.querySelectorAll(CONTENEURS).forEach((conteneur) => {
+        conteneur.querySelectorAll(SURFACES).forEach((element) => ajouterSurface(element, surfaces));
     });
 
     return surfaces;
@@ -65,32 +80,50 @@ function cascade(surfaces) {
 }
 
 function suivrePointeur() {
-    let courante = null;
+    let surfaceCourante = null;
     let image = 0;
+    let positionX = 0;
+    let positionY = 0;
+
+    const mettreAJourReflet = () => {
+        image = 0;
+        const surface = surfaceCourante;
+        if (!surface?.isConnected) return;
+
+        const rect = surface.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const x = Math.max(0, Math.min(100, ((positionX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((positionY - rect.top) / rect.height) * 100));
+        surface.style.setProperty('--glass-x', `${x}%`);
+        surface.style.setProperty('--glass-y', `${y}%`);
+    };
 
     const eteindre = () => {
-        courante?.classList.remove('is-lit');
-        courante = null;
+        surfaceCourante?.classList.remove('is-lit');
+        surfaceCourante = null;
+        if (image) {
+            window.cancelAnimationFrame(image);
+            image = 0;
+        }
     };
 
     document.addEventListener('pointermove', (event) => {
         if (!pointeurFin.matches || reduireMouvement.matches || event.pointerType !== 'mouse') return;
 
-        const surface = event.target.closest?.('[data-glass]');
-        if (surface !== courante) {
-            eteindre();
-            courante = surface;
-            surface?.classList.add('is-lit');
-        }
-        if (!surface || image) return;
+        positionX = event.clientX;
+        positionY = event.clientY;
+        const surface = event.target.closest?.('[data-glass]') ?? null;
 
-        // Une mise à jour par image affichée suffit pour un reflet fluide.
-        image = window.requestAnimationFrame(() => {
-            image = 0;
-            const rect = surface.getBoundingClientRect();
-            surface.style.setProperty('--glass-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-            surface.style.setProperty('--glass-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
-        });
+        if (surface !== surfaceCourante) {
+            surfaceCourante?.classList.remove('is-lit');
+            surfaceCourante = surface;
+            surfaceCourante?.classList.add('is-lit');
+        }
+
+        if (surfaceCourante && !image) {
+            image = window.requestAnimationFrame(mettreAJourReflet);
+        }
     }, { passive: true });
 
     document.addEventListener('pointerleave', eteindre);
@@ -102,25 +135,40 @@ function densifierEntete() {
     const contenu = document.getElementById('main-content');
     if (!entete || !contenu) return;
 
-    const mettreAJour = () => entete.classList.toggle('is-scrolled', contenu.scrollTop > 8);
-    contenu.addEventListener('scroll', mettreAJour, { passive: true });
+    let image = 0;
+    const mettreAJour = () => {
+        image = 0;
+        entete.classList.toggle('is-scrolled', contenu.scrollTop > 8);
+    };
+
+    contenu.addEventListener('scroll', () => {
+        if (!image) image = window.requestAnimationFrame(mettreAJour);
+    }, { passive: true });
     mettreAJour();
+}
+
+function observerContenu() {
+    const observateur = new MutationObserver((mutations) => {
+        const nouvellesSurfaces = [];
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                nouvellesSurfaces.push(...marquerSurfaces(node));
+            });
+        });
+
+        // Une courte cascade rend aussi les panneaux Livewire moins abrupts.
+        cascade(nouvellesSurfaces.slice(0, 6));
+    });
+
+    observateur.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('pagehide', () => observateur.disconnect(), { once: true });
 }
 
 function demarrer() {
     cascade(marquerSurfaces());
     suivrePointeur();
     densifierEntete();
-
-    // Contenu ajouté après coup (Livewire, listes filtrées) : on marque sans cascade.
-    let attente = 0;
-    new MutationObserver(() => {
-        if (attente) return;
-        attente = window.requestAnimationFrame(() => {
-            attente = 0;
-            marquerSurfaces();
-        });
-    }).observe(document.body, { childList: true, subtree: true });
+    observerContenu();
 }
 
 if (document.readyState === 'loading') {

@@ -2,9 +2,9 @@
 <header class="intranet-header shrink-0 border-b border-graphite-200 bg-white">
     
     <!-- Navigation, search, notifications and user profile -->
-    <div class="flex min-h-16 items-center justify-between gap-3 px-4 sm:gap-5 sm:px-6">
+    <div class="flex min-h-16 min-w-0 items-center justify-between gap-2 px-3 sm:gap-5 sm:px-6">
         
-        <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+        <div class="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-4">
             <button
                 @click="sidebarOpen = !sidebarOpen"
                 :aria-expanded="sidebarOpen.toString()"
@@ -27,17 +27,17 @@
                 <svg class="h-5 w-5 shrink-0 text-nere-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <span class="flex-1 truncate text-left text-sm text-graphite-500">Rechercher dans l’intranet...</span>
+                <span class="hidden flex-1 truncate text-left text-sm text-graphite-500 min-[380px]:block">Rechercher dans l’intranet...</span>
             </button>
         </div>
 
-        <div class="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
+        <div class="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3 lg:gap-5">
 
         <button
             type="button"
             data-pwa-install
             hidden
-            class="items-center gap-2 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-nere-800 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-nere-800 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2"
         >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 4-4m-4 4-4-4m-2 8h12"/>

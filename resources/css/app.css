@@ -663,36 +663,38 @@
     --glass-blue: 47 99 214;
     --glass-ink: 24 32 64;
 
-    --glass-tint: rgb(255 255 255 / 56%);
-    --glass-tint-hover: rgb(255 255 255 / 72%);
-    --glass-tint-bar: rgb(255 255 255 / 50%);
-    --glass-tint-float: rgb(255 255 255 / 90%);
-    --glass-edge: rgb(255 255 255 / 92%);
-    --glass-border: rgb(255 255 255 / 70%);
+    --glass-tint: rgb(255 255 255 / 64%);
+    --glass-tint-hover: rgb(255 255 255 / 76%);
+    --glass-tint-bar: rgb(255 255 255 / 62%);
+    --glass-tint-float: rgb(255 255 255 / 92%);
+    --glass-edge: rgb(255 255 255 / 88%);
+    --glass-border: rgb(255 255 255 / 68%);
+    --glass-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --glass-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
     --glass-sheen: linear-gradient(
-        160deg,
-        rgb(255 255 255 / 75%) 0%,
-        rgb(255 255 255 / 22%) 36%,
-        rgb(255 255 255 / 6%) 68%,
-        rgb(255 255 255 / 30%) 100%
+        155deg,
+        rgb(255 255 255 / 68%) 0%,
+        rgb(255 255 255 / 20%) 32%,
+        rgb(255 255 255 / 5%) 66%,
+        rgb(255 255 255 / 24%) 100%
     );
     --glass-shadow:
         inset 0 1px 0 var(--glass-edge),
-        inset 0 0 0 1px rgb(255 255 255 / 30%),
-        0 1px 2px rgb(var(--glass-ink) / 5%),
-        0 14px 34px -16px rgb(var(--glass-ink) / 22%);
+        inset 0 0 0 1px rgb(255 255 255 / 24%),
+        0 2px 3px rgb(var(--glass-ink) / 4%),
+        0 16px 36px -22px rgb(var(--glass-ink) / 28%);
     --glass-shadow-hover:
-        inset 0 1px 0 var(--glass-edge),
-        inset 0 0 0 1px rgb(255 255 255 / 45%),
-        0 2px 6px rgb(var(--glass-ink) / 6%),
-        0 22px 44px -18px rgb(var(--glass-ink) / 30%);
+        inset 0 1px 0 rgb(255 255 255 / 94%),
+        inset 0 0 0 1px rgb(255 255 255 / 38%),
+        0 4px 10px rgb(var(--glass-ink) / 6%),
+        0 24px 48px -24px rgb(var(--glass-ink) / 34%);
     --glass-button-gloss: linear-gradient(180deg, rgb(255 255 255 / 28%) 0%, rgb(255 255 255 / 0%) 55%);
 
     /* Filtres passés par variables : le minifieur colle « blur()saturate() »
        sans espace en déclaration directe, ce que Chromium rejette. */
-    --glass-blur-bar: blur(24px) saturate(180%);
-    --glass-blur-float: blur(28px) saturate(190%);
-    --glass-blur-drawer: blur(32px) saturate(180%);
+    --glass-blur-bar: blur(18px) saturate(155%);
+    --glass-blur-float: blur(22px) saturate(165%);
+    --glass-blur-drawer: blur(22px) saturate(155%);
 }
 
 /* Fond lumineux : halos rouge NÉRÉ, bleu et or, doux et sans aplat criard. */
@@ -712,6 +714,24 @@
 .intranet-shell #main-content,
 .admin-shell main {
     background-color: transparent;
+}
+
+.intranet-shell {
+    height: 100vh;
+    height: 100dvh;
+    min-width: 0;
+}
+
+@media (max-width: 1023px) {
+    .intranet-shell,
+    .app-shell,
+    .admin-shell {
+        background-attachment: scroll;
+    }
+
+    #main-content {
+        overscroll-behavior-y: contain;
+    }
 }
 
 /* Barres : en-tête et barre latérale en verre dépoli. */
@@ -1145,21 +1165,21 @@
     background-image:
         radial-gradient(
             220px circle at var(--glass-x) var(--glass-y),
-            rgb(255 255 255 / calc(var(--glass-lit) * 95%)),
-            rgb(255 255 255 / calc(var(--glass-lit) * 30%)) 45%,
+            rgb(255 255 255 / calc(var(--glass-lit) * 48%)),
+            rgb(255 255 255 / calc(var(--glass-lit) * 16%)) 45%,
             transparent 72%
         ),
         radial-gradient(
             420px circle at var(--glass-x) var(--glass-y),
-            rgb(var(--glass-blue) / calc(var(--glass-lit) * 9%)),
+            rgb(var(--glass-blue) / calc(var(--glass-lit) * 6%)),
             transparent 70%
         ),
         linear-gradient(
             115deg,
             transparent 34%,
-            rgb(255 210 90 / 22%) 43%,
-            rgb(255 255 255 / 85%) 50%,
-            rgb(var(--glass-blue) / 16%) 57%,
+            rgb(255 210 90 / 14%) 43%,
+            rgb(255 255 255 / 62%) 50%,
+            rgb(var(--glass-blue) / 10%) 57%,
             transparent 66%
         ),
         var(--glass-sheen) !important;
@@ -1167,12 +1187,12 @@
     background-position: 0 0, 0 0, var(--glass-sweep) 0, 0 0 !important;
     background-repeat: no-repeat !important;
     transition:
-        --glass-lit 260ms ease,
-        --glass-sweep 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
-        box-shadow 220ms ease,
-        border-color 220ms ease,
-        background-color 220ms ease,
-        translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        --glass-lit 180ms ease,
+        --glass-sweep 720ms var(--glass-ease),
+        box-shadow 220ms var(--glass-ease-soft),
+        border-color 180ms ease,
+        background-color 180ms ease,
+        translate 220ms var(--glass-ease) !important;
 }
 
 [data-glass].is-lit {
@@ -1189,21 +1209,19 @@ a[data-glass]:hover {
 
 /* Apparition en cascade des cartes au chargement de la page. */
 [data-glass-enter] {
-    animation: glass-rise 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    animation-delay: calc(var(--glass-i, 0) * 45ms);
+    animation: glass-rise 460ms var(--glass-ease) both;
+    animation-delay: calc(var(--glass-i, 0) * 32ms);
 }
 
 @keyframes glass-rise {
     from {
         opacity: 0;
-        translate: 0 14px;
-        filter: blur(6px);
+        translate: 0 10px;
     }
 
     to {
         opacity: 1;
         translate: none;
-        filter: none;
     }
 }
 
