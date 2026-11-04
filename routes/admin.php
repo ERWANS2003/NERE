@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminSettingsController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ContentManagementController;
 use App\Http\Controllers\Admin\FeedbackManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
@@ -25,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
+    Route::get('/rapports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
     Route::get('/sante', [SystemHealthController::class, 'index'])->name('health');
     Route::get('/avis', [FeedbackManagementController::class, 'index'])->name('feedback.index');
@@ -51,6 +55,9 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
         ->name('settings.ldap.sync');
 
     // Gestion des utilisateurs
+    Route::post('users/actions-groupees', [UserManagementController::class, 'bulkAction'])->name('users.bulk');
+    Route::post('users/filtres', [UserManagementController::class, 'saveFilter'])->name('users.filters.store');
+    Route::delete('users/filtres/{filter}', [UserManagementController::class, 'deleteFilter'])->name('users.filters.destroy');
     Route::post('users/{user}/departments', [UserManagementController::class, 'assignDepartment'])
         ->name('users.departments.assign');
     Route::patch('users/{user}/menu', [UserManagementController::class, 'toggleMenu'])->name('users.menu.toggle');
@@ -59,6 +66,7 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
         ->name('users.reset-password');
 
     // Gestion des rôles
+    Route::get('roles-matrice', [RoleManagementController::class, 'matrix'])->name('roles.matrix');
     Route::resource('roles', RoleManagementController::class);
 
     // Gestion des communications et du calendrier

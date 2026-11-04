@@ -52,8 +52,8 @@ export function initGlobalSearch() {
                 const data = await response.json();
                 this.searchData = data;
                 
-                // Initialiser Fuse.js
-                this.fuse = new window.Fuse(this.searchData, this.fuseOptions);
+                const { default: Fuse } = await import('fuse.js');
+                this.fuse = new Fuse(this.searchData, this.fuseOptions);
             } catch (error) {
                 console.error('Erreur chargement données recherche:', error);
             }

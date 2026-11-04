@@ -29,6 +29,9 @@
                 'label' => 'Pilotage',
                 'items' => [
                     ['label' => 'Vue d’ensemble', 'icon' => 'gauge', 'route' => 'admin.dashboard', 'match' => ['admin.dashboard']],
+                    ['label' => 'Centre d’alertes', 'icon' => 'triangle-alert', 'route' => 'admin.dashboard', 'fragment' => 'centre-alertes', 'match' => []],
+                    ['label' => 'Rapports', 'icon' => 'chart-column', 'route' => 'admin.reports.index', 'match' => ['admin.reports.*']],
+                    ['label' => 'Journal d’audit', 'icon' => 'list-checks', 'route' => 'admin.audit.index', 'match' => ['admin.audit.*']],
                     ['label' => 'Santé du serveur', 'icon' => 'server', 'route' => 'admin.health', 'match' => ['admin.health*']],
                 ],
             ];
@@ -106,7 +109,7 @@
                         <div class="space-y-1">
                             @foreach($group['items'] as $item)
                                 @php($active = collect($item['match'])->contains(fn ($pattern) => request()->routeIs($pattern)))
-                                <a href="{{ route($item['route']) }}"
+                                <a href="{{ route($item['route']).(isset($item['fragment']) ? '#'.$item['fragment'] : '') }}"
                                    class="admin-nav-link {{ $active ? 'is-active' : '' }}"
                                    @if($active) aria-current="page" @endif>
                                     <x-icone :nom="$item['icon']" />

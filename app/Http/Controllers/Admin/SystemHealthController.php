@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\AdminAudit;
 use App\Services\SystemHealth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
@@ -34,13 +35,16 @@ class SystemHealthController extends Controller
     {
         abort_unless(DB::table('failed_jobs')->where('uuid', $uuid)->exists(), 404);
         Artisan::call('queue:retry', ['id' => [$uuid]]);
+        AdminAudit::record('relance job', 'système', after: ['uuid' => $uuid], targetLabel: $uuid);
 
         return back()->with('success', 'Le job est remis dans la file d’attente.');
     }
 
     public function retryAll(): RedirectResponse
     {
+        $count = DB::table('failed_jobs')->count();
         Artisan::call('queue:retry', ['id' => ['all']]);
+        AdminAudit::record('relance de tous les jobs', 'système', after: ['count' => $count]);
 
         return back()->with('success', 'Tous les jobs en échec sont remis dans la file d’attente.');
     }
@@ -49,6 +53,7 @@ class SystemHealthController extends Controller
     {
         abort_unless(DB::table('failed_jobs')->where('uuid', $uuid)->exists(), 404);
         Artisan::call('queue:forget', ['id' => $uuid]);
+        AdminAudit::record('suppression job échoué', 'système', before: ['uuid' => $uuid], targetLabel: $uuid);
 
         return back()->with('success', 'Le job en échec est supprimé.');
     }

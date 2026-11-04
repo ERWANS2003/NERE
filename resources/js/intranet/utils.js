@@ -47,7 +47,7 @@ export function showWarningNotification(message, title = 'Attention') {
 /**
  * Initialiser un élément Sortable
  */
-export function initSortable(elementId, options = {}) {
+export async function initSortable(elementId, options = {}) {
     const el = document.getElementById(elementId);
     if (!el) {
         console.error(`Élément #${elementId} introuvable`);
@@ -62,7 +62,8 @@ export function initSortable(elementId, options = {}) {
         ...options
     };
     
-    return window.Sortable.create(el, defaultOptions);
+    const { default: Sortable } = await import('sortablejs');
+    return Sortable.create(el, defaultOptions);
 }
 
 /**
@@ -72,9 +73,9 @@ export function quickLinksComponent() {
     return {
         sortable: null,
         
-        init() {
-            this.$nextTick(() => {
-                this.sortable = initSortable('quick-links-list', {
+        async init() {
+            this.$nextTick(async () => {
+                this.sortable = await initSortable('quick-links-list', {
                     onEnd: (evt) => this.handleReorder(evt)
                 });
             });

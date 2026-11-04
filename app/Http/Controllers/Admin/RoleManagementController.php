@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Services\AdminAudit;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,15 @@ class RoleManagementController extends Controller
         $roles = $query->orderBy('nom')->paginate(20);
 
         return view('admin.roles.index', compact('roles'));
+    }
+
+    public function matrix(): View
+    {
+        return view('admin.roles.matrix', [
+            'roles' => Role::with('permissions')->withCount('users')->orderBy('nom')->get(),
+            'permissionGroups' => PermissionCatalog::group(Permission::with('roles')->orderBy('nom')->get()),
+            'sensitivePermissions' => ['users.manage', 'roles.manage', 'settings.manage', 'departments.manage'],
+        ]);
     }
 
     /**
@@ -65,6 +75,10 @@ class RoleManagementController extends Controller
         if (! empty($validated['permissions'])) {
             $role->permissions()->sync($validated['permissions']);
         }
+        AdminAudit::record('création rôle', 'rôles et permissions', $role, after: [
+            'attributes' => $role->only(['nom', 'slug', 'description']),
+            'permissions' => $validated['permissions'] ?? [],
+        ]);
 
         return redirect()
             ->route('admin.roles.show', $role)
@@ -97,6 +111,11 @@ class RoleManagementController extends Controller
      */
     public function update(Request $request, Role $role): RedirectResponse
     {
+        $role->load('permissions');
+        $before = [
+            'attributes' => $role->only(['nom', 'slug', 'description']),
+            'permissions' => $role->permissions->pluck('id')->all(),
+        ];
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:roles,slug,'.$role->id],
@@ -117,6 +136,11 @@ class RoleManagementController extends Controller
         } else {
             $role->permissions()->sync([]);
         }
+        $role->refresh()->load('permissions');
+        AdminAudit::record('mise à jour rôle', 'rôles et permissions', $role, $before, [
+            'attributes' => $role->only(['nom', 'slug', 'description']),
+            'permissions' => $role->permissions->pluck('id')->all(),
+        ]);
 
         return redirect()
             ->route('admin.roles.show', $role)
@@ -135,7 +159,10 @@ class RoleManagementController extends Controller
                 ->with('error', 'Impossible de supprimer ce rôle car il est attribué à des utilisateurs.');
         }
 
+        $label = $role->nom;
+        $before = $role->only(['nom', 'slug', 'description']);
         $role->delete();
+        AdminAudit::record('suppression rôle', 'rôles et permissions', before: $before, targetLabel: $label);
 
         return redirect()
             ->route('admin.roles.index')

@@ -3,6 +3,10 @@
  * Utilise Chart.js
  */
 
+import Chart from 'chart.js/auto';
+
+window.Chart = Chart;
+
 // Configuration globale Chart.js
 if (window.Chart) {
     window.Chart.defaults.font.family = "'Inter', sans-serif";

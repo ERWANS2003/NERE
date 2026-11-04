@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Ldap\LdapUserSynchronizer;
 use App\Models\AppSetting;
 use App\Models\User;
+use App\Services\AdminAudit;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use LdapRecord\Connection;
@@ -141,6 +142,12 @@ class LdapSyncCommand extends Command
                     'ignored' => $ignores,
                     'disabled' => $disabled,
                 ], JSON_THROW_ON_ERROR),
+            ]);
+            AdminAudit::record('synchronisation Active Directory', 'active directory', after: [
+                'imported' => $imported,
+                'updated' => $updated,
+                'ignored' => $ignores,
+                'disabled' => $disabled,
             ]);
         }
 

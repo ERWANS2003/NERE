@@ -82,6 +82,7 @@ class LdapAuthenticator
         }
 
         Auth::login($user, $remember);
+        $user->forceFill(['last_login_at' => now()])->saveQuietly();
         session()->put('auth_provider', 'active_directory');
 
         return true;

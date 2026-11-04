@@ -34,3 +34,41 @@ if (sidebar) {
         }
     });
 }
+
+const bulkUsers = document.querySelector('[data-bulk-users]');
+
+if (bulkUsers) {
+    const action = bulkUsers.querySelector('[data-bulk-action]');
+    const checkboxes = [...bulkUsers.querySelectorAll('[data-user-checkbox]')];
+    const selectAll = bulkUsers.querySelector('[data-select-all]');
+    const count = bulkUsers.querySelector('[data-bulk-count]');
+    const submit = bulkUsers.querySelector('[data-bulk-submit]');
+    const department = bulkUsers.querySelector('[data-bulk-department]');
+    const role = bulkUsers.querySelector('[data-bulk-role]');
+
+    const refresh = () => {
+        const selected = checkboxes.filter((checkbox) => checkbox.checked).length;
+        count.textContent = `${selected} sélectionné${selected > 1 ? 's' : ''}`;
+        submit.disabled = selected === 0 || !action.value;
+        selectAll.checked = selected > 0 && selected === checkboxes.length;
+        selectAll.indeterminate = selected > 0 && selected < checkboxes.length;
+        department.hidden = action.value !== 'assign_department';
+        role.hidden = !['add_role', 'remove_role'].includes(action.value);
+        department.querySelector('select').required = action.value === 'assign_department';
+        role.querySelector('select').required = ['add_role', 'remove_role'].includes(action.value);
+    };
+
+    selectAll?.addEventListener('change', () => {
+        checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+        refresh();
+    });
+    checkboxes.forEach((checkbox) => checkbox.addEventListener('change', refresh));
+    action?.addEventListener('change', refresh);
+    bulkUsers.addEventListener('submit', (event) => {
+        if (['deactivate', 'remove_role'].includes(action.value)
+            && !window.confirm('Confirmer cette action sur tous les comptes sélectionnés ?')) {
+            event.preventDefault();
+        }
+    });
+    refresh();
+}

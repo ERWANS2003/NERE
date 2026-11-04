@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\AdminAudit;
 use App\Support\IntranetModuleRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,9 @@ class ModuleManagementController extends Controller
             'enabled' => ['required', 'boolean'],
         ]);
 
+        $before = ['enabled' => $modules->enabled($module)];
         $modules->setEnabled($module, $request->boolean('enabled'));
+        AdminAudit::record('modification module', 'modules', before: $before, after: ['enabled' => $request->boolean('enabled')], targetLabel: $module);
 
         return redirect()
             ->route('admin.modules.index')

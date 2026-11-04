@@ -116,6 +116,7 @@ class LoginRequest extends FormRequest
         }
 
         Auth::login($user, $this->boolean('remember'));
+        $user->forceFill(['last_login_at' => now()])->saveQuietly();
         $this->session()->put('auth_provider', 'local');
 
         $user->clearFailedAttempts();

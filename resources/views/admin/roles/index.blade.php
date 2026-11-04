@@ -8,9 +8,12 @@
         <h2 class="text-2xl font-bold text-gray-900">Gestion des rôles</h2>
         <p class="mt-1 text-sm text-gray-600">Organisez les responsabilités et les permissions des utilisateurs.</p>
     </div>
+    <div class="flex flex-wrap gap-2">
+    <a href="{{ route('admin.roles.matrix') }}" class="bouton-secondaire"><x-icone nom="list-checks" class="mr-2" />Matrice des droits</a>
     <a href="{{ route('admin.roles.create') }}" class="inline-flex items-center justify-center rounded-md bg-nere-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-nere-700 focus:outline-none focus:ring-2 focus:ring-nere-500 focus:ring-offset-2">
         <x-icone nom="plus" class="mr-2" />Nouveau rôle
     </a>
+    </div>
 </div>
 
 @if(session('success'))

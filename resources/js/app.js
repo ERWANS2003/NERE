@@ -1,18 +1,12 @@
 import focus from '@alpinejs/focus';
 
-// Import des bibliothèques intranet
-import Fuse from 'fuse.js';
-import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import Chart from 'chart.js/auto';
+// Bibliothèques communes légères. Les graphiques, calendriers, la recherche
+// fuzzy et le glisser-déposer sont importés à la demande par leurs modules.
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
-import Sortable from 'sortablejs';
 
 // Import des modules intranet
 import './intranet/index.js';
@@ -39,16 +33,9 @@ toastr.options = {
     hideMethod: 'fadeOut'
 };
 
-// Rendre les bibliothèques disponibles globalement
-window.Fuse = Fuse;
-window.Calendar = Calendar;
-window.dayGridPlugin = dayGridPlugin;
-window.timeGridPlugin = timeGridPlugin;
-window.interactionPlugin = interactionPlugin;
-window.Chart = Chart;
+// Rendre les bibliothèques communes disponibles aux modules historiques
 window.dayjs = dayjs;
 window.toastr = toastr;
-window.Sortable = Sortable;
 
 // Livewire embarque et demarre deja Alpine. Lancer Alpine.start() ici creerait
 // une seconde instance : Alpine la detecte, puis desaccorde ses intercepteurs,

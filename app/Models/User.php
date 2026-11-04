@@ -61,6 +61,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         'poste_modifie_localement',
         'menu_eligible',
         'desactive_localement',
+        'last_login_at',
         'org_level',
         'hire_date',
         'birth_date',
@@ -89,6 +90,7 @@ class User extends Authenticatable implements LdapAuthenticatable
             'failed_attempts' => 'integer',
             'locked_until' => 'datetime',
             'tutorial_completed_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'org_level' => 'integer',
             'hire_date' => 'date',
             'birth_date' => 'date',
@@ -202,6 +204,22 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function manager(): BelongsTo
     {
         return $this->belongsTo(self::class, 'manager_id');
+    }
+
+    /**
+     * Opérations administratives réalisées par cet utilisateur.
+     */
+    public function adminAuditLogs(): HasMany
+    {
+        return $this->hasMany(AdminAuditLog::class, 'actor_id');
+    }
+
+    /**
+     * Filtres enregistrés dans la console d’administration.
+     */
+    public function savedAdminFilters(): HasMany
+    {
+        return $this->hasMany(AdminSavedFilter::class);
     }
 
     /**

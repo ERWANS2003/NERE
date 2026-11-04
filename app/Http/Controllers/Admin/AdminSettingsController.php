@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
+use App\Services\AdminAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -43,6 +44,7 @@ class AdminSettingsController extends Controller
             'ldap_sync_day' => ['required', 'integer', 'between:1,7'],
         ]);
 
+        $before = collect(array_keys($validated))->mapWithKeys(fn ($key) => [$key => AppSetting::value($key)])->all();
         AppSetting::saveValues([
             'site_name' => $validated['site_name'],
             'support_email' => $validated['support_email'] ?: null,
@@ -50,6 +52,7 @@ class AdminSettingsController extends Controller
             'ldap_sync_time' => $validated['ldap_sync_time'],
             'ldap_sync_day' => (string) $validated['ldap_sync_day'],
         ]);
+        AdminAudit::record('modification paramètres', 'paramètres', before: $before, after: $validated, targetLabel: 'Configuration générale');
 
         return redirect()->route('admin.settings')->with('success', 'Paramètres enregistrés.');
     }
@@ -57,6 +60,8 @@ class AdminSettingsController extends Controller
     public function synchronizeLdap(): RedirectResponse
     {
         if (! config('ldap_integration.enabled')) {
+            AdminAudit::record('synchronisation Active Directory refusée', 'active directory', after: ['reason' => 'integration_disabled']);
+
             return back()->with('error', 'La connexion Active Directory est désactivée dans la configuration du serveur.');
         }
 
@@ -74,6 +79,7 @@ class AdminSettingsController extends Controller
                     'ldap_last_sync_error' => $diagnostic,
                 ]);
                 Log::error('Synchronisation AD manuelle échouée.', ['sortie' => $diagnostic]);
+                AdminAudit::record('échec synchronisation Active Directory', 'active directory', after: ['diagnostic' => $diagnostic]);
 
                 return back()->with('error', 'La synchronisation AD a échoué : '.$diagnostic);
             }
@@ -85,6 +91,7 @@ class AdminSettingsController extends Controller
                 'ldap_last_sync_error' => $diagnostic,
             ]);
             Log::error('Synchronisation AD manuelle impossible.', ['exception' => $exception]);
+            AdminAudit::record('échec synchronisation Active Directory', 'active directory', after: ['diagnostic' => $diagnostic]);
 
             return back()->with('error', 'La synchronisation AD a échoué : '.$diagnostic);
         }
