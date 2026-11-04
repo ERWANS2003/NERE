@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class TimeOffRequest extends Model
 {
@@ -46,6 +47,38 @@ class TimeOffRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Qui peut approuver cette demande : le manager direct et les directeurs
+     * des départements de l'employé ; à défaut, les administrateurs système.
+     *
+     * @return Collection<int, User>
+     */
+    public function approvers(): Collection
+    {
+        $employee = $this->user;
+        $approvers = collect();
+
+        if ($employee?->manager && $employee->manager->actif) {
+            $approvers->push($employee->manager);
+        }
+
+        foreach ($employee?->departments()->pluck('departments.id') ?? [] as $departmentId) {
+            User::query()
+                ->where('actif', true)
+                ->whereKeyNot($employee->id)
+                ->handlersOf($departmentId)
+                ->get()
+                ->filter(fn (User $user) => $user->canValidateIn($departmentId))
+                ->each(fn (User $user) => $approvers->push($user));
+        }
+
+        if ($approvers->isEmpty()) {
+            $approvers = User::query()->where('is_super_admin', true)->where('actif', true)->get();
+        }
+
+        return $approvers->unique('id')->values();
     }
 
     public function scopePending($query)

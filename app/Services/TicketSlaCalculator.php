@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Intranet\CalendarFeed;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use InvalidArgumentException;
@@ -21,7 +22,8 @@ class TicketSlaCalculator
         while ($remainingSeconds > 0) {
             $interval = config('intranet.sla.schedule.'.$cursor->dayOfWeekIso);
 
-            if (! is_array($interval)) {
+            // Jour non ouvré ou jour férié : le délai ne court pas.
+            if (! is_array($interval) || CalendarFeed::isPublicHoliday($cursor)) {
                 $cursor = $cursor->startOfDay()->addDay();
 
                 continue;

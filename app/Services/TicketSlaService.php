@@ -11,6 +11,7 @@ use App\Notifications\TicketSlaNotification;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class TicketSlaService
@@ -116,50 +117,60 @@ class TicketSlaService
         $alertsSent = 0;
 
         foreach ($ticketIds as $ticketId) {
-            $alertsSent += DB::transaction(function () use ($ticketId, $now): int {
-                $ticket = Ticket::query()->lockForUpdate()->find($ticketId);
-
-                if (! $ticket || in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)) {
-                    return 0;
-                }
-
-                if (! $ticket->first_response_due_at || ! $ticket->resolution_due_at) {
-                    $this->setDeadlines($ticket);
-                }
-
-                $alerts = [];
-
-                if (! $ticket->first_responded_at) {
-                    $this->recordAlert($ticket, 'response', $now, $alerts);
-                }
-
-                if (! $ticket->resolved_at && ! $ticket->closed_at) {
-                    $this->recordAlert($ticket, 'resolution', $now, $alerts);
-                }
-
-                if ($alerts === []) {
-                    return 0;
-                }
-
-                $recipients = $this->recipientsFor($ticket);
-                if ($recipients->isEmpty()) {
-                    throw new \RuntimeException("Aucun technicien IT actif ne peut recevoir les alertes du ticket [{$ticket->number}].");
-                }
-
-                $ticket->save();
-
-                foreach ($alerts as [$metric, $stage]) {
-                    Notification::send(
-                        $recipients,
-                        new TicketSlaNotification($ticket, $metric, $stage)
-                    );
-                }
-
-                return count($alerts);
-            });
+            try {
+                $alertsSent += $this->checkTicket($ticketId, $now);
+            } catch (\RuntimeException $exception) {
+                // Un ticket sans destinataire ne doit pas bloquer les alertes des autres.
+                Log::error($exception->getMessage(), ['ticket_id' => $ticketId]);
+            }
         }
 
         return $alertsSent;
+    }
+
+    private function checkTicket(int $ticketId, CarbonInterface $now): int
+    {
+        return DB::transaction(function () use ($ticketId, $now): int {
+            $ticket = Ticket::query()->lockForUpdate()->find($ticketId);
+
+            if (! $ticket || in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)) {
+                return 0;
+            }
+
+            if (! $ticket->first_response_due_at || ! $ticket->resolution_due_at) {
+                $this->setDeadlines($ticket);
+            }
+
+            $alerts = [];
+
+            if (! $ticket->first_responded_at) {
+                $this->recordAlert($ticket, 'response', $now, $alerts);
+            }
+
+            if (! $ticket->resolved_at && ! $ticket->closed_at) {
+                $this->recordAlert($ticket, 'resolution', $now, $alerts);
+            }
+
+            if ($alerts === []) {
+                return 0;
+            }
+
+            $recipients = $this->recipientsFor($ticket);
+            if ($recipients->isEmpty()) {
+                throw new \RuntimeException("Aucun technicien IT actif ne peut recevoir les alertes du ticket [{$ticket->number}].");
+            }
+
+            $ticket->save();
+
+            foreach ($alerts as [$metric, $stage]) {
+                Notification::send(
+                    $recipients,
+                    new TicketSlaNotification($ticket, $metric, $stage)
+                );
+            }
+
+            return count($alerts);
+        });
     }
 
     /**

@@ -100,6 +100,7 @@ class UserManagementController extends Controller
         $validated['poste_modifie_localement'] = filled($validated['position_title']);
         $validated['password'] = Hash::make($validated['password']);
         $validated['actif'] = $request->boolean('actif', true);
+        $validated['desactive_localement'] = ! $validated['actif'];
         $validated['is_super_admin'] = $request->boolean('is_super_admin', false);
         $validated['menu_eligible'] = $request->boolean('menu_eligible');
         $departmentIds = $validated['departments'] ?? [];
@@ -261,6 +262,7 @@ class UserManagementController extends Controller
         }
 
         $validated['actif'] = $request->boolean('actif');
+        $validated['desactive_localement'] = ! $validated['actif'];
         $validated['is_super_admin'] = $request->boolean('is_super_admin');
         $validated['menu_eligible'] = $request->boolean('menu_eligible');
 
@@ -295,7 +297,7 @@ class UserManagementController extends Controller
         }
 
         // Ne pas supprimer, seulement désactiver
-        $user->update(['actif' => false]);
+        $user->update(['actif' => false, 'desactive_localement' => true]);
 
         return redirect()
             ->route('admin.users.index')

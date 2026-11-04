@@ -49,7 +49,8 @@ class LdapUserSynchronizer
                 ?? $this->first($ldap, 'userprincipalname')
                 ?? ($sam ? Str::lower($sam).'@ad.neremining.local' : null),
 
-            'actif' => ! $this->estDesactiveDansAd($ldap),
+            // Un compte désactivé dans l'intranet le reste, même actif dans l'AD.
+            'actif' => ! $this->estDesactiveDansAd($ldap) && ! $database->desactive_localement,
         ];
 
         // Attributs optionnels : écrits seulement si l'AD les renseigne, pour ne

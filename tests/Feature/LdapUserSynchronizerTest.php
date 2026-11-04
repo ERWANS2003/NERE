@@ -83,3 +83,30 @@ it('marks a job title changed by an administrator as owned by the intranet', fun
     $this->actingAs($admin)->put(route('admin.users.update', $user), $payload(''));
     expect($user->fresh()->poste_modifie_localement)->toBeFalse();
 });
+
+it('keeps an account deactivated in the intranet inactive even when AD enables it', function () {
+    $localUser = User::factory()->make(['actif' => false, 'desactive_localement' => true]);
+    $ldapUser = new LdapUser;
+    $ldapUser->setAttribute('useraccountcontrol', '512');
+
+    expect(app(LdapUserSynchronizer::class)($localUser, $ldapUser)['actif'])->toBeFalse();
+
+    $enabledUser = User::factory()->make(['actif' => false]);
+    expect(app(LdapUserSynchronizer::class)($enabledUser, $ldapUser)['actif'])->toBeTrue();
+});
+
+it('marks accounts deactivated or reactivated by an administrator', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)->delete(route('admin.users.destroy', $user))->assertRedirect();
+    expect($user->fresh())->actif->toBeFalse()->desactive_localement->toBeTrue();
+
+    $this->actingAs($admin)->put(route('admin.users.update', $user), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'matricule' => $user->matricule,
+        'actif' => '1',
+    ])->assertRedirect();
+    expect($user->fresh())->actif->toBeTrue()->desactive_localement->toBeFalse();
+});

@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\DepartmentForm;
 use App\Models\FormSubmission;
+use App\Models\User;
+use App\Notifications\NewRequestToProcess;
 use App\Notifications\SubmissionReviewed;
 use App\Support\DynamicFormSchema;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
 class SubmissionController extends Controller
@@ -100,6 +103,13 @@ class SubmissionController extends Controller
             'data' => $submittedData,
             'status' => 'pending',
         ]);
+
+        $handlers = User::query()
+            ->where('actif', true)
+            ->whereKeyNot($request->user()->id)
+            ->handlersOf($form->department_id)
+            ->get();
+        Notification::send($handlers, new NewRequestToProcess($submission->load('form.department', 'user')));
 
         return redirect()
             ->route('intranet.submissions.show', $submission)

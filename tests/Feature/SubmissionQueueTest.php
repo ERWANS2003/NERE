@@ -153,3 +153,24 @@ it('denies the processing queue to ordinary users and blocks cross-department re
         ->post(route('intranet.submissions.take', $foreignSubmission))
         ->assertForbidden();
 });
+
+it('notifies the department team of a new request', function () {
+    \Illuminate\Support\Facades\Notification::fake();
+    $department = Department::factory()->create();
+    $head = User::factory()->withRole($department, DepartmentRole::Director)->create();
+    $technician = User::factory()->withRole($department, DepartmentRole::Technician, 1)->create();
+    $outsider = User::factory()->withRole(Department::factory()->create(), DepartmentRole::Director)->create();
+    $requester = User::factory()->create();
+    $form = DepartmentForm::create([
+        'department_id' => $department->id,
+        'name' => 'Demande de matériel',
+        'form_schema' => ['fields' => [['key' => 'details', 'label' => 'Détails', 'type' => 'text', 'required' => false]]],
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($requester)->post(route('intranet.submissions.store', $form), ['data' => ['details' => 'Un écran']])
+        ->assertSessionHasNoErrors();
+
+    \Illuminate\Support\Facades\Notification::assertSentTo([$head, $technician], \App\Notifications\NewRequestToProcess::class);
+    \Illuminate\Support\Facades\Notification::assertNotSentTo([$outsider, $requester], \App\Notifications\NewRequestToProcess::class);
+});

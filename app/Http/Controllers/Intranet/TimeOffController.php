@@ -7,11 +7,14 @@ use App\Models\TimeOffBalance;
 use App\Models\TimeOffPolicy;
 use App\Models\TimeOffRequest;
 use App\Models\User;
+use App\Notifications\NewRequestToProcess;
+use App\Services\Intranet\CalendarFeed;
 use App\Services\TimeOffBalanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -124,7 +127,7 @@ class TimeOffController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($user, $policy, $debut, $fin, $jours, $validated, $demiJournee, $balances) {
+        $demande = DB::transaction(function () use ($user, $policy, $debut, $fin, $jours, $validated, $demiJournee, $balances) {
             $demande = TimeOffRequest::create([
                 'user_id' => $user->id,
                 'policy_id' => $policy->id,
@@ -145,7 +148,13 @@ class TimeOffController extends Controller
                     'end_date' => 'Solde insuffisant pour cette demande.',
                 ]);
             }
+
+            return $demande;
         });
+
+        if ($demande->status === 'pending') {
+            Notification::send($demande->approvers(), new NewRequestToProcess($demande));
+        }
 
         return redirect()
             ->route('intranet.time-off.index')
@@ -153,19 +162,51 @@ class TimeOffController extends Controller
     }
 
     /**
-     * Nombre de jours ouvrés (lundi-vendredi) entre deux dates incluses.
-     * Une demi-journée compte pour 0,5.
+     * L'employé annule sa demande : en attente à tout moment, approuvée tant
+     * que le congé n'a pas commencé (les jours reviennent alors au solde).
+     */
+    public function cancel(Request $request, TimeOffRequest $timeOffRequest, TimeOffBalanceService $balances): RedirectResponse
+    {
+        abort_unless($timeOffRequest->user_id === $request->user()->id, 403);
+
+        $resultat = DB::transaction(function () use ($timeOffRequest, $balances) {
+            $demande = TimeOffRequest::query()->lockForUpdate()->find($timeOffRequest->getKey());
+
+            $annulable = $demande->status === 'pending'
+                || ($demande->status === 'approved' && $demande->start_date->isAfter(today()));
+            if (! $annulable) {
+                return false;
+            }
+
+            if ($demande->status === 'approved') {
+                $balances->restore($demande);
+            }
+            $demande->update(['status' => 'cancelled']);
+
+            return true;
+        });
+
+        return redirect()
+            ->route('intranet.time-off.index')
+            ->with($resultat ? 'success' : 'error', $resultat
+                ? 'Votre demande de congé est annulée.'
+                : 'Ce congé a déjà commencé ou a été traité : voyez avec votre responsable.');
+    }
+
+    /**
+     * Nombre de jours ouvrés (lundi-vendredi, hors jours fériés) entre deux
+     * dates incluses. Une demi-journée compte pour 0,5.
      */
     private function joursOuvres(Carbon $debut, Carbon $fin, bool $demiJournee): float
     {
         if ($demiJournee) {
-            return $debut->isWeekday() ? 0.5 : 0.0;
+            return $debut->isWeekday() && ! CalendarFeed::isPublicHoliday($debut) ? 0.5 : 0.0;
         }
 
         $jours = 0;
         $curseur = $debut->copy();
         while ($curseur->lte($fin)) {
-            if ($curseur->isWeekday()) {
+            if ($curseur->isWeekday() && ! CalendarFeed::isPublicHoliday($curseur)) {
                 $jours++;
             }
             $curseur->addDay();

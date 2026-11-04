@@ -26,8 +26,8 @@ it('adds SLA time across weekdays, Saturday shifts, and closed hours', function 
     expect($result->toDateTimeString())->toBe($expected);
 })->with([
     'weekday close' => ['2026-10-26 16:30:00', 60, '2026-10-27 08:30:00'],
-    'Friday to Saturday' => ['2026-10-30 16:30:00', 60, '2026-10-31 08:30:00'],
-    'Saturday to Monday' => ['2026-10-31 13:30:00', 60, '2026-11-02 08:30:00'],
+    'Friday to Saturday' => ['2026-10-23 16:30:00', 60, '2026-10-24 08:30:00'],
+    'Saturday to Monday' => ['2026-10-24 13:30:00', 60, '2026-10-26 08:30:00'],
     'Sunday to Monday' => ['2026-11-01 08:00:00', 60, '2026-11-02 09:00:00'],
 ]);
 
@@ -192,4 +192,15 @@ it('restarts the resolution SLA when a director takes back a resolved ticket', f
 
     expect($ticket->fresh()->resolution_due_at->greaterThan($previousDeadline))->toBeTrue()
         ->and($ticket->fresh()->resolution_breached_at)->toBeNull();
+});
+
+it('does not run SLA deadlines on public holidays', function () {
+    $calculator = app(\App\Services\TicketSlaCalculator::class);
+    $timezone = config('intranet.sla.timezone');
+
+    // Jeudi 10 décembre 2026, 17 h ; le vendredi 11 est férié au Burkina Faso.
+    $start = \Carbon\CarbonImmutable::parse('2026-12-10 17:00', $timezone);
+    $due = $calculator->addBusinessMinutes($start, 120);
+
+    expect($due->toDateString())->not->toBe('2026-12-11');
 });

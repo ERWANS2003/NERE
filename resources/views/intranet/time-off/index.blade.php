@@ -75,6 +75,7 @@
                             <th class="text-left font-semibold px-4 py-3">Au</th>
                             <th class="text-left font-semibold px-4 py-3">Jours</th>
                             <th class="text-left font-semibold px-4 py-3">Statut</th>
+                            <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-graphite-100">
@@ -85,6 +86,14 @@
                                 <td class="px-4 py-3 text-graphite-600">{{ $req->end_date?->format('d/m/Y') }}</td>
                                 <td class="px-4 py-3 text-graphite-600">{{ rtrim(rtrim(number_format($req->total_days, 1), '0'), '.') }}{{ $req->is_half_day ? ' (½)' : '' }}</td>
                                 <td class="px-4 py-3"><x-intranet.status-badge :status="$req->status" context="leave" /></td>
+                                <td class="px-4 py-3 text-right">
+                                    @if($req->status === 'pending' || ($req->status === 'approved' && $req->start_date?->isAfter(today())))
+                                        <form method="POST" action="{{ route('intranet.time-off.cancel', $req) }}" onsubmit="return confirm('Annuler cette demande de congé ?')">
+                                            @csrf
+                                            <button class="text-sm font-medium text-nere-700 hover:underline">Annuler</button>
+                                        </form>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

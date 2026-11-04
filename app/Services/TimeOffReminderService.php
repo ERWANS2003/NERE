@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\TimeOffRequest;
-use App\Models\User;
 use App\Notifications\TimeOffManagerReminder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -38,10 +37,7 @@ class TimeOffReminderService
                     return 'skipped';
                 }
 
-                $manager = $timeOffRequest->user?->manager;
-                $recipients = $manager && $manager->actif
-                    ? collect([$manager])
-                    : User::query()->where('is_super_admin', true)->where('actif', true)->get();
+                $recipients = $timeOffRequest->approvers();
 
                 if ($recipients->isEmpty()) {
                     Log::warning('Rappel de congé sans destinataire actif.', [

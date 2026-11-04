@@ -173,6 +173,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/', [TimeOffController::class, 'index'])->name('index');
         Route::get('/demande', [TimeOffController::class, 'create'])->name('create');
         Route::post('/', [TimeOffController::class, 'store'])->name('store');
+        Route::post('/{timeOffRequest}/annuler', [TimeOffController::class, 'cancel'])->name('cancel');
 
         // Approbation (manager / super-admin)
         Route::get('/approbations', [TimeOffApprovalController::class, 'index'])->name('approvals');

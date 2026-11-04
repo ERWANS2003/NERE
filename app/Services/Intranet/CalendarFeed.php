@@ -116,28 +116,9 @@ class CalendarFeed
         $holidays = [];
 
         for ($year = $from->year; $year <= $to->year; $year++) {
-            $fixedHolidays = [
-                '01-01' => 'Jour de l’An',
-                '01-03' => 'Journée de la Révolution',
-                '03-08' => 'Journée internationale des droits des femmes',
-                '05-01' => 'Fête du Travail',
-                '05-15' => 'Journée des coutumes et des traditions',
-                '08-05' => 'Fête de l’Indépendance',
-                '08-15' => 'Assomption',
-                '10-31' => 'Journée des martyrs',
-                '11-01' => 'Toussaint',
-                '12-11' => 'Proclamation de l’Indépendance',
-                '12-25' => 'Noël',
-            ];
-
-            foreach ($fixedHolidays as $monthDay => $name) {
-                $date = Carbon::createFromFormat('!Y-m-d', "{$year}-{$monthDay}");
-                $holidays[] = [$date, $name];
+            foreach (self::holidaysOfYear($year) as $date => $name) {
+                $holidays[] = [Carbon::createFromFormat('!Y-m-d', $date), $name];
             }
-
-            $easter = $this->easterSunday($year);
-            $holidays[] = [$easter->copy()->addDay(), 'Lundi de Pâques'];
-            $holidays[] = [$easter->copy()->addDays(39), 'Ascension'];
         }
 
         return collect($holidays)
@@ -156,7 +137,48 @@ class CalendarFeed
             ->all();
     }
 
-    private function easterSunday(int $year): Carbon
+    /** Jour férié national : non décompté des congés, hors délais SLA. */
+    public static function isPublicHoliday(CarbonInterface $date): bool
+    {
+        return array_key_exists($date->format('Y-m-d'), self::holidaysOfYear((int) $date->format('Y')));
+    }
+
+    /** @return array<string, string> date (Y-m-d) => nom */
+    private static function holidaysOfYear(int $year): array
+    {
+        static $cache = [];
+
+        if (isset($cache[$year])) {
+            return $cache[$year];
+        }
+
+        $holidays = [];
+        $fixedHolidays = [
+            '01-01' => 'Jour de l’An',
+            '01-03' => 'Journée de la Révolution',
+            '03-08' => 'Journée internationale des droits des femmes',
+            '05-01' => 'Fête du Travail',
+            '05-15' => 'Journée des coutumes et des traditions',
+            '08-05' => 'Fête de l’Indépendance',
+            '08-15' => 'Assomption',
+            '10-31' => 'Journée des martyrs',
+            '11-01' => 'Toussaint',
+            '12-11' => 'Proclamation de l’Indépendance',
+            '12-25' => 'Noël',
+        ];
+
+        foreach ($fixedHolidays as $monthDay => $name) {
+            $holidays["{$year}-{$monthDay}"] = $name;
+        }
+
+        $easter = self::easterSunday($year);
+        $holidays[$easter->copy()->addDay()->toDateString()] = 'Lundi de Pâques';
+        $holidays[$easter->copy()->addDays(39)->toDateString()] = 'Ascension';
+
+        return $cache[$year] = $holidays;
+    }
+
+    private static function easterSunday(int $year): Carbon
     {
         $a = $year % 19;
         $b = intdiv($year, 100);

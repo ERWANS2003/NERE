@@ -54,6 +54,30 @@ class TimeOffBalanceService
     }
 
     /**
+     * Rend au solde les jours d'une demande approuvée puis annulée. Même
+     * verrou que consume() : à appeler dans une transaction.
+     */
+    public function restore(TimeOffRequest $request): void
+    {
+        $balance = TimeOffBalance::query()
+            ->where('user_id', $request->user_id)
+            ->where('policy_id', $request->policy_id)
+            ->where('year', $request->start_date->year)
+            ->lockForUpdate()
+            ->first();
+
+        if ($balance === null) {
+            return;
+        }
+
+        $balance->used_days = max(0, (float) $balance->used_days - (float) $request->total_days);
+        $balance->remaining_days = (float) $balance->total_days
+            + (float) $balance->carry_over_days
+            - (float) $balance->used_days;
+        $balance->save();
+    }
+
+    /**
      * Décompte les jours d'une demande approuvée sur le solde de l'année de
      * début. Doit être appelé dans une transaction : la ligne de solde est
      * verrouillée pour que deux approbations simultanées ne se chevauchent pas.
