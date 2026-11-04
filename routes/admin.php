@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\ContentManagementController;
+use App\Http\Controllers\Admin\FeedbackManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\Admin\ResourceManagementController;
 use App\Http\Controllers\Admin\RoleManagementController;
@@ -26,6 +27,8 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
     Route::get('/sante', [SystemHealthController::class, 'index'])->name('health');
+    Route::get('/avis', [FeedbackManagementController::class, 'index'])->name('feedback.index');
+    Route::patch('/avis/{feedback}', [FeedbackManagementController::class, 'update'])->name('feedback.update');
     Route::post('/sante/jobs/relancer', [SystemHealthController::class, 'retryAll'])->name('health.retry-all');
     Route::post('/sante/jobs/{uuid}/relancer', [SystemHealthController::class, 'retry'])->name('health.retry');
     Route::delete('/sante/jobs/{uuid}', [SystemHealthController::class, 'forget'])->name('health.forget');

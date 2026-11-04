@@ -9,6 +9,7 @@ use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentCont
 use App\Http\Controllers\Intranet\DepartmentServiceController;
 use App\Http\Controllers\Intranet\DepartmentShowController;
 use App\Http\Controllers\Intranet\DirectoryController;
+use App\Http\Controllers\Intranet\FeedbackController;
 use App\Http\Controllers\Intranet\FormController;
 use App\Http\Controllers\Intranet\KnowledgeBaseController;
 use App\Http\Controllers\Intranet\NotificationController;
@@ -159,6 +160,9 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     });
 
     // Notifications (centre + marquage)
+    Route::get('/avis', [FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/avis', [FeedbackController::class, 'store'])->middleware('throttle:10,60')->name('feedback.store');
+
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::post('/tout-lu', [NotificationController::class, 'markAllRead'])->name('mark-all-read');

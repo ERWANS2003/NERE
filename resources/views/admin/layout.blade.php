@@ -108,6 +108,11 @@
                    class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.health*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                     <x-icone nom="gauge" class="mr-2" /> Santé du serveur
                 </a>
+
+                <a href="{{ route('admin.feedback.index') }}"
+                   class="block px-4 py-2 mb-2 rounded {{ request()->routeIs('admin.feedback.*') ? 'bg-nere-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
+                    <x-icone nom="inbox" class="mr-2" /> Avis des utilisateurs
+                </a>
                 @endif
             </nav>
         </aside>
