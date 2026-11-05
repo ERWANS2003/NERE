@@ -35,6 +35,29 @@
         @endforeach
     </div>
 
+    <section class="mt-6 rounded-lg border border-graphite-200 bg-white" id="personnes-sans-compte">
+        <div class="flex items-center justify-between gap-3 border-b border-graphite-100 px-5 py-3">
+            <h2 class="text-sm font-bold text-graphite-800">Personnes sans compte ({{ $guests->where('has_chosen', true)->count() }} / {{ $guests->count() }})</h2>
+            <a href="{{ route('menu.manager.guests') }}" class="text-sm font-medium text-nere-700 hover:underline">Gérer la liste</a>
+        </div>
+        <ul class="divide-y divide-graphite-100">
+            @forelse($guests as $guest)
+                <li class="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
+                    <span class="min-w-0">
+                        <span class="font-medium text-graphite-900">{{ $guest->name }}</span>
+                        <span class="ml-2 text-graphite-500">{{ $guest->department }}</span>
+                    </span>
+                    <span class="flex shrink-0 items-center gap-3">
+                        <span class="text-xs font-semibold {{ $guest->has_chosen ? 'text-green-700' : 'text-nere-700' }}">{{ $guest->has_chosen ? 'Choix saisis' : 'À saisir' }}</span>
+                        <a href="{{ route('menu.manager.guests.choices', [$campaign, $guest]) }}" class="rounded-md border border-graphite-300 px-3 py-1.5 font-medium text-graphite-700 hover:bg-graphite-50 hover:text-nere-700">{{ $guest->has_chosen ? 'Modifier' : 'Saisir les choix' }}</a>
+                    </span>
+                </li>
+            @empty
+                <li class="px-5 py-4 text-sm text-graphite-500">Aucune personne sans compte. <a href="{{ route('menu.manager.guests') }}" class="font-medium text-nere-700 hover:underline">En ajouter</a></li>
+            @endforelse
+        </ul>
+    </section>
+
     <p class="mt-6 text-xs text-graphite-500">
         Seuls les employés cochés « Choisit ses plats au menu du personnel » dans l'administration sont listés.
     </p>

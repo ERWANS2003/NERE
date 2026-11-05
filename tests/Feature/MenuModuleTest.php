@@ -606,3 +606,56 @@ it('shows only the dish chosen by the employee for today', function () {
     $this->travelTo(now()->parse('2026-10-25 08:00'));
     $this->actingAs($employee)->get(route('intranet.dashboard'))->assertOk()->assertDontSee('Mon plat du jour');
 });
+
+it('lets menu managers record choices for people without an account', function () {
+    $campaign = createOpenMenuCampaign();
+    $manager = createMenuManager();
+    $days = $campaign->days()->get();
+
+    $this->actingAs($manager)->post(route('menu.manager.guests.store'), [
+        'name' => 'Moussa Sans Compte',
+        'department' => 'Restauration',
+    ])->assertRedirect();
+    $guest = \App\Models\MenuGuest::firstOrFail();
+
+    $this->get(route('menu.manager.tracking', $campaign))
+        ->assertOk()
+        ->assertSee('Moussa Sans Compte')
+        ->assertSee('Saisir les choix');
+
+    $this->get(route('menu.manager.guests.choices', [$campaign, $guest]))->assertOk();
+
+    $this->post(route('menu.manager.guests.choices.store', [$campaign, $guest]), [
+        'choices' => [$days[0]->id => '2', $days[2]->id => '1', $days[1]->id => ''],
+    ])->assertRedirect(route('menu.manager.tracking', $campaign));
+
+    $registration = MenuRegistration::where('employee_identifier', 'externe|'.$guest->id)->firstOrFail();
+    expect($registration->user_id)->toBeNull()
+        ->and($registration->employee_name)->toBe('Moussa Sans Compte')
+        ->and($registration->department)->toBe('Restauration')
+        ->and($registration->choices()->orderBy('menu_day_id')->pluck('selected_menu')->all())->toBe([2, 1]);
+
+    $this->get(route('menu.manager.tracking', $campaign))->assertSee('Choix saisis');
+
+    $this->post(route('menu.manager.guests.choices.store', [$campaign, $guest]), ['choices' => []])->assertRedirect();
+    expect(MenuRegistration::count())->toBe(0);
+
+    $employee = User::factory()->create(['menu_eligible' => true]);
+    $this->actingAs($employee)->get(route('menu.manager.guests'))->assertForbidden();
+    $this->actingAs($employee)->post(route('menu.manager.guests.choices.store', [$campaign, $guest]), [
+        'choices' => [$days[0]->id => '1'],
+    ])->assertForbidden();
+});
+
+it('hides inactive people without an account from tracking', function () {
+    $campaign = createOpenMenuCampaign();
+    $guest = \App\Models\MenuGuest::create(['name' => 'Ancien Prestataire', 'department' => 'Garage']);
+
+    $this->actingAs(createMenuManager())
+        ->put(route('menu.manager.guests.update', $guest), ['name' => 'Ancien Prestataire', 'department' => 'Garage'])
+        ->assertRedirect();
+
+    expect($guest->fresh()->active)->toBeFalse();
+    $this->get(route('menu.manager.tracking', $campaign))->assertDontSee('Ancien Prestataire');
+    $this->get(route('menu.manager.guests'))->assertSee('Ancien Prestataire')->assertSee('Inactif');
+});

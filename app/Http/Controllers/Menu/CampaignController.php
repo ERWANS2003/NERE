@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
 use App\Models\MenuCampaign;
+use App\Models\MenuGuest;
 use App\Models\User;
 use App\Notifications\MenuCampaignNotification;
 use Illuminate\Http\RedirectResponse;
@@ -123,7 +124,14 @@ class CampaignController extends Controller
             ->get()
             ->partition(fn (User $user) => $registeredUserIds->contains($user->id));
 
-        return view('menu.manager.tracking', compact('campaign', 'chosen', 'pending'));
+        $guestIdentifiers = $campaign->registrations()->whereNull('user_id')->pluck('employee_identifier');
+        $guests = MenuGuest::query()
+            ->where('active', true)
+            ->orderBy('name')
+            ->get()
+            ->each(fn (MenuGuest $guest) => $guest->setAttribute('has_chosen', $guestIdentifiers->contains($guest->employeeIdentifier())));
+
+        return view('menu.manager.tracking', compact('campaign', 'chosen', 'pending', 'guests'));
     }
 
     public function close(MenuCampaign $campaign): RedirectResponse

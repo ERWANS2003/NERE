@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Menu\CampaignController;
+use App\Http\Controllers\Menu\GuestController;
 use App\Http\Controllers\Menu\MenuExportController;
 use App\Http\Controllers\Menu\RegistrationController;
 use App\Http\Controllers\ProfileController;
@@ -80,6 +81,12 @@ Route::middleware(['auth', 'active'])
             Route::post('/campagnes/{campaign}/cloturer', [CampaignController::class, 'close'])->name('close');
             Route::get('/campagnes/{campaign}/suivi', [CampaignController::class, 'tracking'])->name('tracking');
             Route::get('/campagnes/{campaign}/exporter', MenuExportController::class)->name('export');
+            Route::get('/personnes', [GuestController::class, 'index'])->name('guests');
+            Route::post('/personnes', [GuestController::class, 'store'])->name('guests.store');
+            Route::put('/personnes/{guest}', [GuestController::class, 'update'])->name('guests.update');
+            Route::delete('/personnes/{guest}', [GuestController::class, 'destroy'])->name('guests.destroy');
+            Route::get('/campagnes/{campaign}/personnes/{guest}', [GuestController::class, 'editChoices'])->name('guests.choices');
+            Route::post('/campagnes/{campaign}/personnes/{guest}', [GuestController::class, 'storeChoices'])->name('guests.choices.store');
         });
 
         Route::get('/{campaign:link_token}', [RegistrationController::class, 'show'])->name('registration.show');

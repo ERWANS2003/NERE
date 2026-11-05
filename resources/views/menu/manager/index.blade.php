@@ -12,10 +12,13 @@
             <h1 class="mt-2 text-3xl font-semibold tracking-tight text-graphite-950 sm:text-4xl">Gestion des menus</h1>
             <p class="mt-3 max-w-xl text-sm leading-6 text-graphite-600 sm:text-base">Préparez les menus de la semaine, partagez le lien aux équipes et exportez les commandes pour la restauration.</p>
         </div>
+        <div class="flex shrink-0 flex-wrap gap-2">
+        <a href="{{ route('menu.manager.guests') }}" class="inline-flex min-h-11 items-center justify-center rounded-md border border-graphite-300 bg-white px-4 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">Personnes sans compte</a>
         <a href="{{ route('menu.manager.create') }}" class="bouton-primaire min-h-11 shrink-0 rounded-md">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/></svg>
             Préparer une semaine
         </a>
+        </div>
     </section>
 
     <div class="mb-4 flex items-end justify-between gap-3">
