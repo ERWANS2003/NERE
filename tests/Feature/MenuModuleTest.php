@@ -685,3 +685,46 @@ it('lets employees download their own menu choices as a PDF', function () {
 
     $this->actingAs($other)->get(route('menu.registration.download', $campaign->link_token))->assertNotFound();
 });
+
+it('reopens and deletes closed menu weeks only', function () {
+    $manager = createMenuManager();
+    $open = createOpenMenuCampaign();
+    $closed = createOpenMenuCampaign([
+        'title' => 'Semaine fermée',
+        'link_token' => str_repeat('f', 64),
+        'status' => 'closed',
+        'registration_closes_at' => now()->subDay(),
+    ]);
+    $closed->registrations()->create(['employee_name' => 'Awa', 'employee_identifier' => 'local|1', 'department' => 'RH']);
+
+    $this->actingAs($manager)->post(route('menu.manager.reopen', $open))->assertStatus(409);
+    $this->actingAs($manager)->delete(route('menu.manager.destroy', $open))->assertStatus(409);
+
+    $this->actingAs($manager)->post(route('menu.manager.reopen', $closed))->assertRedirect();
+    expect($closed->fresh())->status->toBe('open')->registration_closes_at->toBeNull()
+        ->and(MenuCampaign::openForRegistration()->whereKey($closed->id)->exists())->toBeTrue();
+
+    $closed->refresh()->update(['status' => 'closed']);
+    $this->actingAs(User::factory()->create(['menu_eligible' => true]))->delete(route('menu.manager.destroy', $closed))->assertForbidden();
+    $this->actingAs($manager)->delete(route('menu.manager.destroy', $closed))->assertRedirect(route('menu.manager.campaigns'));
+    expect(MenuCampaign::find($closed->id))->toBeNull()
+        ->and(MenuRegistration::count())->toBe(0);
+});
+
+it('paginates menu weeks ten per page', function () {
+    foreach (range(1, 11) as $i) {
+        MenuCampaign::create([
+            'title' => 'Semaine numéro '.$i,
+            'link_token' => str_pad((string) $i, 64, 'p'),
+            'starts_on' => now()->subWeeks($i)->startOfWeek(),
+            'ends_on' => now()->subWeeks($i)->startOfWeek()->addDays(4),
+            'status' => 'closed',
+        ]);
+    }
+
+    $this->actingAs(createMenuManager())->get(route('menu.manager.campaigns'))
+        ->assertOk()
+        ->assertSee('Semaine numéro 10')
+        ->assertDontSee('Semaine numéro 11')
+        ->assertSee('page=2', false);
+});

@@ -23,7 +23,7 @@ class CampaignController extends Controller
         $campaigns = MenuCampaign::query()
             ->withCount('registrations')
             ->latest('starts_on')
-            ->paginate(20);
+            ->paginate(10);
 
         return view('menu.manager.index', compact('campaigns'));
     }
@@ -141,6 +141,28 @@ class CampaignController extends Controller
         $campaign->update(['status' => 'closed']);
 
         return back()->with('success', 'Les inscriptions à cette campagne sont clôturées.');
+    }
+
+    public function reopen(MenuCampaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === 'closed', 409, 'Seule une semaine clôturée peut être rouverte.');
+
+        // Une date de clôture déjà passée refermerait aussitôt la semaine.
+        $campaign->update([
+            'status' => 'open',
+            'registration_closes_at' => $campaign->registration_closes_at?->isFuture() ? $campaign->registration_closes_at : null,
+        ]);
+
+        return back()->with('success', 'La semaine est rouverte : les employés peuvent de nouveau modifier leurs choix.');
+    }
+
+    public function destroy(MenuCampaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === 'closed', 409, 'Clôturez la semaine avant de la supprimer.');
+
+        $campaign->delete();
+
+        return redirect()->route('menu.manager.campaigns')->with('success', 'La semaine « '.$campaign->title.' » et ses choix ont été supprimés.');
     }
 
     private function notifyChoosers(MenuCampaign $campaign): void

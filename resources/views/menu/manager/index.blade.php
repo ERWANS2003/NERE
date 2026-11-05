@@ -76,6 +76,17 @@
                                 <button class="inline-flex min-h-10 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-graphite-600 transition hover:bg-red-50 hover:text-red-700">Clôturer</button>
                             </form>
                         @endif
+                        @if($campaign->status === 'closed')
+                            <form method="POST" action="{{ route('menu.manager.reopen', $campaign) }}" onsubmit="return confirm('Rouvrir les inscriptions de cette semaine ?')">
+                                @csrf
+                                <button class="inline-flex min-h-10 items-center justify-center rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">Rouvrir</button>
+                            </form>
+                            <form method="POST" action="{{ route('menu.manager.destroy', $campaign) }}" onsubmit="return confirm('Supprimer définitivement cette semaine et tous les choix enregistrés ? Pensez à faire l’export Excel avant.')">
+                                @csrf
+                                @method('DELETE')
+                                <button class="inline-flex min-h-10 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50">Supprimer</button>
+                            </form>
+                        @endif
                     </div>
                 </div>
                 @if($campaign->status !== 'draft')
