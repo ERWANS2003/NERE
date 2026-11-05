@@ -3,6 +3,8 @@
 use App\Http\Controllers\Intranet\AnalyticsController;
 use App\Http\Controllers\Intranet\AnnouncementController;
 use App\Http\Controllers\Intranet\CalendarController;
+use App\Http\Controllers\Intranet\ChatController;
+use App\Http\Controllers\Intranet\ChatRoomController;
 use App\Http\Controllers\Intranet\DashboardController;
 use App\Http\Controllers\Intranet\DepartmentCalendarEventController;
 use App\Http\Controllers\Intranet\DepartmentController as IntranetDepartmentController;
@@ -157,6 +159,20 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
         Route::post('/resources/{resource}/favori', [ResourceController::class, 'toggleFavorite'])->name('resources.favorite');
         Route::delete('/resources/{resource}', [ResourceController::class, 'destroy'])->name('resources.destroy');
+    });
+
+    Route::prefix('chat')->name('chat.')->middleware('module:chat')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::get('/salons/nouveau', [ChatRoomController::class, 'create'])->name('rooms.create');
+        Route::post('/salons', [ChatRoomController::class, 'store'])->name('rooms.store');
+        Route::get('/salons/{room}/modifier', [ChatRoomController::class, 'edit'])->name('rooms.edit');
+        Route::put('/salons/{room}', [ChatRoomController::class, 'update'])->name('rooms.update');
+        Route::delete('/salons/{room}', [ChatRoomController::class, 'destroy'])->name('rooms.destroy');
+        Route::put('/messages/{message}', [ChatController::class, 'update'])->name('messages.update');
+        Route::delete('/messages/{message}', [ChatController::class, 'destroy'])->name('messages.destroy');
+        Route::get('/{room}', [ChatController::class, 'show'])->name('show');
+        Route::get('/{room}/nouveaux', [ChatController::class, 'poll'])->name('poll');
+        Route::post('/{room}/messages', [ChatController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
     });
 
     // Notifications (centre + marquage)

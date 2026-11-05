@@ -17,6 +17,7 @@ import './intranet/notification-sound.js';
 import './page-skeleton.js';
 import './intranet/pwa-install.js';
 import './intranet/tutorial.js';
+import './intranet/chat.js';
 import './intranet/glass.js';
 import './admin-shell.js';
 

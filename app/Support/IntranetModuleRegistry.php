@@ -16,6 +16,7 @@ class IntranetModuleRegistry
         'knowledge_base' => 'Base de connaissances',
         'forms' => 'Formulaires et services',
         'tickets' => 'Support informatique',
+        'chat' => 'Chat',
     ];
 
     /**

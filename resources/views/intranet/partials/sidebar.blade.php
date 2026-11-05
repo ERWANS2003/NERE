@@ -59,6 +59,22 @@
                     </a>
                 </li>
                 @endif
+                @if($enabledModules['chat']['enabled'])
+                @php($chatUnread = array_sum(\App\Models\ChatRoom::unreadCountsFor($currentUser)))
+                <li>
+                    <a id="intranet-chat-link" href="{{ route('intranet.chat.index') }}"
+                       @if(request()->routeIs('intranet.chat.*')) aria-current="page" @endif
+                       class="sidebar-link {{ request()->routeIs('intranet.chat.*') ? 'active' : '' }}">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m10-7V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l4-4h4a2 2 0 002-2V8z"/>
+                        </svg>
+                        <span>Chat</span>
+                        @if($chatUnread > 0)
+                            <span class="ml-auto rounded-full bg-nere-600 px-2 py-0.5 text-xs font-semibold text-white">{{ $chatUnread > 99 ? '99+' : $chatUnread }}<span class="sr-only"> message(s) non lu(s)</span></span>
+                        @endif
+                    </a>
+                </li>
+                @endif
                 <li>
                     <a id="intranet-feedback-link" href="{{ route('intranet.feedback.create') }}"
                        @if(request()->routeIs('intranet.feedback.*')) aria-current="page" @endif

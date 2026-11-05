@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\ChatMessage;
+use App\Models\ChatRoom;
 use App\Services\SystemHealth;
 use App\Models\AppSetting;
 use App\Services\TicketSlaService;
@@ -35,6 +37,13 @@ Artisan::command('webpush:generate-vapid-keys', function () {
     $this->warn('Conservez la clé privée dans un gestionnaire de secrets; ne la versionnez jamais.');
 })->purpose('Générer une paire de clés VAPID pour les notifications push navigateur');
 
+Artisan::command('intranet:purge-chat', function () {
+    $supprimes = ChatMessage::withTrashed()
+        ->where('created_at', '<', now()->subMonths(ChatRoom::RETENTION_MONTHS))
+        ->forceDelete();
+    $this->info("{$supprimes} message(s) de chat supprimé(s).");
+})->purpose('Supprimer les messages de chat de plus de 6 mois');
+
 // Témoin affiché sur la page Santé du serveur de l'admin.
 Schedule::call(fn () => Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, now()->toIso8601String()))
     ->everyMinute()
@@ -44,6 +53,7 @@ Schedule::command('intranet:alerte-sante')->everyFifteenMinutes()->withoutOverla
 // Rappels des événements du calendrier prévus le lendemain, chaque jour à 7h.
 Schedule::command('intranet:rappels-evenements')->dailyAt('07:00');
 Schedule::command('intranet:check-ticket-slas')->everyMinute()->withoutOverlapping();
+Schedule::command('intranet:purge-chat')->dailyAt('03:30');
 Schedule::command('intranet:rappels-menus')->hourly()->withoutOverlapping();
 Schedule::command('intranet:remind-pending-time-off')->everyFifteenMinutes()->withoutOverlapping();
 
