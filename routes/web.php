@@ -91,4 +91,5 @@ Route::middleware(['auth', 'active'])
 
         Route::get('/{campaign:link_token}', [RegistrationController::class, 'show'])->name('registration.show');
         Route::post('/{campaign:link_token}', [RegistrationController::class, 'store'])->name('registration.store');
+        Route::get('/{campaign:link_token}/telecharger', [RegistrationController::class, 'download'])->name('registration.download');
     });

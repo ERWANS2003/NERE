@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\MenuCampaign;
 use App\Models\MenuRegistration;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -103,6 +106,33 @@ class RegistrationController extends Controller
         return redirect()
             ->route('menu.registration.show', $campaign->link_token)
             ->with('success', 'Vos choix de menus ont été enregistrés.');
+    }
+
+    public function download(MenuCampaign $campaign, Request $request): Response
+    {
+        $this->ensureCanChoose($request);
+        abort_if($campaign->status === 'draft', 404);
+
+        $registration = $campaign->registrations()
+            ->where('employee_identifier', $this->employeeIdentifier($request))
+            ->with('choices')
+            ->firstOrFail();
+
+        $options = new Options;
+        $options->set('isRemoteEnabled', false);
+        $pdf = new Dompdf($options);
+        $pdf->loadHtml(view('menu.registration.pdf', [
+            'campaign' => $campaign->load('days'),
+            'registration' => $registration,
+        ])->render(), 'UTF-8');
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->render();
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="mes-menus-'.$campaign->starts_on->format('Y-m-d').'.pdf"',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     private function ensureCanChoose(Request $request): void

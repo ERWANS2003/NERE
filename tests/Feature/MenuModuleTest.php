@@ -659,3 +659,29 @@ it('hides inactive people without an account from tracking', function () {
     $this->get(route('menu.manager.tracking', $campaign))->assertDontSee('Ancien Prestataire');
     $this->get(route('menu.manager.guests'))->assertSee('Ancien Prestataire')->assertSee('Inactif');
 });
+
+it('lets employees download their own menu choices as a PDF', function () {
+    $campaign = createOpenMenuCampaign();
+    $day = $campaign->days()->first();
+    $employee = User::factory()->create(['menu_eligible' => true]);
+    $other = User::factory()->create(['menu_eligible' => true]);
+
+    $this->actingAs($employee)
+        ->get(route('menu.registration.show', $campaign->link_token))
+        ->assertDontSee('Télécharger mes choix');
+    $this->get(route('menu.registration.download', $campaign->link_token))->assertNotFound();
+
+    $this->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => 'Finances',
+        'choices' => [$day->id => '1'],
+    ])->assertRedirect();
+
+    $this->get(route('menu.registration.show', $campaign->link_token))->assertSee('Télécharger mes choix');
+    $response = $this->get(route('menu.registration.download', $campaign->link_token))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+    expect($response->headers->get('Content-Disposition'))->toContain('mes-menus-2026-10-19.pdf')
+        ->and(substr($response->getContent(), 0, 4))->toBe('%PDF');
+
+    $this->actingAs($other)->get(route('menu.registration.download', $campaign->link_token))->assertNotFound();
+});

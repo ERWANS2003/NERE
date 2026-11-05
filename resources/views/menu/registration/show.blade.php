@@ -18,6 +18,12 @@
                 <svg class="h-4 w-4 text-nere-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
                 {{ $campaign->starts_on->translatedFormat('l d F Y') }} <span aria-hidden="true">—</span> {{ $campaign->ends_on->translatedFormat('l d F Y') }}
             </p>
+            @if($registration)
+                <a href="{{ route('menu.registration.download', $campaign->link_token) }}" data-no-skeleton class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0l-4-4m4 4l4-4m-13 7v2a1 1 0 001 1h16a1 1 0 001-1v-2"/></svg>
+                    Télécharger mes choix (PDF)
+                </a>
+            @endif
         </div>
     </section>
 
