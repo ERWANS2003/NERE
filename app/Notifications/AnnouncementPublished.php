@@ -5,25 +5,19 @@ namespace App\Notifications;
 use App\Models\Announcement;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * Notifie le public d'une annonce (toute l'entreprise ou un département)
  * lors de sa publication.
- *
- * Les annonces urgentes partent aussi par e-mail : les autres restent sur le
- * canal "database" (badge de l'en-tête), pour ne pas noyer les boîtes mail
- * sous des communications routinières.
  */
 class AnnouncementPublished extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
-     * bloque plus l'action de l'utilisateur. La notification intranet reste
-     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     * La notification est enregistrée tout de suite (connexion synchrone)
+     * pour apparaître immédiatement dans la cloche.
      *
      * @return array<string, string>
      */
@@ -39,21 +33,9 @@ class AnnouncementPublished extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return $this->announcement->priority === 'urgent'
-            ? ['database', 'mail']
-            : ['database'];
+        return ['database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('[Urgent] '.$this->announcement->title)
-            ->greeting('Bonjour '.$notifiable->first_name.',')
-            ->line("Une annonce urgente vient d'être publiée sur l'intranet NÉRÉ Mining :")
-            ->line('**'.$this->announcement->title.'**')
-            ->action("Lire l'annonce", route('intranet.announcements.show', $this->announcement->id))
-            ->line("Merci d'en prendre connaissance rapidement.");
-    }
 
     /**
      * Format `data` normalisé partagé par toutes les notifications intranet :

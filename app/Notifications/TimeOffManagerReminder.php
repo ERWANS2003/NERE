@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\TimeOffRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TimeOffManagerReminder extends Notification implements ShouldQueue
@@ -13,9 +12,8 @@ class TimeOffManagerReminder extends Notification implements ShouldQueue
     use Queueable;
 
     /**
-     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
-     * bloque plus l'action de l'utilisateur. La notification intranet reste
-     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     * La notification est enregistrée tout de suite (connexion synchrone)
+     * pour apparaître immédiatement dans la cloche.
      *
      * @return array<string, string>
      */
@@ -29,21 +27,9 @@ class TimeOffManagerReminder extends Notification implements ShouldQueue
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
-    {
-        $employee = $this->request->user?->name ?? 'Un collaborateur';
-        $policy = $this->request->policy?->name ?? 'Congé';
-
-        return (new MailMessage)
-            ->subject("Rappel : demande de {$policy} en attente depuis 48 h")
-            ->greeting('Bonjour '.$notifiable->first_name.',')
-            ->line("La demande de {$policy} de {$employee} attend une décision depuis 48 heures.")
-            ->line('Période : '.$this->period())
-            ->action('Traiter les demandes', route('intranet.time-off.approvals'));
-    }
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array

@@ -5,22 +5,20 @@ namespace App\Notifications;
 use App\Models\TimeOffRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
 /**
  * Prévient l'employé de la décision prise sur sa demande de congé
- * (approuvée ou refusée). Canal e-mail systématique : réponse personnelle.
+ * (approuvée ou refusée).
  */
 class TimeOffReviewed extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
-     * bloque plus l'action de l'utilisateur. La notification intranet reste
-     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     * La notification est enregistrée tout de suite (connexion synchrone)
+     * pour apparaître immédiatement dans la cloche.
      *
      * @return array<string, string>
      */
@@ -36,26 +34,9 @@ class TimeOffReviewed extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
-    {
-        $approuvee = $this->request->status === 'approved';
-        $type = $this->request->policy?->name ?? 'Congé';
-        $periode = $this->request->start_date->format('d/m/Y').' au '.$this->request->end_date->format('d/m/Y');
-
-        $mail = (new MailMessage)
-            ->subject(($approuvee ? '[Approuvé] ' : '[Refusé] ').$type)
-            ->greeting('Bonjour '.$notifiable->first_name.',')
-            ->line("Votre demande de « {$type} » du {$periode} a été ".($approuvee ? 'approuvée.' : 'refusée.'));
-
-        if ($this->request->approval_comment) {
-            $mail->line('Commentaire : '.$this->request->approval_comment);
-        }
-
-        return $mail->action('Voir mes congés', route('intranet.time-off.index'));
-    }
 
     /**
      * @return array<string, mixed>

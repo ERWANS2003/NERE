@@ -25,7 +25,7 @@ it('restricts the health page to system administrators', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.health'))->assertForbidden();
 });
 
-it('reports scheduler, mail, backup and failed jobs', function () {
+it('reports scheduler, backup and failed jobs without any mail section', function () {
     config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.from.address' => 'hello@example.com']);
     Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, now()->subMinute()->toIso8601String());
     failedJob();
@@ -34,7 +34,7 @@ it('reports scheduler, mail, backup and failed jobs', function () {
         ->get(route('admin.health'))
         ->assertOk()
         ->assertSee('Actives')
-        ->assertSee('Non configuré')
+        ->assertDontSee('E-mail (SMTP)')
         ->assertSee('Aucune sauvegarde enregistrée')
         ->assertSee('TicketNotification')
         ->assertSee('127.0.0.1:2525');
@@ -72,7 +72,8 @@ it('alerts administrators once per new problem', function () {
     $this->artisan('intranet:alerte-sante')->assertSuccessful();
     $first = $admin->notifications()->first();
     expect($admin->notifications()->count())->toBe(1)
-        ->and($first->data['problems'])->toContain('mail', 'backup')
+        ->and($first->data['problems'])->toContain('backup')
+        ->not->toContain('mail')
         ->and($first->data['url'])->toBe(route('admin.health'))
         ->and($employee->notifications()->count())->toBe(0);
 

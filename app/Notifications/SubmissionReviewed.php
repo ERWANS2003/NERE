@@ -5,23 +5,20 @@ namespace App\Notifications;
 use App\Models\FormSubmission;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
 /**
  * Prévient le demandeur que sa demande (soumission de formulaire) a été
- * approuvée ou rejetée. Canal e-mail systématique : contrairement à une
- * annonce de masse, c'est une réponse personnelle attendue.
+ * approuvée ou rejetée.
  */
 class SubmissionReviewed extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * L'e-mail part en file d'attente : un serveur SMTP lent ou injoignable ne
-     * bloque plus l'action de l'utilisateur. La notification intranet reste
-     * immédiate (connexion synchrone) pour apparaître tout de suite dans la cloche.
+     * La notification est enregistrée tout de suite (connexion synchrone)
+     * pour apparaître immédiatement dans la cloche.
      *
      * @return array<string, string>
      */
@@ -37,25 +34,9 @@ class SubmissionReviewed extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
-    {
-        $approuvee = $this->submission->status === 'approved';
-        $formulaire = $this->submission->form?->name ?? 'Votre demande';
-
-        $mail = (new MailMessage)
-            ->subject(($approuvee ? '[Approuvée] ' : '[Rejetée] ').$formulaire)
-            ->greeting('Bonjour '.$notifiable->first_name.',')
-            ->line("Votre demande « {$formulaire} » a été ".($approuvee ? 'approuvée.' : 'rejetée.'));
-
-        if ($this->submission->review_comment) {
-            $mail->line('Commentaire : '.$this->submission->review_comment);
-        }
-
-        return $mail->action('Voir la demande', route('intranet.submissions.show', $this->submission->id));
-    }
 
     /**
      * @return array<string, mixed>

@@ -29,9 +29,6 @@ class SystemHealth
         $oldestJob = $oldestJob ? Carbon::createFromTimestamp($oldestJob) : null;
         $failedTotal = DB::table('failed_jobs')->count();
 
-        $mailHost = (string) config('mail.mailers.smtp.host');
-        $mailFrom = (string) config('mail.from.address');
-
         $backupFile = storage_path('app/'.self::BACKUP_STATUS_FILE);
         $backup = is_file($backupFile) ? json_decode((string) file_get_contents($backupFile), true) : null;
 
@@ -50,14 +47,6 @@ class SystemHealth
                 'oldest' => $oldestJob,
                 'failed_total' => $failedTotal,
                 'ok' => $failedTotal === 0 && ($oldestJob === null || $oldestJob->gt(now()->subMinutes(10))),
-            ],
-            'mail' => [
-                'mailer' => config('mail.default'),
-                'host' => $mailHost,
-                'port' => config('mail.mailers.smtp.port'),
-                'from' => $mailFrom,
-                'ok' => config('mail.default') !== 'smtp'
-                    || (! in_array($mailHost, ['127.0.0.1', 'localhost', ''], true) && ! str_ends_with($mailFrom, '@example.com')),
             ],
             'ldap' => [
                 'enabled' => (bool) config('ldap_integration.enabled'),
@@ -92,7 +81,6 @@ class SystemHealth
         $labels = [
             'scheduler' => 'Les tâches planifiées ne tournent plus.',
             'queue' => 'Des envois sont en échec ou bloqués dans la file d’attente.',
-            'mail' => 'L’envoi des e-mails n’est pas configuré.',
             'ldap' => 'La dernière synchronisation Active Directory a échoué.',
             'backup' => 'Aucune sauvegarde réussie depuis plus de 36 h.',
             'disk' => 'Moins de 10 % d’espace disque libre.',

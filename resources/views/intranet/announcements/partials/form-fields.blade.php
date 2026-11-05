@@ -26,7 +26,7 @@
     <select id="priority" name="priority" required class="champ">
         <option value="info" @selected($priorite === 'info')>Info</option>
         <option value="important" @selected($priorite === 'important')>Important</option>
-        <option value="urgent" @selected($priorite === 'urgent')>Urgent (envoie aussi un e-mail)</option>
+        <option value="urgent" @selected($priorite === 'urgent')>Urgent</option>
     </select>
     <x-erreur :messages="$errors->get('priority')" />
 </div>

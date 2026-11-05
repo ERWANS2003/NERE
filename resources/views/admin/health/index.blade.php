@@ -24,17 +24,6 @@
             <p class="mt-1 text-xs text-gray-500">Alertes SLA, rappels de congés et de menus, synchronisation AD. Tourne chaque minute.</p>
         </section>
 
-        <section class="rounded-lg border border-gray-200 bg-white p-5" id="sante-mail">
-            <div class="mb-2 flex items-center justify-between">
-                <h2 class="font-semibold text-gray-900">E-mail (SMTP)</h2>
-                {!! $badge($mail['ok'], 'Configuré', 'Non configuré') !!}
-            </div>
-            <p class="text-sm text-gray-600">{{ $mail['mailer'] }} · {{ $mail['host'] }}:{{ $mail['port'] }} · expéditeur {{ $mail['from'] }}</p>
-            @unless($mail['ok'])
-                <p class="mt-1 text-xs text-red-700">Valeurs d’exemple dans le .env du serveur : aucun e-mail ne part.</p>
-            @endunless
-        </section>
-
         <section class="rounded-lg border border-gray-200 bg-white p-5" id="sante-sauvegarde">
             <div class="mb-2 flex items-center justify-between">
                 <h2 class="font-semibold text-gray-900">Sauvegarde de la base</h2>

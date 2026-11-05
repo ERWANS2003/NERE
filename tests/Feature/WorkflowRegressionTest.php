@@ -249,7 +249,7 @@ it('met les e-mails en file d’attente et garde la notification intranet imméd
     TimeOffReviewed::class,
 ]);
 
-it('crée un ticket même si le serveur de messagerie est injoignable', function () {
+it('crée un ticket sans envoyer d’e-mail, même si un serveur de messagerie est configuré', function () {
     config([
         'queue.default' => 'database',
         'mail.default' => 'smtp',
@@ -271,5 +271,5 @@ it('crée un ticket même si le serveur de messagerie est injoignable', function
 
     expect(Ticket::where('subject', 'Imprimante en panne')->exists())->toBeTrue()
         ->and($technician->fresh()->notifications()->count())->toBe(1)
-        ->and(DB::table('jobs')->count())->toBeGreaterThan(0);
+        ->and(DB::table('jobs')->count())->toBe(0);
 });

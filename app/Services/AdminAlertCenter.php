@@ -17,7 +17,6 @@ class AdminAlertCenter
         $links = [
             'scheduler' => ['route' => 'admin.health', 'anchor' => 'sante-taches', 'severity' => 'critical'],
             'queue' => ['route' => 'admin.health', 'anchor' => 'sante-echecs', 'severity' => 'critical'],
-            'mail' => ['route' => 'admin.health', 'anchor' => 'sante-mail', 'severity' => 'warning'],
             'ldap' => ['route' => 'admin.settings', 'anchor' => 'ldap', 'severity' => 'critical'],
             'backup' => ['route' => 'admin.health', 'anchor' => 'sante-sauvegarde', 'severity' => 'critical'],
             'disk' => ['route' => 'admin.health', 'anchor' => 'sante-disque', 'severity' => 'critical'],

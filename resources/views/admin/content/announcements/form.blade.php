@@ -22,7 +22,7 @@
             <div>
                 <label for="priority" class="mb-1 block text-sm font-medium text-gray-700">Priorité</label>
                 <select id="priority" name="priority" required class="w-full rounded border-gray-300">
-                    @foreach(['info' => 'Info', 'important' => 'Important', 'urgent' => 'Urgent (e-mail aux destinataires)'] as $value => $label)
+                    @foreach(['info' => 'Info', 'important' => 'Important', 'urgent' => 'Urgent'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('priority', $announcement->priority) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
