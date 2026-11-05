@@ -65,3 +65,19 @@ it('lets administrators review feedback and answer the author', function () {
     expect($feedback->fresh()->status)->toBe('done');
     $this->actingAs($employee)->get(route('intranet.feedback.create'))->assertSee('Merci, c’est noté.');
 });
+
+it('renders the page skeleton and the role label in the layouts', function () {
+    $admin = User::factory()->superAdmin()->create(['poste' => null, 'position_title' => null]);
+    $employee = User::factory()->create(['poste' => null, 'position_title' => null]);
+
+    $this->actingAs($admin)->get(route('intranet.dashboard'))
+        ->assertOk()
+        ->assertSee('data-page-skeleton-root', false)
+        ->assertSee('Administrateur');
+    $this->actingAs($admin)->get(route('admin.health'))
+        ->assertOk()
+        ->assertSee('data-page-skeleton-root', false);
+    $this->actingAs($employee)->get(route('intranet.dashboard'))->assertSee('Employé');
+
+    $this->get(route('login'))->assertDontSee('ou adresse e-mail');
+});

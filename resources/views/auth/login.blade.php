@@ -13,7 +13,7 @@
                    required 
                    autofocus 
                    autocomplete="username" 
-                   placeholder="Saisissez votre nom d’utilisateur ou adresse e-mail" />
+                   placeholder="Saisissez votre nom d’utilisateur" />
             @if($errors->has('identifiant'))
                 <p class="error-message">{{ $errors->first('identifiant') }}</p>
             @endif

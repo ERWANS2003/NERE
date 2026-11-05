@@ -83,7 +83,7 @@
                         {{ auth()->user()->name }}
                     </div>
                     <div class="text-xs text-graphite-500">
-                        {{ auth()->user()->position_title ?? 'Employé' }}
+                        {{ auth()->user()->job_title ?: (auth()->user()->is_super_admin ? 'Administrateur' : 'Employé') }}
                     </div>
                 </div>
 

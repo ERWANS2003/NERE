@@ -40,7 +40,8 @@
             @include('intranet.partials.header')
 
             <!-- Page Content -->
-            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto bg-graphite-50 p-4 sm:p-6">
+            <main id="main-content" tabindex="-1" data-page-skeleton-root class="flex-1 overflow-y-auto bg-graphite-50 p-4 sm:p-6">
+                @include('partials.page-skeleton')
                 @if (! empty($breadcrumbs))
                     <nav class="mb-6" aria-label="Breadcrumb">
                         <ol class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-graphite-600">

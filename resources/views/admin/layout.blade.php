@@ -162,7 +162,8 @@
             </header>
 
             <main id="admin-main-content" class="admin-content" tabindex="-1">
-                <div class="admin-content-inner">
+                <div class="admin-content-inner" data-page-skeleton-root>
+                    @include('partials.page-skeleton')
                     @if(session('success'))
                         <div role="status" class="admin-alert admin-alert-success">
                             <span class="admin-alert-icon"><x-icone nom="circle-check" /></span>

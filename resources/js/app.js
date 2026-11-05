@@ -14,6 +14,7 @@ import './intranet/live-search.js';
 import './intranet/auto-refresh.js';
 import './intranet/push-notifications.js';
 import './intranet/notification-sound.js';
+import './page-skeleton.js';
 import './intranet/pwa-install.js';
 import './intranet/tutorial.js';
 import './intranet/glass.js';

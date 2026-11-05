@@ -2287,3 +2287,59 @@ a[data-glass]:hover {
         display: none;
     }
 }
+
+/* Écran squelette pendant le chargement de la page suivante (resources/js/page-skeleton.js). */
+.page-skeleton {
+    display: none;
+}
+
+[data-page-skeleton-root].is-navigating > :not(.page-skeleton) {
+    display: none;
+}
+
+[data-page-skeleton-root].is-navigating > .page-skeleton {
+    display: block;
+}
+
+.page-skeleton-card {
+    padding: 1.25rem;
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: 1rem;
+    background-color: rgb(255 255 255 / 85%);
+    box-shadow: 0 8px 24px -20px rgb(15 23 42 / 45%);
+}
+
+.page-skeleton-block {
+    border-radius: 0.5rem;
+    background: linear-gradient(90deg, rgb(196 201 210) 0%, rgb(224 227 233) 50%, rgb(196 201 210) 100%);
+    background-size: 200% 100%;
+    animation: page-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes page-skeleton-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-skeleton-block {
+        animation: none;
+    }
+}
+
+/* Menu d'administration : la liste défile, un fondu en bas le signale. */
+.admin-navigation {
+    scrollbar-color: rgb(255 255 255 / 35%) transparent;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
+    padding-bottom: 2.5rem;
+}
+
+.admin-nav-group + .admin-nav-group {
+    margin-top: 0.9rem;
+}
+
+.admin-nav-link {
+    min-height: 2.35rem;
+    padding-block: 0.5rem;
+}
