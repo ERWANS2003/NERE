@@ -4,7 +4,11 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Intranet\MyPayslipController;
 use App\Http\Controllers\Menu\CampaignController;
+use App\Http\Controllers\Payroll\PeriodController as PayrollPeriodController;
+use App\Http\Controllers\Payroll\ProfileController as PayrollProfileController;
+use App\Http\Controllers\Payroll\RubricController as PayrollRubricController;
 use App\Http\Controllers\Menu\GuestController;
 use App\Http\Controllers\Menu\MenuExportController;
 use App\Http\Controllers\Menu\RegistrationController;
@@ -95,3 +99,34 @@ Route::middleware(['auth', 'active'])
         Route::post('/{campaign:link_token}', [RegistrationController::class, 'store'])->name('registration.store');
         Route::get('/{campaign:link_token}/telecharger', [RegistrationController::class, 'download'])->name('registration.download');
     });
+
+Route::middleware(['auth', 'active', 'module:payroll'])->prefix('intranet')->group(function (): void {
+    Route::get('/mes-bulletins', [MyPayslipController::class, 'index'])->name('intranet.payslips.index');
+    Route::get('/mes-bulletins/{payslip}', [MyPayslipController::class, 'download'])->name('intranet.payslips.download');
+
+    Route::middleware('payroll.manager')->prefix('paie')->name('payroll.')->group(function (): void {
+        Route::get('/', [PayrollPeriodController::class, 'index'])->name('index');
+        Route::post('/periodes', [PayrollPeriodController::class, 'store'])->name('periods.store');
+        Route::get('/periodes/{period}', [PayrollPeriodController::class, 'show'])->name('periods.show');
+        Route::post('/periodes/{period}/calculer', [PayrollPeriodController::class, 'calculate'])->name('periods.calculate');
+        Route::post('/periodes/{period}/cloturer', [PayrollPeriodController::class, 'close'])->name('periods.close');
+        Route::get('/periodes/{period}/bulletins', [PayrollPeriodController::class, 'batch'])->name('periods.batch');
+        Route::get('/periodes/{period}/livre', [PayrollPeriodController::class, 'ledger'])->name('periods.ledger');
+        Route::get('/periodes/{period}/salaries/{user}', [PayrollPeriodController::class, 'employee'])->name('periods.employee');
+        Route::put('/periodes/{period}/salaries/{user}', [PayrollPeriodController::class, 'updateEntry'])->name('periods.entry');
+        Route::post('/periodes/{period}/salaries/{user}/variables', [PayrollPeriodController::class, 'storeVariable'])->name('periods.variables.store');
+        Route::delete('/periodes/{period}/variables/{variable}', [PayrollPeriodController::class, 'destroyVariable'])->name('periods.variables.destroy');
+        Route::get('/bulletins/{payslip}', [PayrollPeriodController::class, 'payslip'])->name('payslips.show');
+
+        Route::get('/rubriques', [PayrollRubricController::class, 'index'])->name('rubrics.index');
+        Route::get('/rubriques/nouvelle', [PayrollRubricController::class, 'create'])->name('rubrics.create');
+        Route::post('/rubriques', [PayrollRubricController::class, 'store'])->name('rubrics.store');
+        Route::get('/rubriques/{rubric}', [PayrollRubricController::class, 'edit'])->name('rubrics.edit');
+        Route::put('/rubriques/{rubric}', [PayrollRubricController::class, 'update'])->name('rubrics.update');
+        Route::put('/parametres', [PayrollRubricController::class, 'settings'])->name('settings');
+
+        Route::get('/salaries', [PayrollProfileController::class, 'index'])->name('profiles.index');
+        Route::get('/salaries/{user}', [PayrollProfileController::class, 'edit'])->name('profiles.edit');
+        Route::put('/salaries/{user}', [PayrollProfileController::class, 'update'])->name('profiles.update');
+    });
+});

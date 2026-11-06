@@ -17,6 +17,7 @@ class IntranetModuleRegistry
         'forms' => 'Formulaires et services',
         'tickets' => 'Support informatique',
         'chat' => 'Chat',
+        'payroll' => 'Paie',
     ];
 
     /**

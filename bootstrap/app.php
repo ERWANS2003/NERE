@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureMenuManager;
 use App\Http\Middleware\EnsureModuleIsEnabled;
+use App\Http\Middleware\EnsurePayrollManager;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUtf8Response;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
             'module' => EnsureModuleIsEnabled::class,
             'menu.manager' => EnsureMenuManager::class,
+            'payroll.manager' => EnsurePayrollManager::class,
         ]);
 
         $middleware->redirectGuestsTo('/connexion');

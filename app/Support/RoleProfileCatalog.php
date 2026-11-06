@@ -62,6 +62,11 @@ class RoleProfileCatalog
                 'description' => 'Créer les menus, suivre les inscriptions et exporter les commandes de repas.',
                 'permissions' => ['menu.manage'],
             ],
+            'gestionnaire-paie' => [
+                'nom' => 'Gestionnaire Paie',
+                'description' => 'Paramétrer et calculer la paie, éditer et clôturer les bulletins.',
+                'permissions' => ['payroll.manage'],
+            ],
             'administrateur-systeme' => [
                 'nom' => 'Administrateur système',
                 'description' => 'Accès complet à l’administration et aux fonctionnalités de l’intranet.',

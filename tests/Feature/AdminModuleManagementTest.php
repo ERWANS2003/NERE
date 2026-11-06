@@ -8,7 +8,7 @@ use App\Support\IntranetModuleRegistry;
 it('enables all managed modules by default', function () {
     $modules = app(IntranetModuleRegistry::class)->all();
 
-    expect($modules)->toHaveCount(6)
+    expect($modules)->toHaveCount(7)
         ->and(collect($modules)->every(fn (array $module) => $module['enabled']))->toBeTrue();
 });
 

@@ -139,6 +139,13 @@ class PermissionCatalog
                     'description' => 'Créer les menus hebdomadaires, suivre les inscriptions et exporter les commandes.',
                 ],
             ],
+            'Paie' => [
+                [
+                    'nom' => 'Gérer la paie',
+                    'slug' => 'payroll.manage',
+                    'description' => 'Paramétrer les rubriques, les salaires, calculer et clôturer la paie, éditer les bulletins.',
+                ],
+            ],
             'Organisation' => [
                 [
                     'nom' => 'Consulter les départements',
