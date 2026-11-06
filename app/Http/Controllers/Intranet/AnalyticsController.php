@@ -7,8 +7,7 @@ use App\Models\Department;
 use App\Models\FormSubmission;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsReport;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use App\Support\PdfRenderer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -42,14 +41,9 @@ class AnalyticsController extends Controller
     public function exportPdf(Request $request): Response
     {
         $data = $this->analyticsData($request);
-        $options = new Options;
-        $options->set('isRemoteEnabled', false);
-        $pdf = new Dompdf($options);
-        $pdf->loadHtml(view('intranet.analytics.pdf', $data)->render(), 'UTF-8');
-        $pdf->setPaper('A4', 'portrait');
-        $pdf->render();
+        $pdf = PdfRenderer::render(view('intranet.analytics.pdf', $data)->render());
 
-        return response($pdf->output(), 200, [
+        return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="analytics-'.$data['jours'].'-jours-'.now()->format('Ymd-His').'.pdf"',
             'Cache-Control' => 'private, no-store',

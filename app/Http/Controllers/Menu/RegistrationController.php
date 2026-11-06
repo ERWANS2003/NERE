@@ -6,8 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\MenuCampaign;
 use App\Models\MenuRegistration;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use App\Support\PdfRenderer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -118,17 +117,12 @@ class RegistrationController extends Controller
             ->with('choices')
             ->firstOrFail();
 
-        $options = new Options;
-        $options->set('isRemoteEnabled', false);
-        $pdf = new Dompdf($options);
-        $pdf->loadHtml(view('menu.registration.pdf', [
+        $pdf = PdfRenderer::render(view('menu.registration.pdf', [
             'campaign' => $campaign->load('days'),
             'registration' => $registration,
-        ])->render(), 'UTF-8');
-        $pdf->setPaper('A4', 'portrait');
-        $pdf->render();
+        ])->render());
 
-        return response($pdf->output(), 200, [
+        return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="mes-menus-'.$campaign->starts_on->format('Y-m-d').'.pdf"',
             'Cache-Control' => 'private, no-store',
