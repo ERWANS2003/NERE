@@ -100,11 +100,13 @@ Route::middleware(['auth', 'active'])
         Route::get('/{campaign:link_token}/telecharger', [RegistrationController::class, 'download'])->name('registration.download');
     });
 
-Route::middleware(['auth', 'active', 'module:payroll'])->prefix('intranet')->group(function (): void {
-    Route::get('/mes-bulletins', [MyPayslipController::class, 'index'])->name('intranet.payslips.index');
-    Route::get('/mes-bulletins/{payslip}', [MyPayslipController::class, 'download'])->name('intranet.payslips.download');
+Route::middleware(['auth', 'active'])->prefix('intranet')->group(function (): void {
+    Route::middleware('module:payroll')->group(function (): void {
+        Route::get('/mes-bulletins', [MyPayslipController::class, 'index'])->name('intranet.payslips.index');
+        Route::get('/mes-bulletins/{payslip}', [MyPayslipController::class, 'download'])->name('intranet.payslips.download');
+    });
 
-    Route::middleware('payroll.manager')->prefix('paie')->name('payroll.')->group(function (): void {
+    Route::middleware(['module:payroll,admins', 'payroll.manager'])->prefix('paie')->name('payroll.')->group(function (): void {
         Route::get('/', [PayrollPeriodController::class, 'index'])->name('index');
         Route::post('/periodes', [PayrollPeriodController::class, 'store'])->name('periods.store');
         Route::get('/periodes/{period}', [PayrollPeriodController::class, 'show'])->name('periods.show');

@@ -14,10 +14,14 @@ class EnsureModuleIsEnabled
     /**
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $module): Response
+    public function handle(Request $request, Closure $next, string $module, ?string $preview = null): Response
     {
         abort_unless($this->modules->has($module), 404);
-        abort_unless($this->modules->enabled($module), 404);
+
+        // « module:x,admins » : un module désactivé reste accessible aux
+        // administrateurs système, pour le vérifier avant de l'ouvrir à tous.
+        $adminPreview = $preview === 'admins' && $request->user()?->is_super_admin;
+        abort_unless($this->modules->enabled($module) || $adminPreview, 404);
 
         return $next($request);
     }

@@ -159,3 +159,13 @@ it('excludes inactive profiles from the payroll run', function () {
 
     expect(Payslip::pluck('user_id')->all())->toBe([$active->id]);
 });
+
+it('keeps a disabled payroll module visible to system administrators only', function () {
+    app(\App\Support\IntranetModuleRegistry::class)->setEnabled('payroll', false);
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs(payrollManager())->get(route('payroll.index'))->assertNotFound();
+    $this->actingAs(User::factory()->create())->get(route('intranet.payslips.index'))->assertNotFound();
+    $this->actingAs($admin)->get(route('payroll.index'))->assertOk();
+    $this->actingAs($admin)->get(route('intranet.dashboard'))->assertSee('Masqué');
+});
