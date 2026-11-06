@@ -101,7 +101,7 @@ Route::middleware(['auth', 'active'])
     });
 
 Route::middleware(['auth', 'active'])->prefix('intranet')->group(function (): void {
-    Route::middleware('module:payroll')->group(function (): void {
+    Route::middleware('module:payroll,admins')->group(function (): void {
         Route::get('/mes-bulletins', [MyPayslipController::class, 'index'])->name('intranet.payslips.index');
         Route::get('/mes-bulletins/{payslip}', [MyPayslipController::class, 'download'])->name('intranet.payslips.download');
     });
@@ -112,6 +112,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->group(function (): vo
         Route::get('/periodes/{period}', [PayrollPeriodController::class, 'show'])->name('periods.show');
         Route::post('/periodes/{period}/calculer', [PayrollPeriodController::class, 'calculate'])->name('periods.calculate');
         Route::post('/periodes/{period}/cloturer', [PayrollPeriodController::class, 'close'])->name('periods.close');
+        Route::delete('/periodes/{period}', [PayrollPeriodController::class, 'destroy'])->name('periods.destroy');
         Route::get('/periodes/{period}/bulletins', [PayrollPeriodController::class, 'batch'])->name('periods.batch');
         Route::get('/periodes/{period}/livre', [PayrollPeriodController::class, 'ledger'])->name('periods.ledger');
         Route::get('/periodes/{period}/salaries/{user}', [PayrollPeriodController::class, 'employee'])->name('periods.employee');
@@ -125,6 +126,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->group(function (): vo
         Route::post('/rubriques', [PayrollRubricController::class, 'store'])->name('rubrics.store');
         Route::get('/rubriques/{rubric}', [PayrollRubricController::class, 'edit'])->name('rubrics.edit');
         Route::put('/rubriques/{rubric}', [PayrollRubricController::class, 'update'])->name('rubrics.update');
+        Route::delete('/rubriques/{rubric}', [PayrollRubricController::class, 'destroy'])->name('rubrics.destroy');
         Route::put('/parametres', [PayrollRubricController::class, 'settings'])->name('settings');
 
         Route::get('/salaries', [PayrollProfileController::class, 'index'])->name('profiles.index');

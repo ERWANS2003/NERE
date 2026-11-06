@@ -79,4 +79,11 @@
             <button class="bouton-primaire">Enregistrer</button>
         </div>
     </form>
+    @if($rubric->exists)
+        <form method="POST" action="{{ route('payroll.rubrics.destroy', $rubric) }}" class="mx-auto mt-4 max-w-3xl text-right" onsubmit="return confirm('Supprimer la rubrique {{ $rubric->code }} ? Elle sera retirée des fiches et des variables du mois en cours.')">
+            @csrf
+            @method('DELETE')
+            <button class="text-sm font-medium text-red-700 hover:underline">Supprimer la rubrique</button>
+        </form>
+    @endif
 </x-intranet-layout>

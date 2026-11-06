@@ -75,7 +75,7 @@
                     </a>
                 </li>
                 @endif
-                @if($enabledModules['payroll']['enabled'] && $currentUser->payslips()->whereHas('period', fn ($q) => $q->where('status', 'closed'))->exists())
+                @if(isset($enabledModules['payroll']) && ($enabledModules['payroll']['enabled'] || $currentUser->is_super_admin) && $currentUser->payslips()->whereHas('period', fn ($q) => $q->where('status', 'closed'))->exists())
                 <li>
                     <a id="intranet-payslips-link" href="{{ route('intranet.payslips.index') }}"
                        @if(request()->routeIs('intranet.payslips.*')) aria-current="page" @endif
@@ -87,7 +87,7 @@
                     </a>
                 </li>
                 @endif
-                @if(($enabledModules['payroll']['enabled'] || $currentUser->is_super_admin) && $currentUser->hasPermission('payroll.manage'))
+                @if(isset($enabledModules['payroll']) && ($enabledModules['payroll']['enabled'] || $currentUser->is_super_admin) && $currentUser->hasPermission('payroll.manage'))
                 <li>
                     <a id="intranet-payroll-link" href="{{ route('payroll.index') }}"
                        @if(request()->routeIs('payroll.*')) aria-current="page" @endif

@@ -71,6 +71,15 @@
         </table>
     </section>
 
+    @php($testMode = ! app(\App\Support\IntranetModuleRegistry::class)->enabled('payroll') && auth()->user()->is_super_admin)
+    @if(! $period->isClosed() || $testMode)
+        <form method="POST" action="{{ route('payroll.periods.destroy', $period) }}" class="mt-8 text-right" onsubmit="return confirm('Supprimer définitivement la paie de {{ $period->label() }} et tous ses bulletins ?')">
+            @csrf
+            @method('DELETE')
+            <button class="text-sm font-medium text-red-700 hover:underline">Supprimer cette paie{{ $period->isClosed() ? ' (mode test, module masqué)' : '' }}</button>
+        </form>
+    @endif
+
     @if(! $period->isClosed() && $payslips->isNotEmpty())
         <section class="mt-8 rounded-xl border border-red-200 bg-white p-5">
             <h2 class="font-semibold text-graphite-900">Clôturer la paie</h2>

@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Payroll\PayrollCalculator;
 
+beforeEach(fn () => config(['payroll.available' => true]));
+
 // Valeurs de test uniquement : ce ne sont pas des taux réglementaires.
 function payrollRubrics(): array
 {
@@ -168,4 +170,38 @@ it('keeps a disabled payroll module visible to system administrators only', func
     $this->actingAs(User::factory()->create())->get(route('intranet.payslips.index'))->assertNotFound();
     $this->actingAs($admin)->get(route('payroll.index'))->assertOk();
     $this->actingAs($admin)->get(route('intranet.dashboard'))->assertSee('Masqué');
+});
+
+it('deletes test payrolls and rubrics while the module is masked', function () {
+    $r = payrollRubrics();
+    $admin = User::factory()->superAdmin()->create();
+    PayrollProfile::create(['user_id' => $admin->id, 'base_salary' => 100000, 'active' => true])->rubrics()->attach($r['prime']->id, ['amount' => 5000]);
+    $period = PayrollPeriod::create(['year' => 2026, 'month' => 11, 'status' => 'open']);
+    $this->actingAs($admin)->post(route('payroll.periods.calculate', $period));
+    $this->post(route('payroll.periods.close', $period), ['confirmation' => 'novembre 2026']);
+    expect($period->fresh()->isClosed())->toBeTrue();
+
+    // Module actif : une paie clôturée est définitive.
+    $this->delete(route('payroll.periods.destroy', $period))->assertStatus(409);
+
+    // Module masqué : l'administrateur peut effacer sa paie de test et voit ses bulletins.
+    app(\App\Support\IntranetModuleRegistry::class)->setEnabled('payroll', false);
+    $this->get(route('intranet.payslips.index'))->assertOk()->assertSee('Novembre 2026');
+    $this->delete(route('payroll.periods.destroy', $period))->assertRedirect(route('payroll.index'));
+    expect(PayrollPeriod::count())->toBe(0)->and(Payslip::count())->toBe(0);
+
+    $this->delete(route('payroll.rubrics.destroy', $r['prime']))->assertRedirect(route('payroll.rubrics.index'));
+    expect(PayrollRubric::find($r['prime']->id))->toBeNull()
+        ->and(PayrollProfile::first()->rubrics()->count())->toBe(0);
+});
+
+it('hides payroll everywhere when it is not available', function () {
+    config(['payroll.available' => false]);
+    $admin = User::factory()->superAdmin()->create();
+
+    expect(app(\App\Support\IntranetModuleRegistry::class)->has('payroll'))->toBeFalse();
+    $this->actingAs($admin)->get(route('payroll.index'))->assertNotFound();
+    $this->actingAs($admin)->get(route('intranet.payslips.index'))->assertNotFound();
+    $this->actingAs($admin)->get(route('intranet.dashboard'))->assertOk()->assertDontSee('intranet-payroll-link', false);
+    $this->actingAs($admin)->get(route('admin.modules.index'))->assertOk()->assertDontSee('Paie');
 });

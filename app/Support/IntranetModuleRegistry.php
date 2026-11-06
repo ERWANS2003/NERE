@@ -26,12 +26,12 @@ class IntranetModuleRegistry
     public function all(): array
     {
         $settings = AppSetting::query()
-            ->whereIn('key', array_map($this->settingKey(...), array_keys(self::MODULES)))
+            ->whereIn('key', array_map($this->settingKey(...), array_keys($this->modules())))
             ->pluck('value', 'key');
 
         $modules = [];
 
-        foreach (self::MODULES as $key => $label) {
+        foreach ($this->modules() as $key => $label) {
             $storedValue = $settings->get($this->settingKey($key));
 
             if ($storedValue !== null && ! in_array($storedValue, ['0', '1'], true)) {
@@ -49,7 +49,18 @@ class IntranetModuleRegistry
 
     public function has(string $module): bool
     {
-        return array_key_exists($module, self::MODULES);
+        return array_key_exists($module, $this->modules());
+    }
+
+    /**
+     * La paie n'existe pour personne, administrateurs compris, tant que
+     * PAYROLL_AVAILABLE n'est pas activé dans le .env.
+     *
+     * @return array<string, string>
+     */
+    private function modules(): array
+    {
+        return config('payroll.available') ? self::MODULES : array_diff_key(self::MODULES, ['payroll' => true]);
     }
 
     public function enabled(string $module): bool

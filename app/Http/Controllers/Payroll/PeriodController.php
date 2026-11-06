@@ -14,6 +14,7 @@ use App\Services\AdminAudit;
 use App\Services\Payroll\PayrollLedgerExporter;
 use App\Services\Payroll\PayrollService;
 use App\Services\Payroll\PayslipPdf;
+use App\Support\IntranetModuleRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -100,6 +101,21 @@ class PeriodController extends Controller
         AdminAudit::record('clôture paie', 'paie', $period, null, ['net_total' => $period->payslips()->sum('net')], 'Paie '.$period->label());
 
         return back()->with('success', 'La paie de '.$period->label().' est clôturée : les bulletins sont visibles par les salariés.');
+    }
+
+    /**
+     * Une paie ouverte peut être supprimée. Une paie clôturée ne peut l'être
+     * que tant que le module est masqué (phase de test), par un administrateur.
+     */
+    public function destroy(Request $request, PayrollPeriod $period): RedirectResponse
+    {
+        $testMode = ! app(IntranetModuleRegistry::class)->enabled('payroll') && $request->user()->is_super_admin;
+        abort_if($period->isClosed() && ! $testMode, 409, 'Une paie clôturée ne peut pas être supprimée.');
+
+        AdminAudit::record('suppression paie', 'paie', $period, ['mois' => $period->label(), 'statut' => $period->status, 'bulletins' => $period->payslips()->count()], null, 'Paie '.$period->label());
+        $period->delete();
+
+        return redirect()->route('payroll.index')->with('success', 'La paie de '.$period->label().' a été supprimée.');
     }
 
     public function employee(PayrollPeriod $period, User $user): View

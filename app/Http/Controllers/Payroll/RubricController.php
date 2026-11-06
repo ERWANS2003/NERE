@@ -52,6 +52,16 @@ class RubricController extends Controller
         return redirect()->route('payroll.rubrics.index')->with('success', 'La rubrique '.$rubric->code.' a été modifiée.');
     }
 
+    /** Les bulletins déjà calculés gardent leurs lignes : seule la rubrique disparaît. */
+    public function destroy(PayrollRubric $rubric): RedirectResponse
+    {
+        AdminAudit::record('suppression rubrique de paie', 'paie', $rubric, $rubric->only(['code', 'label', 'kind']));
+        $rubric->delete();
+        PayrollService::markStale();
+
+        return redirect()->route('payroll.rubrics.index')->with('success', 'La rubrique '.$rubric->code.' a été supprimée.');
+    }
+
     public function settings(Request $request): RedirectResponse
     {
         $validated = $request->validate(['days_per_month' => ['required', 'integer', 'between:1,31']]);
