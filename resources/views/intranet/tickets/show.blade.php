@@ -31,7 +31,7 @@
             <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{{ session('success') }}</div>
         @endif
 
-        <section class="overflow-hidden rounded-xl border border-graphite-200 bg-white">
+        <section class="overflow-hidden rounded-xl border border-graphite-200 bg-white" data-tour="ticket-entete">
             <div class="border-b border-graphite-100 p-6">
                 <div class="flex flex-wrap items-center gap-3">
                     <span class="font-mono text-sm text-graphite-500">{{ $ticket->number }}</span>
@@ -104,7 +104,7 @@
         </section>
 
         @if($isAgent)
-            <section class="rounded-xl border border-graphite-200 bg-white p-6">
+            <section class="rounded-xl border border-graphite-200 bg-white p-6" data-tour="ticket-traitement">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 class="text-lg font-semibold text-graphite-900">Traitement du ticket</h2>
                     @if($canTake && $ticket->status->value !== 'closed')
@@ -156,7 +156,7 @@
             </section>
         @endif
 
-        <section class="rounded-xl border border-graphite-200 bg-white p-6">
+        <section class="rounded-xl border border-graphite-200 bg-white p-6" data-tour="ticket-echanges">
             <h2 class="mb-5 text-lg font-semibold text-graphite-900">Échanges et suivi</h2>
             <div class="mb-6 space-y-4">
                 @foreach($ticket->activities as $activity)

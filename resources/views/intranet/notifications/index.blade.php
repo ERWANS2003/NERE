@@ -37,6 +37,7 @@
         <section
             class="mb-6 rounded-lg border border-graphite-200 bg-white p-5"
             aria-labelledby="push-notifications-heading"
+            data-tour="notifications-push"
             data-web-push
             data-public-key-url="{{ route('intranet.notifications.push.public-key') }}"
             data-subscribe-url="{{ route('intranet.notifications.push.subscriptions.store') }}"
@@ -61,7 +62,7 @@
         </p>
     @endif
 
-    <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden">
+    <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden" data-tour="notifications-liste">
         @forelse($notifications as $notification)
             @php $d = $notification->data; $nonLue = is_null($notification->read_at); @endphp
             <form method="POST" action="{{ route('intranet.notifications.mark-read', $notification->id) }}">

@@ -17,7 +17,7 @@
 
     <form method="POST" action="{{ route('menu.manager.store') }}" class="space-y-6">
         @csrf
-        <section class="overflow-hidden rounded-lg border border-graphite-200 bg-white">
+        <section class="overflow-hidden rounded-lg border border-graphite-200 bg-white" data-tour="menu-creation-semaine">
             <div class="border-b border-graphite-100 px-5 py-4 sm:px-6">
                 <h2 class="font-bold text-graphite-900">Période et publication</h2>
                 <p class="mt-1 text-sm text-graphite-600">Une campagne correspond toujours à une semaine complète, du lundi au vendredi.</p>
@@ -45,7 +45,7 @@
         </section>
 
         @foreach(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'] as $index => $weekday)
-            <section class="overflow-hidden rounded-lg border border-graphite-200 bg-white">
+            <section class="overflow-hidden rounded-lg border border-graphite-200 bg-white" data-tour="menu-creation-plats">
                 <div class="flex items-center gap-3 border-b border-graphite-100 px-5 py-4 sm:px-6">
                     <span class="flex h-9 w-9 items-center justify-center rounded-md bg-graphite-50 text-sm font-semibold text-graphite-600">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                     <div>

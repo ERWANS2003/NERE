@@ -11,11 +11,12 @@
     </div>
 
     <!-- Departments Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-tour="departements-liste">
         
         @foreach(\App\Models\Department::active()->withCount('services')->ordered()->get() as $department)
             <a 
                 href="{{ route('intranet.departments.show', strtolower($department->code)) }}"
+                data-tour="departement-carte"
                 class="bg-white rounded-xl border-2 border-graphite-200 hover:border-nere-500 hover:shadow-lg transition-all duration-300 overflow-hidden group"
             >
                 <!-- Department Image -->

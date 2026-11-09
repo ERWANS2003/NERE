@@ -32,7 +32,7 @@
         <div class="bg-white rounded-xl border border-graphite-200 overflow-hidden">
 
             {{-- En-tête --}}
-            <div class="p-6 border-b border-graphite-100">
+            <div class="p-6 border-b border-graphite-100" data-tour="demande-entete">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
@@ -113,7 +113,7 @@
         </div>
 
         @if($submission->status === 'pending' && $canHandle)
-            <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
+            <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5" data-tour="demande-prise-en-charge">
                 <h2 class="font-semibold text-blue-950">Prise en charge</h2>
                 @if($submission->assigned_to === null || $submission->assigned_to === auth()->id())
                     <p class="mt-1 text-sm text-blue-900">Attribuez cette demande à votre compte pour indiquer à l’équipe que vous la traitez.</p>
@@ -134,7 +134,7 @@
 
         @if($submission->status === 'pending' && $canReview)
             <div class="mt-6 rounded-xl border border-graphite-200 bg-white p-5">
-                <h2 class="text-lg font-semibold text-graphite-900">Décision du chef de département</h2>
+                <h2 class="text-lg font-semibold text-graphite-900" data-tour="demande-decision">Décision du chef de département</h2>
                 <p class="mt-1 text-sm text-graphite-600">Après examen, approuvez ou rejetez la demande. Votre commentaire sera transmis au demandeur.</p>
                 <form method="POST" action="{{ route('intranet.submissions.update', $submission) }}" class="mt-4 space-y-4">
                     @csrf

@@ -15,7 +15,7 @@
 
             @include('intranet.announcements.partials.form-fields')
 
-            <div class="flex items-center gap-3 pt-2">
+            <div class="flex items-center gap-3 pt-2" data-tour="annonce-publier">
                 <x-bouton-primaire>Publier</x-bouton-primaire>
                 <a href="{{ route('intranet.announcements.index') }}" class="bouton-secondaire">Annuler</a>
             </div>

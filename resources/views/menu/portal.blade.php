@@ -53,7 +53,7 @@
                             </span>
                         @endif
                     </div>
-                    <a href="{{ route('menu.registration.show', $campaign->link_token) }}" class="bouton-primaire mt-5 min-h-11 w-full rounded-md sm:w-auto">
+                    <a href="{{ route('menu.registration.show', $campaign->link_token) }}" data-tour="menu-semaine" class="bouton-primaire mt-5 min-h-11 w-full rounded-md sm:w-auto">
                         Choisir mes menus
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7l7 7-7 7"/></svg>
                     </a>

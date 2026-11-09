@@ -25,7 +25,7 @@
               class="bg-white rounded-xl border border-graphite-200 p-8 space-y-6">
             @csrf
 
-            <div>
+            <div data-tour="conges-type">
                 <x-etiquette for="policy_id">Type de congé</x-etiquette>
                 <select id="policy_id" name="policy_id" required class="champ"
                         x-model="policyId"
@@ -45,7 +45,7 @@
                 </p>
             </div>
 
-            <div class="grid gap-6 sm:grid-cols-2">
+            <div class="grid gap-6 sm:grid-cols-2" data-tour="conges-dates">
                 <div>
                     <x-etiquette for="start_date">Date de début</x-etiquette>
                     <input type="date" id="start_date" name="start_date" required class="champ"
@@ -62,7 +62,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2" data-tour="conges-demi">
                 <input type="checkbox" id="is_half_day" name="is_half_day" value="1"
                        x-model="demiJournee" @change="if (demiJournee) fin = debut; calcul()"
                        class="rounded border-graphite-300 text-nere-600 focus:ring-nere-600/30">
@@ -74,17 +74,17 @@
                 <span class="text-graphite-500">(hors week-ends ; jours fériés non déduits)</span>
             </div>
 
-            <div>
+            <div data-tour="conges-motif">
                 <x-etiquette for="reason">Motif (facultatif)</x-etiquette>
                 <textarea id="reason" name="reason" rows="3" maxlength="1000" class="champ">{{ old('reason') }}</textarea>
             </div>
 
-            <div>
+            <div data-tour="conges-urgence">
                 <x-etiquette for="emergency_contact">Contact en cas d'urgence (facultatif)</x-etiquette>
                 <x-champ id="emergency_contact" name="emergency_contact" :value="old('emergency_contact')" maxlength="255" />
             </div>
 
-            <div class="flex items-center gap-3 pt-2">
+            <div class="flex items-center gap-3 pt-2" data-tour="conges-envoyer">
                 <x-bouton-primaire>Soumettre la demande</x-bouton-primaire>
                 <a href="{{ route('intranet.time-off.index') }}" class="bouton-secondaire">Annuler</a>
             </div>

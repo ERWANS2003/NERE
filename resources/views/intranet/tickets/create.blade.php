@@ -13,7 +13,7 @@
         </div>
 
         @if($suggestedArticles->isNotEmpty())
-            <section class="mb-6 rounded-xl border border-or-200 bg-or-50 p-5" aria-labelledby="suggested-guides-title">
+            <section data-tour="ticket-suggestions" class="mb-6 rounded-xl border border-or-200 bg-or-50 p-5" aria-labelledby="suggested-guides-title">
                 <div class="mb-4">
                     <h2 id="suggested-guides-title" class="text-lg font-semibold text-graphite-900">Avant d’envoyer votre demande</h2>
                     <p class="mt-1 text-sm text-graphite-700">Ces guides peuvent vous aider à résoudre le problème plus rapidement.</p>
@@ -41,7 +41,7 @@
                 @error('subject')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-2" data-tour="ticket-classement">
                 <div>
                     <label for="category" class="mb-1 block text-sm font-medium text-graphite-800">Catégorie <span class="text-red-600">*</span></label>
                     <select id="category" name="category" required class="w-full rounded-lg border border-graphite-300 px-3 py-2">
@@ -77,7 +77,7 @@
                 @error('attachments.*')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
 
-            <div class="flex justify-end gap-3 border-t border-graphite-100 pt-5">
+            <div class="flex justify-end gap-3 border-t border-graphite-100 pt-5" data-tour="ticket-envoyer">
                 <a href="{{ route('intranet.tickets.index') }}" class="rounded-lg border border-graphite-300 px-4 py-2 text-sm text-graphite-700 hover:bg-graphite-50">Annuler</a>
                 <button type="submit" class="rounded-lg bg-nere-700 px-4 py-2 text-sm font-semibold text-white hover:bg-nere-800">Envoyer au support</button>
             </div>

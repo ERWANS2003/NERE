@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#1b2126">
     <title>@yield('title', 'Menu du personnel') · NÉRÉ Mining</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-white text-graphite-900 antialiased">
     <header class="sticky top-0 z-30 border-b border-graphite-200 bg-white">
@@ -70,5 +71,8 @@
             <a href="{{ route('intranet.dashboard') }}" class="font-medium text-graphite-600 transition hover:text-nere-700">Retour à l’intranet</a>
         </div>
     </footer>
+    @include('intranet.partials.tutorial')
+    {{-- Livewire embarque et démarre Alpine (guides, formulaires interactifs). --}}
+    @livewireScripts
 </body>
 </html>

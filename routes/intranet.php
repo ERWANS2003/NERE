@@ -40,6 +40,8 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/tutoriel/terminer', [TutorialController::class, 'complete'])->name('tutorial.complete');
+    Route::get('/aide', [TutorialController::class, 'help'])->name('help');
+    Route::get('/aide/guides/{guide}', [TutorialController::class, 'guide'])->name('help.guide');
 
     // Départements — vitrine (vues maquette, basées sur le code du département)
     Route::prefix('departments')->name('departments.')->group(function () {

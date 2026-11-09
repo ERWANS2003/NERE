@@ -21,7 +21,7 @@
     </x-intranet.page-header>
 
     {{-- Filtres statut --}}
-    <x-intranet.filters label="Filtrer mes demandes par statut" class="mb-6 flex flex-wrap gap-2">
+    <x-intranet.filters label="Filtrer mes demandes par statut" data-tour="mes-demandes-filtres" class="mb-6 flex flex-wrap gap-2">
         @php
             $filtres = [
                 '' => 'Toutes',
@@ -41,7 +41,7 @@
     </x-intranet.filters>
 
     {{-- Liste --}}
-    <x-intranet.table>
+    <x-intranet.table data-tour="mes-demandes-liste">
         @if($submissions->count() > 0)
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">

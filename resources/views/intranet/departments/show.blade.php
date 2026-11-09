@@ -63,7 +63,7 @@
     <div x-data="{ onglet: '{{ $formsEnabled ? 'services' : 'equipe' }}' }">
 
         <div class="border-b border-graphite-200 mb-6" role="tablist" aria-label="Sections du département">
-            <nav class="flex gap-1 -mb-px overflow-x-auto">
+            <nav class="flex gap-1 -mb-px overflow-x-auto" data-tour="departement-onglets">
                 @php
                     $onglets = $formsEnabled
                         ? [
@@ -77,6 +77,7 @@
                     <button
                         type="button"
                         role="tab"
+                        data-tour="onglet-{{ $cle }}"
                         :aria-selected="onglet === '{{ $cle }}'"
                         @click="onglet = '{{ $cle }}'"
                         class="flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition"
@@ -158,7 +159,7 @@
                                     ? route('intranet.time-off.create')
                                     : route('intranet.forms.show', $form);
                             @endphp
-                            <a href="{{ $formUrl }}" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
+                            <a href="{{ $formUrl }}" data-tour="formulaire-lien" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
                                 Faire une demande
                             </a>
                         </div>

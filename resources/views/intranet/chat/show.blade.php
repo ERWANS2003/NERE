@@ -1,6 +1,6 @@
 <x-intranet-layout title="Chat · {{ $room->name }}">
     <div class="grid gap-6 lg:grid-cols-[16rem_1fr]">
-        <aside class="space-y-5">
+        <aside class="space-y-5" data-tour="chat-salons">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold text-graphite-900">Chat</h1>
                 @if(auth()->user()->is_super_admin)
@@ -31,7 +31,7 @@
             @endforeach
         </aside>
 
-        <section class="flex h-[calc(100vh-11rem)] min-h-[28rem] flex-col rounded-xl border border-graphite-200 bg-white" x-data="chatRoom(@js($config))">
+        <section data-tour="chat-fil" class="flex h-[calc(100vh-11rem)] min-h-[28rem] flex-col rounded-xl border border-graphite-200 bg-white" x-data="chatRoom(@js($config))">
             <header class="flex items-center justify-between gap-3 border-b border-graphite-100 px-5 py-3">
                 <div class="min-w-0">
                     <h2 class="truncate font-semibold text-graphite-900">@if($room->type === \App\Models\ChatRoom::PRIVATE)<svg class="mr-1 inline h-3.5 w-3.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Privé"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>@else# @endif{{ $room->name }}</h2>
@@ -91,7 +91,7 @@
                 </template>
             </div>
 
-            <form @submit.prevent="send()" class="border-t border-graphite-100 p-3">
+            <form @submit.prevent="send()" class="border-t border-graphite-100 p-3" data-tour="chat-saisie">
                 <p x-show="error" x-text="error" class="mb-2 text-sm text-red-700" role="alert"></p>
                 <div class="flex items-end gap-2">
                     <label for="chat-body" class="sr-only">Votre message</label>

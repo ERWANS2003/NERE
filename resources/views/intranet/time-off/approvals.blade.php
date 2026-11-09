@@ -27,7 +27,7 @@
     @if($requests->count() > 0)
         <div class="space-y-4">
             @foreach($requests as $req)
-                <div class="bg-white rounded-lg border border-graphite-200 p-5"
+                <div class="bg-white rounded-lg border border-graphite-200 p-5" data-tour="approbation-demande"
                      x-data="{ ouvert: false, decision: null }">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div class="flex items-start gap-4 min-w-0">
@@ -46,7 +46,7 @@
                             </div>
                         </div>
 
-                        <div class="flex gap-2 shrink-0">
+                        <div class="flex gap-2 shrink-0" data-tour="approbation-boutons">
                             <button type="button" @click="ouvert = true; decision = 'approve'"
                                     class="bouton-primaire">Approuver</button>
                             <button type="button" @click="ouvert = true; decision = 'reject'"

@@ -12,14 +12,14 @@
     >
         <x-slot:actions>
             @if($estApprobateur)
-                <x-button :href="route('intranet.time-off.approvals')" variant="secondary" class="relative">
+                <x-button :href="route('intranet.time-off.approvals')" variant="secondary" class="relative" data-tour="conges-approbations">
                     Approbations
                     @if($enAttente > 0)
                         <span class="ml-1 inline-flex items-center justify-center rounded-full bg-nere-600 px-1.5 text-xs font-bold text-white">{{ $enAttente }}</span>
                     @endif
                 </x-button>
             @endif
-            <x-button :href="route('intranet.time-off.create')">
+            <x-button :href="route('intranet.time-off.create')" data-tour="conges-nouvelle">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -35,7 +35,7 @@
     @endif
 
     {{-- Cartes de solde --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" data-tour="conges-soldes">
         @forelse($balances as $balance)
             @php
                 $total = (float) $balance->total_days;
@@ -64,7 +64,7 @@
 
     {{-- Historique --}}
     <h2 class="text-xl font-bold text-graphite-900 mb-4">Historique des demandes</h2>
-    <x-intranet.table>
+    <x-intranet.table data-tour="conges-historique">
         @if($requests->count() > 0)
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -90,7 +90,7 @@
                                     @if($req->status === 'pending' || ($req->status === 'approved' && $req->start_date?->isAfter(today())))
                                         <form method="POST" action="{{ route('intranet.time-off.cancel', $req) }}" onsubmit="return confirm('Annuler cette demande de congé ?')">
                                             @csrf
-                                            <button class="text-sm font-medium text-nere-700 hover:underline">Annuler</button>
+                                            <button class="text-sm font-medium text-nere-700 hover:underline" data-tour="conges-annuler">Annuler</button>
                                         </form>
                                     @endif
                                 </td>

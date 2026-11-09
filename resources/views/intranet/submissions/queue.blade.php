@@ -17,7 +17,7 @@
         </x-slot:actions>
     </x-intranet.page-header>
 
-    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+    <div class="mb-6 grid gap-4 sm:grid-cols-2" data-tour="file-raccourcis">
         <a href="{{ route('intranet.submissions.queue', ['status' => 'pending']) }}"
            class="rounded-xl border border-amber-200 bg-amber-50 p-5 transition hover:border-amber-300">
             <span class="text-sm font-medium text-amber-800">Demandes en attente</span>
@@ -70,7 +70,7 @@
         </div>
     </x-intranet.filters>
 
-    <x-intranet.table>
+    <x-intranet.table data-tour="file-liste">
         @if($submissions->isNotEmpty())
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">

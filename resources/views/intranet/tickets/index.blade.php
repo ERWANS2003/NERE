@@ -20,7 +20,7 @@
         </x-slot:actions>
     </x-intranet.page-header>
 
-    <x-intranet.filters as-form label="Filtrer les tickets" data-live-search class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_220px_auto]">
+    <x-intranet.filters as-form label="Filtrer les tickets" data-tour="tickets-filtres" data-live-search class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_220px_auto]">
         <input
             type="search"
             name="search"
@@ -37,7 +37,7 @@
         <x-button type="submit" variant="secondary">Filtrer</x-button>
     </x-intranet.filters>
 
-    <x-intranet.table>
+    <x-intranet.table data-tour="tickets-liste">
         @if($tickets->isNotEmpty())
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">

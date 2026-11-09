@@ -19,7 +19,7 @@
                 {{ $campaign->starts_on->translatedFormat('l d F Y') }} <span aria-hidden="true">—</span> {{ $campaign->ends_on->translatedFormat('l d F Y') }}
             </p>
             @if($registration)
-                <a href="{{ route('menu.registration.download', $campaign->link_token) }}" data-no-skeleton class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">
+                <a href="{{ route('menu.registration.download', $campaign->link_token) }}" data-no-skeleton data-tour="menu-telecharger" class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0l-4-4m4 4l4-4m-13 7v2a1 1 0 001 1h16a1 1 0 001-1v-2"/></svg>
                     Télécharger mes choix (PDF)
                 </a>
@@ -47,7 +47,7 @@
     @if($canRegister)
         <form method="POST" action="{{ route('menu.registration.store', $campaign->link_token) }}" class="space-y-5">
             @csrf
-            <section class="rounded-lg border border-graphite-200 bg-white p-5 sm:p-6">
+            <section class="rounded-lg border border-graphite-200 bg-white p-5 sm:p-6" data-tour="menu-departement">
                 <div class="mb-4 flex items-center gap-3">
                     <span class="flex h-9 w-9 items-center justify-center rounded-md bg-graphite-50 text-sm font-semibold text-graphite-600">01</span>
                     <div>
@@ -78,7 +78,7 @@
                 <span class="hidden shrink-0 rounded-md bg-graphite-50 px-3 py-1.5 text-xs font-semibold text-graphite-600 sm:inline-flex">{{ $campaign->days->count() }} jours</span>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-4" data-tour="menu-jours">
                 @foreach($campaign->days as $day)
                     @php($previousChoice = $registration?->choices->firstWhere('menu_day_id', $day->id)?->selected_menu)
                     @php($weekdayNumber = $day->date->dayOfWeekIso)
@@ -133,7 +133,7 @@
                     </section>
                 @endforeach
             </div>
-            <div class="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-graphite-200 bg-white px-4 py-4 sm:static sm:mx-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:rounded-lg sm:border sm:px-5">
+            <div data-tour="menu-enregistrer" class="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-graphite-200 bg-white px-4 py-4 sm:static sm:mx-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:rounded-lg sm:border sm:px-5">
                 <p class="hidden text-sm text-graphite-500 sm:block">Vous pourrez modifier vos choix tant que les inscriptions sont ouvertes.</p>
                 <button class="bouton-primaire w-full sm:w-auto">
                     Enregistrer mes choix
