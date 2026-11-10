@@ -49,6 +49,7 @@
     <x-erreur :messages="$errors->get('department_id')" />
 </div>
 
+
 <div>
     <x-etiquette for="attachment">Pièce jointe (facultatif)</x-etiquette>
     @if(! empty($announcement?->attachment_path))
@@ -64,3 +65,20 @@
     <p class="mt-1.5 text-xs text-graphite-500">PDF, image, Word, Excel, PowerPoint ou texte, 10 Mo maximum.</p>
     <x-erreur :messages="$errors->get('attachment')" />
 </div>
+
+<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-graphite-200 bg-white/55 px-4 py-3 transition-colors hover:bg-white/80 has-[:checked]:border-nere-300 has-[:checked]:bg-nere-50/50">
+    <input
+        type="checkbox"
+        name="send_mail"
+        id="send_mail"
+        value="1"
+        @checked(old('send_mail'))
+        class="mt-0.5 h-4 w-4 shrink-0 rounded border-graphite-300 accent-nere-600"
+    >
+    <span>
+        <span class="block text-sm font-semibold text-graphite-900">Envoyer un e-mail aux destinataires</span>
+        <span class="mt-0.5 block text-xs leading-5 text-graphite-500">
+            Un e-mail riche contenant le titre, le contenu complet et un lien vers l'annonce sera envoyé à tous les destinataires ciblés. Sans cette option, seule la notification dans la cloche est envoyée.
+        </span>
+    </span>
+</label>

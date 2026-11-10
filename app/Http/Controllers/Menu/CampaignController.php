@@ -93,7 +93,7 @@ class CampaignController extends Controller
         });
 
         if ($campaign->status === 'open') {
-            $this->notifyChoosers($campaign);
+            $this->notifyChoosers($campaign, sendMail: $validated['status'] === 'open' && $request->boolean('send_mail'));
         }
 
         return redirect()
@@ -107,7 +107,7 @@ class CampaignController extends Controller
         abort_unless($campaign->status === 'draft', 409, 'Cette semaine est déjà publiée.');
 
         $campaign->update(['status' => 'open']);
-        $this->notifyChoosers($campaign);
+        $this->notifyChoosers($campaign, sendMail: false);
 
         return back()->with('success', 'La semaine de menus est publiée : les employés désignés sont notifiés.');
     }
@@ -165,8 +165,37 @@ class CampaignController extends Controller
         return redirect()->route('menu.manager.campaigns')->with('success', 'La semaine « '.$campaign->title.' » et ses choix ont été supprimés.');
     }
 
-    private function notifyChoosers(MenuCampaign $campaign): void
+    private function notifyChoosers(MenuCampaign $campaign, bool $reminder = false, bool $sendMail = false): void
     {
-        Notification::send(User::query()->menuChoosers()->get(), new MenuCampaignNotification($campaign));
+        Notification::send(
+            User::query()->menuChoosers()->get(),
+            new MenuCampaignNotification($campaign, $reminder, $sendMail)
+        );
+    }
+
+    /**
+     * Envoie un rappel par e-mail aux employés qui n'ont pas encore choisi.
+     */
+    public function sendReminder(Request $request, MenuCampaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === 'open', 409, 'Les inscriptions ne sont pas ouvertes.');
+
+        $registeredUserIds = $campaign->registrations()->whereNotNull('user_id')->pluck('user_id');
+        $pending = User::query()
+            ->menuChoosers()
+            ->whereNotIn('id', $registeredUserIds)
+            ->get();
+
+        if ($pending->isNotEmpty()) {
+            Notification::send($pending, new MenuCampaignNotification($campaign, reminder: true, sendMail: true));
+            $campaign->update(['reminder_sent_at' => now()]);
+        }
+
+        return back()->with(
+            'success',
+            $pending->isNotEmpty()
+                ? "Rappel envoyé par e-mail à {$pending->count()} employé(s) n'ayant pas encore choisi."
+                : "Tous les employés ont déjà choisi leurs plats."
+        );
     }
 }

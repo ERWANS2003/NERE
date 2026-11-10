@@ -15,6 +15,27 @@
         <p class="mt-3 text-sm font-semibold text-graphite-800">
             {{ $chosen->count() }} / {{ $chosen->count() + $pending->count() }} employés désignés ont choisi leurs plats.
         </p>
+
+        @if($campaign->status === 'open' && $pending->count() > 0)
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <form method="POST" action="{{ route('menu.manager.reminder', $campaign) }}"
+                      onsubmit="return confirm('Envoyer un rappel par e-mail aux {{ $pending->count() }} employé(s) qui n\'ont pas encore choisi ?')">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-lg border border-or-400 bg-or-50 px-4 py-2.5 text-sm font-semibold text-graphite-800 transition hover:bg-or-100 focus:outline-none focus:ring-2 focus:ring-or-400/50">
+                        <svg class="h-4 w-4 text-or-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        Envoyer un rappel par e-mail ({{ $pending->count() }} personne{{ $pending->count() > 1 ? 's' : '' }})
+                    </button>
+                </form>
+                @if($campaign->reminder_sent_at)
+                    <span class="text-xs text-graphite-500">
+                        Dernier rappel envoyé {{ $campaign->reminder_sent_at->locale('fr')->diffForHumans() }}
+                    </span>
+                @endif
+            </div>
+        @endif
     </section>
 
     <div class="grid gap-6 lg:grid-cols-2">

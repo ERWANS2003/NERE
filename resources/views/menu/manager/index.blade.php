@@ -71,6 +71,20 @@
                             <a href="{{ route('menu.manager.tracking', $campaign) }}" class="inline-flex min-h-10 items-center justify-center rounded-md border border-graphite-300 bg-white px-3.5 py-2 text-sm font-semibold text-graphite-700 transition hover:bg-graphite-50 hover:text-nere-700">Suivi des choix</a>
                         @endif
                         @if($campaign->status === 'open')
+                            <form method="POST" action="{{ route('menu.manager.reminder', $campaign) }}"
+                                  onsubmit="return confirm('Envoyer un rappel par e-mail aux employés qui n\'ont pas encore choisi ?')">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-or-400 bg-or-50 px-3.5 py-2 text-sm font-semibold text-graphite-800 transition hover:bg-or-100">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
+                                    Rappel e-mail
+                                    @if($campaign->reminder_sent_at)
+                                        <span class="text-xs font-normal text-graphite-500">(dernier : {{ $campaign->reminder_sent_at->locale('fr')->diffForHumans() }})</span>
+                                    @endif
+                                </button>
+                            </form>
                             <form method="POST" action="{{ route('menu.manager.close', $campaign) }}" onsubmit="return confirm('Clôturer les inscriptions ?')">
                                 @csrf
                                 <button class="inline-flex min-h-10 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-graphite-600 transition hover:bg-red-50 hover:text-red-700">Clôturer</button>

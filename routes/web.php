@@ -84,6 +84,7 @@ Route::middleware(['auth', 'active'])
             Route::post('/campagnes/{campaign}/publier', [CampaignController::class, 'publish'])->name('publish');
             Route::post('/campagnes/{campaign}/cloturer', [CampaignController::class, 'close'])->name('close');
             Route::post('/campagnes/{campaign}/rouvrir', [CampaignController::class, 'reopen'])->name('reopen');
+            Route::post('/campagnes/{campaign}/rappel', [CampaignController::class, 'sendReminder'])->name('reminder');
             Route::delete('/campagnes/{campaign}', [CampaignController::class, 'destroy'])->name('destroy');
             Route::get('/campagnes/{campaign}/suivi', [CampaignController::class, 'tracking'])->name('tracking');
             Route::get('/campagnes/{campaign}/exporter', MenuExportController::class)->name('export');

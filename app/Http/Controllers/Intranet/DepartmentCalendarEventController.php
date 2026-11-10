@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\CalendarEventPublished;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -39,13 +41,17 @@ class DepartmentCalendarEventController extends Controller
     {
         $event = CalendarEvent::create([
             ...$this->validatedEvent($request),
-            'user_id' => null,
+            'user_id'    => null,
             'created_by' => $request->user()->id,
         ]);
 
+        if ($request->boolean('send_mail')) {
+            $this->notifyAudience($event);
+        }
+
         return redirect()
             ->route('intranet.calendar.department-events.index')
-            ->with('success', 'Événement ajouté à l’agenda du département.');
+            ->with('success', "Événement ajouté à l'agenda du département.");
     }
 
     public function edit(Request $request, CalendarEvent $event): View
@@ -62,7 +68,7 @@ class DepartmentCalendarEventController extends Controller
 
         return redirect()
             ->route('intranet.calendar.department-events.index')
-            ->with('success', 'Événement mis à jour.');
+            ->with('success', "Événement mis à jour.");
     }
 
     public function destroy(Request $request, CalendarEvent $event): RedirectResponse
@@ -72,7 +78,7 @@ class DepartmentCalendarEventController extends Controller
 
         return redirect()
             ->route('intranet.calendar.department-events.index')
-            ->with('success', 'Événement supprimé de l’agenda.');
+            ->with('success', "Événement supprimé de l'agenda.");
     }
 
     private function eventForm(Request $request, CalendarEvent $event): View
@@ -90,6 +96,23 @@ class DepartmentCalendarEventController extends Controller
     }
 
     /**
+     * Envoie la notification (canal database + mail) aux membres du département.
+     */
+    private function notifyAudience(CalendarEvent $event): void
+    {
+        $destinataires = User::query()
+            ->where('actif', true)
+            ->when($event->department_id, fn ($q) => $q
+                ->whereHas('departments', fn ($d) => $d->where('departments.id', $event->department_id)))
+            ->when($event->created_by, fn ($q) => $q->where('id', '!=', $event->created_by))
+            ->get();
+
+        if ($destinataires->isNotEmpty()) {
+            Notification::send($destinataires, new CalendarEventPublished($event, sendMail: true));
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function validatedEvent(Request $request): array
@@ -101,16 +124,16 @@ class DepartmentCalendarEventController extends Controller
         $request->merge(['all_day' => $allDay ? '1' : '0']);
 
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:10000'],
-            'type' => ['required', Rule::in(self::EVENT_TYPES)],
-            'event_date' => ['required', 'date'],
-            'event_time' => ['required_unless:all_day,1', 'nullable', 'date_format:H:i'],
+            'title'         => ['required', 'string', 'max:255'],
+            'description'   => ['nullable', 'string', 'max:10000'],
+            'type'          => ['required', Rule::in(self::EVENT_TYPES)],
+            'event_date'    => ['required', 'date'],
+            'event_time'    => ['required_unless:all_day,1', 'nullable', 'date_format:H:i'],
             'department_id' => ['required', 'integer', Rule::in($departments->modelKeys())],
-            'all_day' => ['nullable', 'boolean'],
+            'all_day'       => ['nullable', 'boolean'],
         ]);
 
-        $validated['all_day'] = $allDay;
+        $validated['all_day']     = $allDay;
         $validated['event_time'] = $allDay ? null : ($validated['event_time'] ?? null);
 
         return $validated;

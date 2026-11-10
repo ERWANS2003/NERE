@@ -15,7 +15,8 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('menu.manager.store') }}" class="space-y-6">
+    <form method="POST" action="{{ route('menu.manager.store') }}" class="space-y-6"
+          x-data="{ status: '{{ old('status', 'open') }}' }">
         @csrf
         <section class="overflow-hidden rounded-lg border border-graphite-200 bg-white" data-tour="menu-creation-semaine">
             <div class="border-b border-graphite-100 px-5 py-4 sm:px-6">
@@ -31,15 +32,38 @@
                 <label>
                     <span class="etiquette">Clôture des inscriptions <span class="font-normal text-graphite-500">(facultatif)</span></span>
                     <input name="registration_closes_at" type="datetime-local" value="{{ old('registration_closes_at') }}" class="champ">
-                    <span class="mt-1.5 block text-xs leading-5 text-graphite-500">Sans date, les inscriptions restent ouvertes jusqu’à clôture manuelle.</span>
+                    <span class="mt-1.5 block text-xs leading-5 text-graphite-500">Sans date, les inscriptions restent ouvertes jusqu'à clôture manuelle.</span>
                 </label>
                 <label>
                     <span class="etiquette">Publication</span>
-                    <select name="status" required class="champ">
+                    <select name="status" required class="champ" @change="status = $event.target.value">
                         <option value="draft" @selected(old('status', 'open') === 'draft')>Enregistrer en brouillon</option>
                         <option value="open" @selected(old('status', 'open') === 'open')>Ouvrir les inscriptions</option>
                     </select>
-                    <span class="mt-1.5 block text-xs leading-5 text-graphite-500">Un brouillon n’apparaît pas dans le portail des employés.</span>
+                    <span class="mt-1.5 block text-xs leading-5 text-graphite-500">Un brouillon n'apparaît pas dans le portail des employés.</span>
+                </label>
+            </div>
+
+            {{-- Case : e-mail de notification à la publication --}}
+            <div class="border-t border-graphite-100 px-5 py-4 sm:px-6">
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-graphite-200 bg-white/55 px-4 py-3 transition-colors hover:bg-white/80 has-[:checked]:border-nere-300 has-[:checked]:bg-nere-50/50"
+                       :class="status === 'draft' ? 'opacity-50 pointer-events-none' : ''">
+                    <input
+                        type="checkbox"
+                        name="send_mail"
+                        id="send_mail"
+                        value="1"
+                        @checked(old('send_mail'))
+                        :disabled="status === 'draft'"
+                        class="mt-0.5 h-4 w-4 shrink-0 rounded border-graphite-300 accent-nere-600"
+                    >
+                    <span>
+                        <span class="block text-sm font-semibold text-graphite-900">Notifier les employés par e-mail dès la publication</span>
+                        <span class="mt-0.5 block text-xs leading-5 text-graphite-500">
+                            Un e-mail contenant le détail complet des menus de la semaine et un lien vers le portail de choix sera envoyé à tous les employés éligibles au menu.
+                            Disponible uniquement si la semaine est publiée directement (pas pour les brouillons).
+                        </span>
+                    </span>
                 </label>
             </div>
         </section>

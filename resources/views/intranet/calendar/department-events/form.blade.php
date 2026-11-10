@@ -84,6 +84,25 @@
                 Toute la journée
             </label>
 
+            @unless($editing)
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-graphite-200 bg-white/55 px-4 py-3 transition-colors hover:bg-white/80 has-[:checked]:border-nere-300 has-[:checked]:bg-nere-50/50">
+                <input
+                    type="checkbox"
+                    name="send_mail"
+                    id="send_mail"
+                    value="1"
+                    @checked(old('send_mail'))
+                    class="mt-0.5 h-4 w-4 shrink-0 rounded border-graphite-300 text-nere-600 focus:ring-nere-500"
+                >
+                <span>
+                    <span class="block text-sm font-semibold text-graphite-900">Notifier les membres par e-mail</span>
+                    <span class="mt-0.5 block text-xs leading-5 text-graphite-500">
+                        Un e-mail détaillant la date, le type et la description de l'événement sera envoyé à tous les membres du département sélectionné.
+                    </span>
+                </span>
+            </label>
+            @endunless
+
             <div class="flex flex-wrap justify-end gap-3 border-t border-graphite-100 pt-5">
                 <a href="{{ route('intranet.calendar.department-events.index') }}"
                    class="rounded-lg border border-graphite-300 px-4 py-2 text-sm font-medium text-graphite-700 hover:bg-graphite-50">Annuler</a>

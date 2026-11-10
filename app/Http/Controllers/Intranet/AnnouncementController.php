@@ -96,7 +96,7 @@ class AnnouncementController extends Controller
             $announcement->replaceAttachment($request->file('attachment'));
         }
 
-        $this->notifyAudience($announcement);
+        $this->notifyAudience($announcement, $request->boolean('send_mail'));
 
         return redirect()
             ->route('intranet.announcements.show', $announcement)
@@ -199,12 +199,12 @@ class AnnouncementController extends Controller
     /**
      * L'auteur est exclu de la notification : il vient de publier l'annonce.
      */
-    private function notifyAudience(Announcement $announcement): void
+    private function notifyAudience(Announcement $announcement, bool $sendMail = false): void
     {
         $destinataires = $announcement->audience();
 
         if ($destinataires->isNotEmpty()) {
-            Notification::send($destinataires, new AnnouncementPublished($announcement));
+            Notification::send($destinataires, new AnnouncementPublished($announcement, $sendMail));
         }
     }
 }
