@@ -728,3 +728,40 @@ it('paginates menu weeks ten per page', function () {
         ->assertDontSee('Semaine numéro 11')
         ->assertSee('page=2', false);
 });
+
+it('reminds one person who has not chosen and warns one with days left without a dish', function () {
+    \Illuminate\Support\Facades\Notification::fake();
+    $campaign = createOpenMenuCampaign();
+    $days = $campaign->days()->orderBy('date')->get();
+    $manager = createMenuManager();
+    $pending = User::factory()->create(['menu_eligible' => true, 'name' => 'Awa Attente']);
+    $partial = User::factory()->create(['menu_eligible' => true, 'name' => 'Ali Partiel']);
+    $complete = User::factory()->create(['menu_eligible' => true, 'name' => 'Ines Complet']);
+
+    $registration = $campaign->registrations()->create(['user_id' => $partial->id, 'employee_name' => $partial->name, 'employee_identifier' => 'local|'.$partial->id, 'department' => 'RH']);
+    $registration->choices()->create(['menu_day_id' => $days[0]->id, 'selected_menu' => 1]);
+    $full = $campaign->registrations()->create(['user_id' => $complete->id, 'employee_name' => $complete->name, 'employee_identifier' => 'local|'.$complete->id, 'department' => 'RH']);
+    foreach ($days as $day) {
+        $full->choices()->create(['menu_day_id' => $day->id, 'selected_menu' => 2]);
+    }
+
+    $this->actingAs($manager)->get(route('menu.manager.tracking', $campaign))
+        ->assertOk()
+        ->assertSee('Rappeler')
+        ->assertSee('Avertir les choix incomplets (1 personne)')
+        ->assertSee('Sans plat : '.$days[1]->date->locale('fr')->translatedFormat('l j F'));
+
+    $this->post(route('menu.manager.reminder.one', [$campaign, $pending]))->assertRedirect()->assertSessionHas('success', 'Rappel envoyé à Awa Attente.');
+    \Illuminate\Support\Facades\Notification::assertSentTo($pending, \App\Notifications\MenuCampaignNotification::class);
+
+    $this->post(route('menu.manager.reminder.one', [$campaign, $partial]))->assertRedirect();
+    \Illuminate\Support\Facades\Notification::assertSentTo($partial, \App\Notifications\MenuChoicesIncomplete::class,
+        fn ($n) => str_contains($n->toArray($partial)['message'], $days[4]->date->locale('fr')->translatedFormat('l j F')));
+
+    $this->post(route('menu.manager.reminder.one', [$campaign, $complete]))->assertStatus(409);
+
+    $this->post(route('menu.manager.warn-incomplete', $campaign))->assertSessionHas('success', 'Avertissement envoyé à 1 personne(s) ayant des jours sans plat.');
+    \Illuminate\Support\Facades\Notification::assertNotSentTo($complete, \App\Notifications\MenuChoicesIncomplete::class);
+
+    $this->actingAs($pending)->post(route('menu.manager.reminder.one', [$campaign, $partial]))->assertForbidden();
+});

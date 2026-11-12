@@ -7,6 +7,7 @@ use App\Models\MenuCampaign;
 use App\Models\MenuGuest;
 use App\Models\User;
 use App\Notifications\MenuCampaignNotification;
+use App\Notifications\MenuChoicesIncomplete;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -131,7 +132,9 @@ class CampaignController extends Controller
             ->get()
             ->each(fn (MenuGuest $guest) => $guest->setAttribute('has_chosen', $guestIdentifiers->contains($guest->employeeIdentifier())));
 
-        return view('menu.manager.tracking', compact('campaign', 'chosen', 'pending', 'guests'));
+        $missing = $this->missingDaysByUser($campaign);
+
+        return view('menu.manager.tracking', compact('campaign', 'chosen', 'pending', 'guests', 'missing'));
     }
 
     public function close(MenuCampaign $campaign): RedirectResponse
@@ -176,6 +179,65 @@ class CampaignController extends Controller
     /**
      * Envoie un rappel par e-mail aux employés qui n'ont pas encore choisi.
      */
+    /** Rappel ou avertissement à une seule personne, selon où elle en est. */
+    public function remindOne(MenuCampaign $campaign, User $user): RedirectResponse
+    {
+        abort_unless($campaign->status === 'open', 409, 'Les inscriptions ne sont pas ouvertes.');
+        abort_unless(User::query()->menuChoosers()->whereKey($user->id)->exists(), 404);
+
+        $registered = $campaign->registrations()->where('user_id', $user->id)->exists();
+        if (! $registered) {
+            $user->notify(new MenuCampaignNotification($campaign, reminder: true, sendMail: true));
+
+            return back()->with('success', "Rappel envoyé à {$user->name}.");
+        }
+
+        $days = $this->missingDaysByUser($campaign)[$user->id] ?? [];
+        abort_if($days === [], 409, 'Cette personne a choisi un plat pour chaque jour.');
+        $user->notify(new MenuChoicesIncomplete($campaign, $days));
+
+        return back()->with('success', "Avertissement envoyé à {$user->name} pour ".count($days).' jour(s) sans plat.');
+    }
+
+    /** Avertit tous les inscrits qui n'ont pas choisi de plat pour chaque jour. */
+    public function warnIncomplete(MenuCampaign $campaign): RedirectResponse
+    {
+        abort_unless($campaign->status === 'open', 409, 'Les inscriptions ne sont pas ouvertes.');
+
+        $missing = $this->missingDaysByUser($campaign);
+        $users = User::query()->menuChoosers()->whereKey(array_keys($missing))->get();
+        foreach ($users as $user) {
+            $user->notify(new MenuChoicesIncomplete($campaign, $missing[$user->id]));
+        }
+
+        return back()->with('success', $users->isEmpty()
+            ? 'Tous les inscrits ont choisi un plat pour chaque jour.'
+            : "Avertissement envoyé à {$users->count()} personne(s) ayant des jours sans plat.");
+    }
+
+    /**
+     * Jours sans plat choisi, par employé inscrit.
+     *
+     * @return array<int, list<string>>
+     */
+    private function missingDaysByUser(MenuCampaign $campaign): array
+    {
+        $days = $campaign->days()->orderBy('date')->get();
+        $missing = [];
+
+        foreach ($campaign->registrations()->whereNotNull('user_id')->with('choices:id,registration_id,menu_day_id')->get() as $registration) {
+            $chosenDayIds = $registration->choices->pluck('menu_day_id');
+            $labels = $days->reject(fn ($day) => $chosenDayIds->contains($day->id))
+                ->map(fn ($day) => $day->date->locale('fr')->translatedFormat('l j F'))
+                ->values()->all();
+            if ($labels !== []) {
+                $missing[$registration->user_id] = $labels;
+            }
+        }
+
+        return $missing;
+    }
+
     public function sendReminder(Request $request, MenuCampaign $campaign): RedirectResponse
     {
         abort_unless($campaign->status === 'open', 409, 'Les inscriptions ne sont pas ouvertes.');

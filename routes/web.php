@@ -85,6 +85,8 @@ Route::middleware(['auth', 'active'])
             Route::post('/campagnes/{campaign}/cloturer', [CampaignController::class, 'close'])->name('close');
             Route::post('/campagnes/{campaign}/rouvrir', [CampaignController::class, 'reopen'])->name('reopen');
             Route::post('/campagnes/{campaign}/rappel', [CampaignController::class, 'sendReminder'])->name('reminder');
+            Route::post('/campagnes/{campaign}/rappel/{user}', [CampaignController::class, 'remindOne'])->name('reminder.one');
+            Route::post('/campagnes/{campaign}/avertir-incomplets', [CampaignController::class, 'warnIncomplete'])->name('warn-incomplete');
             Route::delete('/campagnes/{campaign}', [CampaignController::class, 'destroy'])->name('destroy');
             Route::get('/campagnes/{campaign}/suivi', [CampaignController::class, 'tracking'])->name('tracking');
             Route::get('/campagnes/{campaign}/exporter', MenuExportController::class)->name('export');

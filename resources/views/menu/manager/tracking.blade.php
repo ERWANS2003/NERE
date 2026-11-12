@@ -16,6 +16,17 @@
             {{ $chosen->count() }} / {{ $chosen->count() + $pending->count() }} employés désignés ont choisi leurs plats.
         </p>
 
+        @if($campaign->status === 'open' && count($missing) > 0)
+            <form method="POST" action="{{ route('menu.manager.warn-incomplete', $campaign) }}" class="mt-4"
+                  onsubmit="return confirm('Avertir les {{ count($missing) }} personne(s) qui n\'ont pas choisi de plat pour chaque jour ?')">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-nere-300 bg-nere-50 px-4 py-2.5 text-sm font-semibold text-nere-800 transition hover:bg-nere-100">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v4m0 4h.01M10.3 3.86L1.82 18a2 2 0 001.7 3h16.96a2 2 0 001.7-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg>
+                    Avertir les choix incomplets ({{ count($missing) }} personne{{ count($missing) > 1 ? 's' : '' }})
+                </button>
+            </form>
+        @endif
+
         @if($campaign->status === 'open' && $pending->count() > 0)
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <form method="POST" action="{{ route('menu.manager.reminder', $campaign) }}"
@@ -44,9 +55,24 @@
                 <h2 class="border-b border-graphite-100 px-5 py-3 text-sm font-bold {{ $color }}">{{ $label }} ({{ $people->count() }})</h2>
                 <ul class="divide-y divide-graphite-100">
                     @forelse($people as $person)
+                        @php($joursManquants = $missing[$person->id] ?? [])
                         <li class="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
-                            <span class="font-medium text-graphite-900">{{ $person->name }}</span>
-                            <span class="truncate text-graphite-500">{{ $person->departments->pluck('name')->join(', ') ?: '-' }}</span>
+                            <span class="min-w-0">
+                                <span class="block font-medium text-graphite-900">{{ $person->name }}</span>
+                                <span class="block truncate text-xs text-graphite-500">{{ $person->departments->pluck('name')->join(', ') ?: '-' }}</span>
+                                @if($joursManquants)
+                                    <span class="mt-0.5 block text-xs font-medium text-nere-700">Sans plat : {{ implode(', ', $joursManquants) }}</span>
+                                @endif
+                            </span>
+                            @if($campaign->status === 'open' && ($label === 'Pas encore choisi' || $joursManquants))
+                                <form method="POST" action="{{ route('menu.manager.reminder.one', [$campaign, $person]) }}" class="shrink-0">
+                                    @csrf
+                                    <button type="submit" class="rounded-md border border-graphite-300 px-2.5 py-1.5 text-xs font-semibold text-graphite-700 transition hover:border-nere-300 hover:bg-nere-50 hover:text-nere-800"
+                                            title="{{ $label === 'Pas encore choisi' ? 'Envoyer un rappel à cette personne' : 'Signaler les jours sans plat à cette personne' }}">
+                                        {{ $label === 'Pas encore choisi' ? 'Rappeler' : 'Avertir' }}
+                                    </button>
+                                </form>
+                            @endif
                         </li>
                     @empty
                         <li class="px-5 py-4 text-sm text-graphite-500">Personne.</li>
