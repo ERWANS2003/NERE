@@ -3,13 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\TimeOffRequest;
+use App\Notifications\Concerns\SendsMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 class TimeOffManagerReminder extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsMail;
 
     /**
      * La notification est enregistrée tout de suite (connexion synchrone)
@@ -27,9 +28,8 @@ class TimeOffManagerReminder extends Notification implements ShouldQueue
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->withMail(['database'], $notifiable);
     }
-
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array

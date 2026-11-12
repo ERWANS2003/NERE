@@ -123,7 +123,8 @@ it('queues browser push after saving an in-app notification', function () {
 });
 
 it('marks server health alerts as urgent push notifications', function () {
-    Queue::fake();
+    // Seul l'envoi push est simulé : l'alerte elle-même passe par la connexion synchrone.
+    Queue::fake([SendWebPushNotification::class]);
     $admin = User::factory()->superAdmin()->create();
     $endpoint = pushSubscriptionPayload()['endpoint'];
     PushSubscription::create([

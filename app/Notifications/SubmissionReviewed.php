@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\FormSubmission;
+use App\Notifications\Concerns\SendsMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
  */
 class SubmissionReviewed extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsMail;
 
     /**
      * La notification est enregistrée tout de suite (connexion synchrone)
@@ -34,9 +35,8 @@ class SubmissionReviewed extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->withMail(['database'], $notifiable);
     }
-
 
     /**
      * @return array<string, mixed>

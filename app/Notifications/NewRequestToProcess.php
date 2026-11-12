@@ -4,25 +4,37 @@ namespace App\Notifications;
 
 use App\Models\FormSubmission;
 use App\Models\TimeOffRequest;
+use App\Notifications\Concerns\SendsMail;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
  * Prévient ceux qui doivent traiter une nouvelle demande : formulaire d'un
  * département ou demande de congé. Canal "database" (et push navigateur).
  */
-class NewRequestToProcess extends Notification
+class NewRequestToProcess extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsMail;
 
     public function __construct(private readonly FormSubmission|TimeOffRequest $request) {}
 
     /**
-     * @return list<string>
+     * La notification intranet est enregistrée tout de suite (connexion
+     * synchrone) ; l'e-mail part en file d'attente pour ne jamais ralentir
+     * ni bloquer l'action de l'utilisateur.
+     *
+     * @return array<string, string>
      */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->withMail(['database'], $notifiable);
     }
 
     /**

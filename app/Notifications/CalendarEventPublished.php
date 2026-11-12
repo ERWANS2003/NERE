@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 /**
  * Notifie le public cible lors de la création d'un événement au calendrier.
@@ -36,14 +37,15 @@ class CalendarEventPublished extends Notification implements ShouldQueue
         if ($this->sendMail && filled($notifiable->email)) {
             $channels[] = 'mail';
         }
+
         return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        $config   = config('intranet.calendar.event_types.'.$this->event->type, []);
+        $config = config('intranet.calendar.event_types.'.$this->event->type, []);
         $typeLabel = $config['name'] ?? ucfirst($this->event->type);
-        $dept      = $this->event->department?->name;
+        $dept = $this->event->department?->name;
 
         $dateFormatted = $this->event->event_date->locale('fr')->translatedFormat('l d F Y');
         $timeFormatted = $this->event->all_day
@@ -64,7 +66,8 @@ class CalendarEventPublished extends Notification implements ShouldQueue
             ->line('🏷️ **Type** : '.$typeLabel.($dept ? ' · '.$dept : ''))
             ->when(filled($this->event->description), function (MailMessage $m) {
                 $desc = nl2br(e($this->event->description));
-                return $m->line(new \Illuminate\Support\HtmlString(
+
+                return $m->line(new HtmlString(
                     '<p style="color:#374151;margin:16px 0;line-height:1.65;">'.$desc.'</p>'
                 ));
             })
@@ -78,15 +81,15 @@ class CalendarEventPublished extends Notification implements ShouldQueue
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $config    = config('intranet.calendar.event_types.'.$this->event->type, []);
+        $config = config('intranet.calendar.event_types.'.$this->event->type, []);
         $typeLabel = $config['name'] ?? ucfirst($this->event->type);
 
         return [
-            'category'         => 'calendar',
-            'icon'             => 'calendar',
-            'title'            => 'Nouvel événement · '.$this->event->title,
-            'message'          => $typeLabel.' · '.$this->event->event_date->locale('fr')->translatedFormat('d F Y'),
-            'url'              => route('intranet.calendar').'?date='.$this->event->event_date->format('Y-m-d'),
+            'category' => 'calendar',
+            'icon' => 'calendar',
+            'title' => 'Nouvel événement · '.$this->event->title,
+            'message' => $typeLabel.' · '.$this->event->event_date->locale('fr')->translatedFormat('d F Y'),
+            'url' => route('intranet.calendar').'?date='.$this->event->event_date->format('Y-m-d'),
             'calendar_event_id' => $this->event->id,
         ];
     }

@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 /**
  * Notifie le public d'une annonce (toute l'entreprise ou un département)
@@ -44,6 +45,7 @@ class AnnouncementPublished extends Notification implements ShouldQueue
         if ($this->sendMail && filled($notifiable->email)) {
             $channels[] = 'mail';
         }
+
         return $channels;
     }
 
@@ -54,9 +56,9 @@ class AnnouncementPublished extends Notification implements ShouldQueue
             : "Toute l'entreprise";
 
         $priority = match ($this->announcement->priority) {
-            'urgent'    => '🔴 URGENT',
+            'urgent' => '🔴 URGENT',
             'important' => '🟡 Important',
-            default     => 'ℹ️ Information',
+            default => 'ℹ️ Information',
         };
 
         $body = nl2br(e($this->announcement->body));
@@ -67,7 +69,7 @@ class AnnouncementPublished extends Notification implements ShouldQueue
             ->line($priority.' — '.$audience)
             ->line('---')
             ->line('**'.$this->announcement->title.'**')
-            ->line(new \Illuminate\Support\HtmlString('<p style="color:#374151;margin:16px 0;line-height:1.65;">'.$body.'</p>'))
+            ->line(new HtmlString('<p style="color:#374151;margin:16px 0;line-height:1.65;">'.$body.'</p>'))
             ->line('---')
             ->action('Lire l\'annonce complète', route('intranet.announcements.show', $this->announcement))
             ->line('Publié par **'.$this->announcement->creator?->name.'** le **'
@@ -75,7 +77,6 @@ class AnnouncementPublished extends Notification implements ShouldQueue
             ->line('Pour gérer vos préférences de notification, rendez-vous dans votre profil intranet.')
             ->salutation('L\'équipe NÉRÉ Mining');
     }
-
 
     /**
      * Format `data` normalisé partagé par toutes les notifications intranet :

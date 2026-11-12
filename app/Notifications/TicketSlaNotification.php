@@ -3,20 +3,37 @@
 namespace App\Notifications;
 
 use App\Models\Ticket;
+use App\Notifications\Concerns\SendsMail;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TicketSlaNotification extends Notification
+class TicketSlaNotification extends Notification implements ShouldQueue
 {
+    use Queueable, SendsMail;
+
     public function __construct(
         private readonly Ticket $ticket,
         private readonly string $metric,
         private readonly string $stage,
     ) {}
 
+    /**
+     * La notification intranet est enregistrée tout de suite (connexion
+     * synchrone) ; l'e-mail part en file d'attente pour ne jamais ralentir
+     * ni bloquer l'action de l'utilisateur.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->withMail(['database'], $notifiable);
     }
 
     /** @return array<string, mixed> */

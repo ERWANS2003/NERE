@@ -16,6 +16,9 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    // Copie par e-mail des notifications de l'intranet (congés, demandes, tickets, rappels).
+    'notifications' => (bool) env('MAIL_NOTIFICATIONS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations
