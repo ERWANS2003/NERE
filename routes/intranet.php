@@ -185,6 +185,8 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::post('/tout-lu', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
         Route::post('/{notification}/lu', [NotificationController::class, 'markRead'])->name('mark-read');
+        Route::delete('/', [NotificationController::class, 'destroyAll'])->name('destroy-all');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
         Route::get('/push/vapid-public-key', [PushSubscriptionController::class, 'publicKey'])->name('push.public-key');
         Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])->name('push.subscriptions.store');
         Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push.subscriptions.destroy');

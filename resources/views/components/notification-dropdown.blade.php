@@ -14,7 +14,7 @@
     ];
 @endphp
 
-<div class="relative" x-data="{ open: false }">
+<div class="relative" x-data="{ open: false, nonLues: {{ $nbNonLues }} }" @intranet-notifications-count.window="nonLues = $event.detail.unread">
     <button
         @click="open = !open"
         @click.away="open = false"
@@ -26,11 +26,9 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icones['bell'] }}"/>
         </svg>
-        @if($nbNonLues > 0)
-            <span class="absolute top-1 right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-nere-600 px-1 text-[10px] font-bold text-white">
-                {{ $nbNonLues > 9 ? '9+' : $nbNonLues }}
-            </span>
-        @endif
+        <span x-show="nonLues > 0" @if($nbNonLues === 0) style="display: none;" @endif
+              class="absolute top-1 right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-nere-600 px-1 text-[10px] font-bold text-white"
+              x-text="nonLues > 9 ? '9+' : nonLues">{{ $nbNonLues > 9 ? '9+' : $nbNonLues }}</span>
     </button>
 
     <div

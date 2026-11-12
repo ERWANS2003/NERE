@@ -12,7 +12,7 @@ use Illuminate\View\View;
  * Page vitrine d'un département (accessible par son code, ex. /intranet/departments/it).
  *
  * Distincte du CRUD d'administration (DepartmentController, sous /manage) :
- * ici on prépare l'affichage public à onglets (Services / Formulaires / Équipe).
+ * ici on prépare l'affichage public à onglets (Services / Équipe).
  */
 class DepartmentShowController extends Controller
 {
@@ -32,20 +32,12 @@ class DepartmentShowController extends Controller
                 ->get()
             : collect();
 
-        $forms = $formsEnabled
-            ? $department->forms()
-                ->where('is_active', true)
-                ->orderBy('order')
-                ->orderBy('name')
-                ->get()
-            : collect();
 
         $team = $this->buildTeam($department);
 
         return view('intranet.departments.show', [
             'department' => $department,
             'services' => $services,
-            'forms' => $forms,
             'formsEnabled' => $formsEnabled,
             'team' => $team,
             'memberCount' => $team->count(),

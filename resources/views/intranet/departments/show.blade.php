@@ -58,7 +58,7 @@
     </div>
 
     {{-- ============================================================
-         Onglets : Services / Formulaires / Équipe (Alpine, sans rechargement)
+         Onglets : Services / Équipe (les formulaires sont accessibles depuis les services) (Alpine, sans rechargement)
     ============================================================ --}}
     <div x-data="{ onglet: '{{ $formsEnabled ? 'services' : 'equipe' }}' }">
 
@@ -68,7 +68,6 @@
                     $onglets = $formsEnabled
                         ? [
                             'services' => ['label' => 'Services', 'count' => $services->count()],
-                            'formulaires' => ['label' => 'Formulaires', 'count' => $forms->count()],
                             'equipe' => ['label' => 'Équipe', 'count' => $memberCount],
                         ]
                         : ['equipe' => ['label' => 'Équipe', 'count' => $memberCount]];
@@ -105,6 +104,7 @@
                         <{{ $actif ? 'a' : 'div' }}
                             @if($actif) href="{{ $destinationUrl }}" @endif
                             @if($actif && $service->link_type === 'external') target="_blank" rel="noopener noreferrer" @endif
+                            @if($actif) data-tour="service-carte" @endif
                             class="bg-white rounded-lg border border-graphite-200 p-6 transition group {{ $actif ? 'hover:border-nere-500 hover:shadow-md' : 'opacity-75' }}"
                         >
                             <div class="w-12 h-12 bg-nere-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-nere-100 transition">
@@ -137,38 +137,6 @@
             @endif
         </div>
 
-        {{-- ---------- Onglet Formulaires ---------- --}}
-        <div x-show="onglet === 'formulaires'" role="tabpanel" x-cloak>
-            @if($forms->count() > 0)
-                <div class="bg-white rounded-lg border border-graphite-200 divide-y divide-graphite-100">
-                    @foreach($forms as $form)
-                        <div class="flex items-center gap-4 p-5">
-                            <div class="w-10 h-10 shrink-0 bg-or-50 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-or-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <h3 class="font-semibold text-graphite-900">{{ $form->name }}</h3>
-                                @if($form->description)
-                                    <p class="text-sm text-graphite-500 line-clamp-1">{{ $form->description }}</p>
-                                @endif
-                            </div>
-                            @php
-                                $formUrl = $department->code === 'RH' && $form->name === 'Demande de congé'
-                                    ? route('intranet.time-off.create')
-                                    : route('intranet.forms.show', $form);
-                            @endphp
-                            <a href="{{ $formUrl }}" data-tour="formulaire-lien" class="shrink-0 rounded-lg bg-nere-700 px-3 py-2 text-sm font-semibold text-white hover:bg-nere-800">
-                                Faire une demande
-                            </a>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <x-departments.empty-tab message="Aucun formulaire disponible pour ce département." />
-            @endif
-        </div>
         @endif
 
         {{-- ---------- Onglet Équipe ---------- --}}

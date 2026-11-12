@@ -12,6 +12,16 @@
 @endphp
 
 <x-intranet-layout title="Notifications" :breadcrumbs="$breadcrumbs">
+    @php
+        $notificationsConfig = [
+            'total' => $notifications->total(),
+            'csrf' => csrf_token(),
+            'destroyUrl' => route('intranet.notifications.destroy', '__ID__'),
+            'destroyAllUrl' => route('intranet.notifications.destroy-all'),
+            'indexUrl' => route('intranet.notifications.index'),
+        ];
+    @endphp
+<div x-data="notificationsList(@js($notificationsConfig))">
 
     <div class="flex items-center justify-between mb-8">
         <div>
@@ -19,13 +29,37 @@
             <p class="text-graphite-600">Toutes vos notifications, lues et non lues</p>
         </div>
 
-        @if(auth()->user()->unreadNotifications()->exists())
-            <form method="POST" action="{{ route('intranet.notifications.mark-all-read') }}">
+        <div class="flex flex-wrap items-center gap-2">
+            @if(auth()->user()->unreadNotifications()->exists())
+                <form method="POST" action="{{ route('intranet.notifications.mark-all-read') }}" x-show="!vide">
+                    @csrf
+                    <button type="submit" class="bouton-secondaire">Tout marquer comme lu</button>
+                </form>
+            @endif
+            <form method="POST" action="{{ route('intranet.notifications.destroy-all') }}" x-show="!vide && !confirmation" @submit.prevent="confirmation = true" @if($notifications->total() === 0) style="display: none;" @endif>
                 @csrf
-                <button type="submit" class="bouton-secondaire">Tout marquer comme lu</button>
+                @method('DELETE')
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Tout supprimer
+                </button>
             </form>
-        @endif
+        </div>
     </div>
+
+    {{-- Confirmation avant de tout supprimer. --}}
+    <div x-show="confirmation" x-cloak x-transition.opacity.duration.200ms
+         class="mb-6 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" role="alertdialog" aria-labelledby="confirmation-suppression">
+        <p id="confirmation-suppression" class="text-sm text-red-900">
+            Supprimer définitivement <strong x-text="total + ' notification' + (total > 1 ? 's' : '')"></strong>, lues et non lues ? Cette action est irréversible.
+        </p>
+        <div class="flex shrink-0 gap-2">
+            <button type="button" @click="confirmation = false" class="rounded-lg border border-graphite-300 bg-white px-4 py-2 text-sm font-semibold text-graphite-700 hover:bg-graphite-50">Annuler</button>
+            <button type="button" @click="toutSupprimer()" :disabled="enCours" class="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60" x-text="enCours ? 'Suppression…' : 'Oui, tout supprimer'"></button>
+        </div>
+    </div>
+
+    <p x-show="erreur" x-cloak x-text="erreur" class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"></p>
 
     @if(session('success'))
         <div class="mb-6 rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">
@@ -62,12 +96,13 @@
         </p>
     @endif
 
-    <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden" data-tour="notifications-liste">
+    <div class="bg-white rounded-lg border border-graphite-200 overflow-hidden" data-tour="notifications-liste" x-ref="liste" x-show="!vide">
         @forelse($notifications as $notification)
             @php $d = $notification->data; $nonLue = is_null($notification->read_at); @endphp
+            <div class="group relative border-b border-graphite-100 last:border-0" data-notification="{{ $notification->id }}">
             <form method="POST" action="{{ route('intranet.notifications.mark-read', $notification->id) }}">
                 @csrf
-                <button type="submit" class="w-full text-left px-6 py-4 hover:bg-graphite-50 transition border-b border-graphite-100 last:border-0 flex items-start gap-4 {{ $nonLue ? 'bg-nere-50/40' : '' }}">
+                <button type="submit" class="w-full text-left py-4 pl-6 pr-16 hover:bg-graphite-50 transition flex items-start gap-4 {{ $nonLue ? 'bg-nere-50/40' : '' }}">
                     <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-nere-50 text-nere-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icones[$d['icon'] ?? 'bell'] ?? $icones['bell'] }}"/>
@@ -87,14 +122,25 @@
                     </span>
                 </button>
             </form>
-        @empty
-            <div class="p-12 text-center">
-                <svg class="w-16 h-16 text-graphite-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icones['bell'] }}"/>
-                </svg>
-                <p class="text-graphite-600">Aucune notification</p>
+            <form method="POST" action="{{ route('intranet.notifications.destroy', $notification->id) }}" class="absolute right-3 top-1/2 -translate-y-1/2" @submit.prevent="supprimer(@js($notification->id))">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="flex h-9 w-9 items-center justify-center rounded-full text-graphite-400 transition hover:bg-red-50 hover:text-red-700 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                        aria-label="Supprimer la notification « {{ $d['title'] ?? 'Notification' }} »" title="Supprimer">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </form>
             </div>
+        @empty
         @endforelse
+    </div>
+
+    <div x-show="vide" x-cloak class="rounded-lg border border-graphite-200 bg-white p-12 text-center" @if($notifications->total() === 0) style="display: block;" @endif>
+        <span x-ref="cloche" class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-600">
+            <svg class="h-9 w-9" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="{{ $icones['bell'] }}"/></svg>
+        </span>
+        <p class="font-semibold text-graphite-900">Tout est propre</p>
+        <p class="mt-1 text-sm text-graphite-600">Aucune notification. Les nouvelles apparaîtront ici et dans la cloche.</p>
     </div>
 
     @if($notifications->hasPages())
@@ -103,4 +149,5 @@
         </div>
     @endif
 
+</div>
 </x-intranet-layout>
