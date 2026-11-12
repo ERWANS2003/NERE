@@ -2348,3 +2348,8 @@ a[data-glass]:hover {
     min-height: 2.35rem;
     padding-block: 0.5rem;
 }
+
+/* Champ « Date et heure » : un espace entre la date et l'heure (Edge, Chrome). */
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field {
+    margin-left: 0.75rem;
+}

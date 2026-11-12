@@ -88,3 +88,25 @@ it('lets form editors create an item list field with proposed articles', functio
     expect($field['type'])->toBe('items')
         ->and($field['options'])->toBe([['value' => 'Agrafes', 'label' => 'Agrafes']]);
 });
+
+it('keeps a single date and time input and shows the value in French format', function () {
+    $form = DepartmentForm::create([
+        'department_id' => Department::factory()->create(['is_active' => true])->id,
+        'name' => 'Réservation de véhicule',
+        'form_schema' => ['fields' => [
+            ['key' => 'travel_date', 'label' => 'Date et heure de départ', 'type' => 'datetime-local', 'required' => true, 'options' => []],
+        ]],
+        'is_active' => true,
+        'order' => 0,
+    ]);
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('intranet.forms.show', $form))
+        ->assertOk()
+        ->assertSee('type="datetime-local"', false)
+        ->assertSee('name="data[travel_date]"', false);
+
+    $this->post(route('intranet.submissions.store', $form), ['data' => ['travel_date' => '2026-11-20T08:30']])->assertRedirect();
+    $this->get(route('intranet.submissions.show', FormSubmission::latest('id')->firstOrFail()))
+        ->assertSee('20/11/2026 à 08:30');
+});

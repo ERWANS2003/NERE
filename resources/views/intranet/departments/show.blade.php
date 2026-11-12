@@ -94,7 +94,9 @@
         @if($formsEnabled)
         {{-- ---------- Onglet Services ---------- --}}
         <div x-show="onglet === 'services'" role="tabpanel">
-            @if($services->count() > 0)
+            @if($services->count() > 0 && $services->count() <= 2)
+                @include('intranet.departments.partials.few-services')
+            @elseif($services->count() > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($services as $service)
                         @php

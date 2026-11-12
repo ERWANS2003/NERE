@@ -105,6 +105,8 @@
                                                     @endforeach
                                                 </tbody>
                                             </table>
+                                        @elseif(is_string($valeur) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/', $valeur))
+                                            {{ \Illuminate\Support\Carbon::parse($valeur)->format('d/m/Y à H:i') }}
                                         @else
                                             {{ is_array($valeur) ? implode(', ', $valeur) : $valeur }}
                                         @endif
