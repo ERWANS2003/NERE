@@ -89,6 +89,7 @@ class SubmissionController extends Controller
         abort_unless($form->is_active && $form->department?->is_active, 404);
 
         $fields = DynamicFormSchema::fields($form->form_schema);
+        $request->merge(['data' => DynamicFormSchema::prepare($fields, (array) $request->input('data', []))]);
         $validated = $request->validate(DynamicFormSchema::submissionRules([
             'fields' => $fields,
         ]));

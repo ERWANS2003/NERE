@@ -146,6 +146,7 @@
                             <option value="time">Heure</option>
                             <option value="datetime-local">Date et heure</option>
                             <option value="select">Liste de choix</option>
+                            <option value="items">Liste d’articles avec quantité</option>
                         </select>
                     </div>
                     <div>
@@ -162,18 +163,33 @@
                     Champ obligatoire
                 </label>
 
+                <div x-show="field.type === 'items'" x-cloak class="space-y-3 rounded-md bg-graphite-50 p-3">
+                    <h3 class="text-sm font-medium text-graphite-800">Articles proposés (facultatif)</h3>
+                    <p class="text-xs text-graphite-500">Le demandeur peut choisir dans cette liste ou saisir un autre article.</p>
+                    <template x-for="(option, optionIndex) in field.options" :key="optionIndex">
+                        <div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+                            <input x-model="option.label" @input="option.value = option.label"
+                                   x-bind:name="field.type === 'items' ? `fields[${index}][options][${optionIndex}][label]` : null"
+                                   :required="field.type === 'items'" maxlength="255" placeholder="Ex. Ramette de papier A4" class="champ" aria-label="Article proposé">
+                            <input type="hidden" x-bind:value="option.label" x-bind:name="field.type === 'items' ? `fields[${index}][options][${optionIndex}][value]` : null">
+                            <x-button type="button" variant="danger" x-on:click="removeOption(field, optionIndex)">Retirer</x-button>
+                        </div>
+                    </template>
+                    <x-button type="button" variant="secondary" x-on:click="addOption(field)">Ajouter un article proposé</x-button>
+                </div>
+
                 <div x-show="field.type === 'select'" x-cloak class="space-y-3 rounded-md bg-graphite-50 p-3">
                     <h3 class="text-sm font-medium text-graphite-800">Options</h3>
                     <template x-for="(option, optionIndex) in field.options" :key="optionIndex">
                         <div class="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                             <label class="sr-only" :for="`option-value-${index}-${optionIndex}`">Valeur de l'option</label>
                             <input :id="`option-value-${index}-${optionIndex}`" x-model="option.value"
-                                   x-bind:name="`fields[${index}][options][${optionIndex}][value]`"
-                                   required maxlength="255" placeholder="Valeur" class="champ">
+                                   x-bind:name="field.type === 'select' ? `fields[${index}][options][${optionIndex}][value]` : null"
+                                   :required="field.type === 'select'" maxlength="255" placeholder="Valeur" class="champ">
                             <label class="sr-only" :for="`option-label-${index}-${optionIndex}`">Libellé de l'option</label>
                             <input :id="`option-label-${index}-${optionIndex}`" x-model="option.label"
-                                   x-bind:name="`fields[${index}][options][${optionIndex}][label]`"
-                                   required maxlength="255" placeholder="Libellé affiché" class="champ">
+                                   x-bind:name="field.type === 'select' ? `fields[${index}][options][${optionIndex}][label]` : null"
+                                   :required="field.type === 'select'" maxlength="255" placeholder="Libellé affiché" class="champ">
                             <x-button type="button" variant="danger" x-on:click="removeOption(field, optionIndex)">Retirer</x-button>
                         </div>
                     </template>

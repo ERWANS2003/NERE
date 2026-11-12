@@ -7,7 +7,10 @@ use Illuminate\Validation\Rule;
 class DynamicFormSchema
 {
     /** @var list<string> */
-    public const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'time', 'datetime-local', 'select'];
+    public const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'time', 'datetime-local', 'select', 'items'];
+
+    /** Nombre maximal de lignes d'une liste d'articles. */
+    public const MAX_ITEMS = 50;
 
     /**
      * @param  array{fields?: list<array<string, mixed>>}|null  $schema
@@ -72,6 +75,15 @@ class DynamicFormSchema
         ];
 
         foreach ($fields as $field) {
+            // Liste d'articles : une ligne par article, avec sa quantité.
+            if ($field['type'] === 'items') {
+                $rules['data.'.$field['key']] = [($field['required'] ?? false) ? 'required' : 'nullable', 'array', 'min:1', 'max:'.self::MAX_ITEMS];
+                $rules['data.'.$field['key'].'.*.article'] = ['required', 'string', 'max:255'];
+                $rules['data.'.$field['key'].'.*.quantite'] = ['required', 'integer', 'min:1', 'max:100000'];
+
+                continue;
+            }
+
             $fieldRules = ($field['required'] ?? false) ? ['required'] : ['nullable'];
 
             if ($field['type'] === 'number') {
@@ -96,6 +108,34 @@ class DynamicFormSchema
     }
 
     /**
+     * Retire les lignes vides des listes d'articles avant la validation.
+     *
+     * @param  list<array<string, mixed>>  $fields
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function prepare(array $fields, array $data): array
+    {
+        foreach ($fields as $field) {
+            if ($field['type'] !== 'items' || ! is_array($data[$field['key']] ?? null)) {
+                continue;
+            }
+            $data[$field['key']] = array_values(array_filter(
+                array_map(static fn ($row): array => [
+                    'article' => is_array($row) ? trim((string) ($row['article'] ?? '')) : '',
+                    'quantite' => is_array($row) ? ($row['quantite'] ?? null) : null,
+                ], $data[$field['key']]),
+                static fn (array $row): bool => $row['article'] !== ''
+            ));
+            if ($data[$field['key']] === []) {
+                unset($data[$field['key']]);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $fields
      * @return list<array{key: string, label: string, type: string, required: bool, help_text: string|null, options: list<array{value: string, label: string}>}>
      */
@@ -108,7 +148,7 @@ class DynamicFormSchema
                 'type' => $field['type'],
                 'required' => (bool) $field['required'],
                 'help_text' => filled($field['help_text'] ?? null) ? trim($field['help_text']) : null,
-                'options' => $field['type'] === 'select'
+                'options' => in_array($field['type'], ['select', 'items'], true)
                     ? array_values(array_map(
                         static fn (array $option): array => [
                             'value' => trim($option['value']),

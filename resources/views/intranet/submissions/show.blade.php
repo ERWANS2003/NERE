@@ -94,7 +94,21 @@
                             @foreach($submission->data as $champ => $valeur)
                                 <div class="flex flex-col sm:flex-row sm:gap-4">
                                     <dt class="text-graphite-500 sm:w-1/3">{{ $formFieldsByKey->get($champ)['label'] ?? ucfirst(str_replace('_', ' ', $champ)) }}</dt>
-                                    <dd class="text-graphite-900 sm:w-2/3">{{ is_array($valeur) ? implode(', ', $valeur) : $valeur }}</dd>
+                                    <dd class="text-graphite-900 sm:w-2/3">
+                                        @if(is_array($valeur) && is_array(reset($valeur)))
+                                            {{-- Liste d'articles : un tableau article / quantité. --}}
+                                            <table class="w-full overflow-hidden rounded-lg border border-graphite-200 text-sm">
+                                                <thead class="bg-graphite-50 text-xs uppercase text-graphite-500"><tr><th class="px-3 py-1.5 text-left">Article</th><th class="px-3 py-1.5 text-right">Quantité</th></tr></thead>
+                                                <tbody class="divide-y divide-graphite-100">
+                                                    @foreach($valeur as $ligne)
+                                                        <tr><td class="px-3 py-1.5">{{ $ligne['article'] ?? '' }}</td><td class="px-3 py-1.5 text-right tabular-nums">{{ $ligne['quantite'] ?? '' }}</td></tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        @else
+                                            {{ is_array($valeur) ? implode(', ', $valeur) : $valeur }}
+                                        @endif
+                                    </dd>
                                 </div>
                             @endforeach
                         </dl>
