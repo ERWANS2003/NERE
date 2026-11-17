@@ -200,6 +200,7 @@ return [
         'nom' => 'nom',
         'email' => 'adresse e-mail',
         'mot_de_passe' => 'mot de passe',
+        'password' => 'mot de passe',
         'confirmation_mot_de_passe' => 'confirmation du mot de passe',
         'identifiant' => 'identifiant',
         'departement' => 'département',
