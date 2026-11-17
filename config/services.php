@@ -28,6 +28,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // IA locale (Ollama) qui propose catégorie, priorité, résumé et réponse
+    // pour chaque nouveau ticket. Désactivée tant que TICKET_AI_URL est vide.
+    'ticket_ai' => [
+        'url' => env('TICKET_AI_URL'),
+        'model' => env('TICKET_AI_MODEL', 'qwen3:4b-instruct'),
+        'timeout' => (int) env('TICKET_AI_TIMEOUT', 600),
+        'queue' => env('TICKET_AI_QUEUE', 'ai'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

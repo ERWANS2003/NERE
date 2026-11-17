@@ -103,6 +103,54 @@
             </div>
         </section>
 
+        @if($isAgent && $ticket->ai_suggestion)
+            @php
+                $suggestion = $ticket->ai_suggestion;
+                $suggestedCategory = \App\Enums\TicketCategory::tryFrom($suggestion['category']);
+                $suggestedPriority = \App\Enums\TicketPriority::tryFrom($suggestion['priority']);
+            @endphp
+            <section class="rounded-xl border border-nere-200 bg-nere-50/40 p-6" data-tour="ticket-ia">
+                <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="text-lg font-semibold text-graphite-900">Suggestion de l'IA</h2>
+                    <span class="text-xs text-graphite-500">Proposition automatique, à vérifier. Visible seulement par l'équipe informatique.</span>
+                </div>
+                <p class="text-sm text-graphite-800">{{ $suggestion['summary'] }}</p>
+                <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                    <div>
+                        <dt class="text-graphite-500">Catégorie proposée</dt>
+                        <dd class="font-medium text-graphite-900">
+                            {{ $suggestedCategory?->label() }}
+                            @if($suggestedCategory && $suggestedCategory !== $ticket->category)
+                                <span class="font-normal text-graphite-500">(choisie par le demandeur : {{ $ticket->category->label() }})</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-graphite-500">Priorité proposée</dt>
+                        <dd class="flex flex-wrap items-center gap-2 font-medium text-graphite-900">
+                            {{ $suggestedPriority?->label() }}
+                            @if($suggestedPriority && $suggestedPriority !== $ticket->priority)
+                                <button type="button" class="text-sm font-semibold text-nere-700 hover:underline"
+                                        onclick="const s = document.getElementById('priority'); s.value = @js($suggestedPriority->value); s.focus();">
+                                    Reporter dans le traitement
+                                </button>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+                <div class="mt-4">
+                    <p class="mb-1 text-sm text-graphite-500">Brouillon de réponse au demandeur</p>
+                    <p class="whitespace-pre-line rounded-lg border border-graphite-200 bg-white p-3 text-sm text-graphite-800">{{ $suggestion['reply'] }}</p>
+                    <button type="button" class="mt-2 text-sm font-semibold text-nere-700 hover:underline"
+                            onclick="const b = document.getElementById('body'); b.value = @js($suggestion['reply']); b.scrollIntoView({ block: 'center' }); b.focus();">
+                        Copier dans la réponse
+                    </button>
+                </div>
+            </section>
+        @elseif($isAgent && $aiEnabled && $ticket->created_at->gt(now()->subHour()))
+            <p class="rounded-xl border border-graphite-200 bg-white px-6 py-4 text-sm text-graphite-500">L'IA analyse ce ticket ; sa suggestion apparaîtra ici dans quelques minutes.</p>
+        @endif
+
         @if($isAgent)
             <section class="rounded-xl border border-graphite-200 bg-white p-6" data-tour="ticket-traitement">
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">

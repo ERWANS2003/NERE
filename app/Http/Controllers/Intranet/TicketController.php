@@ -7,6 +7,7 @@ use App\Enums\TicketCategory;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\SuggestTicketTriage;
 use App\Models\Department;
 use App\Models\KnowledgeArticle;
 use App\Models\Ticket;
@@ -15,6 +16,7 @@ use App\Models\TicketAttachment;
 use App\Models\TicketComment;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use App\Services\TicketAiTriage;
 use App\Services\TicketSlaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,6 +134,10 @@ class TicketController extends Controller
 
         $this->saveAttachments($request, $ticket);
 
+        if (TicketAiTriage::enabled()) {
+            SuggestTicketTriage::dispatch($ticket->id);
+        }
+
         $recipients = $this->itAgents($department)->reject(
             fn (User $agent) => $agent->is($request->user())
         );
@@ -172,6 +178,7 @@ class TicketController extends Controller
             'canTake' => $this->canTake($user, $ticket),
             'statuses' => TicketStatus::options(),
             'priorities' => TicketPriority::options(),
+            'aiEnabled' => TicketAiTriage::enabled(),
             // Le technicien affecte reste dans la liste meme desactive, sinon
             // enregistrer le formulaire retirerait l'affectation sans le dire.
             'agents' => ($assignable ?? collect())

@@ -34,6 +34,8 @@ class Ticket extends Model
         'resolution_breached_at',
         'resolved_at',
         'closed_at',
+        'ai_suggestion',
+        'ai_suggested_at',
     ];
 
     protected function casts(): array
@@ -53,6 +55,8 @@ class Ticket extends Model
             'resolution_breached_at' => 'datetime',
             'resolved_at' => 'datetime',
             'closed_at' => 'datetime',
+            'ai_suggestion' => 'array',
+            'ai_suggested_at' => 'datetime',
         ];
     }
 
