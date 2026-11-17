@@ -765,3 +765,50 @@ it('reminds one person who has not chosen and warns one with days left without a
 
     $this->actingAs($pending)->post(route('menu.manager.reminder.one', [$campaign, $partial]))->assertForbidden();
 });
+
+it('always offers the Zone du bois site in the department list', function () {
+    $campaign = createOpenMenuCampaign();
+    $employee = User::factory()->create(['menu_eligible' => true, 'guid' => 'employee-site-guid', 'domain' => 'default']);
+
+    $this->actingAs($employee)->withSession(['auth_provider' => 'active_directory'])
+        ->get(route('menu.registration.show', $campaign->link_token))
+        ->assertOk()
+        ->assertSee('<option value="Zone du bois"', false);
+});
+
+it('offers a fixed department list and merges spelling variants', function () {
+    \App\Models\Department::factory()->create(['name' => 'Administration & Finances', 'is_active' => true]);
+    $campaign = createOpenMenuCampaign();
+    $campaign->registrations()->create(['employee_name' => 'Awa', 'employee_identifier' => 'local|1', 'department' => 'Zone du bois']);
+    $campaign->registrations()->create(['employee_name' => 'Ali', 'employee_identifier' => 'local|2', 'department' => 'Zone du bois']);
+    $campaign->registrations()->create(['employee_name' => 'Ina', 'employee_identifier' => 'local|3', 'department' => 'ZONE DU BOIS']);
+    $employee = User::factory()->create(['menu_eligible' => true, 'guid' => 'employee-dep-guid', 'domain' => 'default']);
+    $day = $campaign->days()->firstOrFail();
+
+    $page = $this->actingAs($employee)->withSession(['auth_provider' => 'active_directory'])
+        ->get(route('menu.registration.show', $campaign->link_token))
+        ->assertOk()
+        ->assertSee('<option value="Administration &amp; Finances"', false)
+        ->assertSee('<option value="Zone du bois"', false)
+        ->assertSee('Autre (préciser)');
+    expect(substr_count($page->getContent(), 'ZONE DU BOIS'))->toBe(0);
+
+    $this->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => \App\Services\Menu\MenuDepartments::OTHER,
+        'department_other' => '  zone   du Bois ',
+        'choices' => [$day->id => '1'],
+    ])->assertSessionHasNoErrors();
+    expect(MenuRegistration::where('employee_identifier', 'default|employee-dep-guid')->value('department'))->toBe('Zone du bois');
+
+    $this->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => \App\Services\Menu\MenuDepartments::OTHER,
+        'department_other' => '',
+        'choices' => [$day->id => '1'],
+    ])->assertSessionHasErrors(['department_other' => 'Précisez votre département.']);
+
+    $this->post(route('menu.registration.store', $campaign->link_token), [
+        'department' => 'administration & finances',
+        'choices' => [$day->id => '1'],
+    ])->assertSessionHasNoErrors();
+    expect(MenuRegistration::where('employee_identifier', 'default|employee-dep-guid')->value('department'))->toBe('Administration & Finances');
+});

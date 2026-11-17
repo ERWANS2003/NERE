@@ -9,12 +9,6 @@
         <p class="mt-2 max-w-2xl text-sm text-graphite-600">Personnes absentes de l'Active Directory et de l'intranet qui mangent au restaurant. Vous saisissez leurs choix depuis le suivi de chaque semaine.</p>
     </section>
 
-    <datalist id="menu-departments">
-        @foreach($departments as $department)
-            <option value="{{ $department->name }}">
-        @endforeach
-    </datalist>
-
     <form method="POST" action="{{ route('menu.manager.guests.store') }}" class="mb-8 grid gap-3 rounded-lg border border-graphite-200 bg-white p-5 sm:grid-cols-[2fr_2fr_1fr_auto] sm:items-end">
         @csrf
         <label class="block">
@@ -23,7 +17,9 @@
         </label>
         <label class="block">
             <span class="etiquette">Département <span class="text-nere-600">*</span></span>
-            <input name="department" list="menu-departments" value="{{ old('department') }}" required maxlength="150" class="champ">
+            @include('menu.partials.department-field', [
+                'value' => old('department') === \App\Services\Menu\MenuDepartments::OTHER ? old('department_other') : old('department'),
+            ])
         </label>
         <label class="block">
             <span class="etiquette">Matricule</span>
@@ -56,7 +52,7 @@
                         @csrf
                         @method('PUT')
                         <input name="name" value="{{ $guest->name }}" required maxlength="255" class="champ" aria-label="Nom et prénom">
-                        <input name="department" list="menu-departments" value="{{ $guest->department }}" required maxlength="150" class="champ" aria-label="Département">
+                        @include('menu.partials.department-field', ['value' => $guest->department])
                         <input name="matricule" value="{{ $guest->matricule }}" maxlength="50" class="champ" aria-label="Matricule" placeholder="Matricule">
                         <label class="flex items-center gap-2 text-sm text-graphite-700">
                             <input type="checkbox" name="active" value="1" @checked($guest->active) class="rounded border-graphite-300">

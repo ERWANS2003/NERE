@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Department;
 use App\Models\MenuCampaign;
 use App\Models\MenuGuest;
 use App\Models\MenuRegistration;
+use App\Services\Menu\MenuDepartments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class GuestController extends Controller
     {
         return view('menu.manager.guests', [
             'guests' => MenuGuest::query()->orderByDesc('active')->orderBy('name')->get(),
-            'departments' => Department::active()->orderBy('name')->get(['name']),
+            'departments' => MenuDepartments::options(),
         ]);
     }
 
@@ -110,10 +110,13 @@ class GuestController extends Controller
      */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'department' => ['required', 'string', 'max:150'],
             'matricule' => ['nullable', 'string', 'max:50'],
-        ]);
+        ] + MenuDepartments::rules(), ['department_other.required_if' => 'Précisez le département.']);
+        $validated['department'] = MenuDepartments::fromInput($validated);
+        unset($validated['department_other']);
+
+        return $validated;
     }
 }

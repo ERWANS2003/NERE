@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Menu;
 
 use App\Http\Controllers\Controller;
-use App\Models\Department;
 use App\Models\MenuCampaign;
 use App\Models\MenuRegistration;
+use App\Services\Menu\MenuDepartments;
 use App\Support\PdfRenderer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +43,7 @@ class RegistrationController extends Controller
         return view('menu.registration.show', [
             'campaign' => $campaign->load('days'),
             'registration' => $registration,
-            'departments' => Department::active()->orderBy('name')->get(['name']),
+            'departments' => MenuDepartments::options(),
             'canRegister' => $campaign->status === 'open'
                 && ($campaign->registration_closes_at === null || $campaign->registration_closes_at->isFuture()),
         ]);
@@ -59,11 +59,11 @@ class RegistrationController extends Controller
             'Les inscriptions à cette semaine de menus sont clôturées.'
         );
 
-        $validated = $request->validate([
-            'department' => ['required', 'string', 'max:150'],
+        $validated = $request->validate(MenuDepartments::rules() + [
             'choices' => ['required', 'array', 'max:5'],
             'choices.*' => ['nullable', 'integer', 'in:1,2'],
-        ]);
+        ], ['department_other.required_if' => 'Précisez votre département.']);
+        $validated['department'] = MenuDepartments::fromInput($validated);
 
         $campaignDays = $campaign->days()->get();
         $submittedDayIds = collect(array_keys($validated['choices']))->map(fn ($id) => (int) $id);
@@ -85,7 +85,7 @@ class RegistrationController extends Controller
                 [
                     'user_id' => $user->id,
                     'employee_name' => $user->name,
-                    'department' => trim($validated['department']),
+                    'department' => $validated['department'],
                 ],
             );
 

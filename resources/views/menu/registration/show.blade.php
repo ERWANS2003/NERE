@@ -57,16 +57,13 @@
                 </div>
                 <label class="block max-w-xl">
                     <span class="etiquette">Département <span class="text-nere-600">*</span></span>
-                    <input name="department" list="menu-departments" value="{{ old('department', $registration?->department) }}" required maxlength="150" placeholder="Ex. Finances, Sûreté, Zone du Bois" class="champ">
-                    <datalist id="menu-departments">
-                        @foreach($departments as $department)
-                            <option value="{{ $department->name }}">
-                        @endforeach
-                    </datalist>
+                    @include('menu.partials.department-field', [
+                        'value' => old('department') === \App\Services\Menu\MenuDepartments::OTHER ? old('department_other') : old('department', $registration?->department),
+                    ])
                 </label>
                 <p class="mt-2 flex items-start gap-1.5 text-xs leading-5 text-graphite-500">
                     <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 11c0 3-2 5-5 5s-5-2-5-5 2-5 5-5c3 0 5 2 5 5zm0 0c0-3 2-5 5-5s5 2 5 5-2 5-5 5c-3 0-5-2-5-5zM7 16v3m10-3v3"/></svg>
-                    Votre nom provient de votre compte Active Directory. Vous pouvez choisir une suggestion ou saisir votre département.
+                    Votre nom provient de votre compte Active Directory. Choisissez votre département dans la liste, ou « Autre » s'il n'y figure pas.
                 </p>
             </section>
 
