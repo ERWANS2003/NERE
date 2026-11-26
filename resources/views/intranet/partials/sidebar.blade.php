@@ -224,6 +224,7 @@
                     </a>
                 </li>
                 @endif
+                @if(config('monitor.show_in_menu'))
                 @can('monitor')
                 <li>
                     <a href="{{ route('intranet.monitor.index') }}"
@@ -236,6 +237,7 @@
                     </a>
                 </li>
                 @endcan
+                @endif
             </ul>
         </section>
 

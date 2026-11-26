@@ -92,7 +92,11 @@ it('opens supervision to the IT team and administrators only', function () {
     $this->actingAs($technician)->get(route('intranet.monitor.index'))
         ->assertOk()
         ->assertSee('Créer le premier groupe')
-        ->assertSee('Découverte automatique');
+        ->assertSee('Découverte automatique')
+        ->assertDontSee('<span>Supervision réseau</span>', false);
+
+    config(['monitor.show_in_menu' => true]);
+    $this->get(route('intranet.monitor.index'))->assertSee('<span>Supervision réseau</span>', false);
 });
 
 it('inherits settings from parent groups and applies device templates', function () {
