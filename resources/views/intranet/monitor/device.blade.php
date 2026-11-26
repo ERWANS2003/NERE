@@ -9,29 +9,39 @@
 <x-intranet-layout :title="$device->name" :breadcrumbs="$breadcrumbs">
     @include('intranet.monitor.partials.nav')
 
-    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <h1 class="text-3xl font-bold text-graphite-900">{{ $device->name }}</h1>
-                @include('intranet.monitor.partials.badge', ['status' => $device->status()])
+    @php $deviceStatus = $device->status(); @endphp
+    <section class="carte mb-6 border-l-4 {{ $deviceStatus->accent() }} p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex min-w-0 items-center gap-4">
+                @include('intranet.monitor.partials.device-icon', ['type' => $device->type, 'status' => $deviceStatus, 'size' => 'lg'])
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1 class="text-2xl font-bold text-graphite-900 sm:text-3xl">{{ $device->name }}</h1>
+                        <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $deviceStatus->color() }}">{{ $deviceStatus->label() }}</span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span class="rounded-md bg-graphite-100 px-2 py-1 font-medium text-graphite-700">{{ $device->type->label() }}</span>
+                        <span class="rounded-md bg-graphite-100 px-2 py-1 font-mono text-graphite-700">{{ $device->host }}</span>
+                        <span class="rounded-md bg-graphite-100 px-2 py-1 text-graphite-700">{{ $device->group->path() }}</span>
+                        @if($device->parentDevice)
+                            <a href="{{ route('intranet.monitor.devices.show', $device->parentDevice) }}" class="rounded-md bg-nere-50 px-2 py-1 font-medium text-nere-700 hover:underline">Dépend de {{ $device->parentDevice->name }}</a>
+                        @endif
+                    </div>
+                    @if($device->inMaintenance())
+                        <p class="mt-2 text-sm text-blue-800">En maintenance planifiée jusqu’à {{ $device->maintenanceWindow()['end'] }} : contrôles et alertes suspendus.</p>
+                    @elseif($device->isPaused())
+                        <p class="mt-2 text-sm text-blue-800">En pause{{ $device->paused_until ? ' jusqu’au '.$device->paused_until->format('d/m/Y à H:i') : '' }}{{ $device->pause_reason ? ' : '.$device->pause_reason : '' }}</p>
+                    @endif
+                </div>
             </div>
-            <p class="mt-1 text-graphite-600">{{ $device->type->label() }} · {{ $device->host }} · {{ $device->group->path() }}</p>
-            @if($device->parentDevice)
-                <p class="mt-1 text-sm text-graphite-600">Dépend de <a href="{{ route('intranet.monitor.devices.show', $device->parentDevice) }}" class="font-medium text-nere-700 hover:underline">{{ $device->parentDevice->name }}</a></p>
-            @endif
-            @if($device->inMaintenance())
-                <p class="mt-1 text-sm text-blue-800">En maintenance planifiée jusqu’à {{ $device->maintenanceWindow()['end'] }} : contrôles et alertes suspendus.</p>
-            @elseif($device->isPaused())
-                <p class="mt-1 text-sm text-blue-800">En pause{{ $device->paused_until ? ' jusqu’au '.$device->paused_until->format('d/m/Y à H:i') : '' }}{{ $device->pause_reason ? ' : '.$device->pause_reason : '' }}</p>
-            @endif
+            <div class="flex flex-wrap gap-2" data-auto-refresh data-interval="60000">
+                @include('intranet.monitor.partials.pause-form', ['paused' => $device->isPaused(), 'action' => route('intranet.monitor.devices.pause', $device)])
+                <a href="{{ route('intranet.monitor.devices.edit', $device) }}" class="bouton-secondaire">Modifier</a>
+                <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">Suspendre l’actualisation</button>
+                <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
+            </div>
         </div>
-        <div class="flex flex-wrap gap-2" data-auto-refresh data-interval="60000">
-            @include('intranet.monitor.partials.pause-form', ['paused' => $device->isPaused(), 'action' => route('intranet.monitor.devices.pause', $device)])
-            <a href="{{ route('intranet.monitor.devices.edit', $device) }}" class="bouton-secondaire">Modifier</a>
-            <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">Suspendre l’actualisation</button>
-            <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
-        </div>
-    </div>
+    </section>
 
     @if($reference)
         <section class="mb-6 grid gap-3 sm:grid-cols-3" aria-label="Disponibilité">
@@ -57,8 +67,7 @@
                         <th class="px-5 py-2">État</th>
                         <th class="px-5 py-2">Capteur</th>
                         <th class="px-5 py-2">Valeur</th>
-                        <th class="px-5 py-2">Message</th>
-                        <th class="w-48 px-5 py-2">2 jours</th>
+                        <th class="w-56 px-5 py-2">2 jours</th>
                         <th class="px-5 py-2">Contrôlé</th>
                         <th class="px-5 py-2"><span class="sr-only">Actions</span></th>
                     </tr>
@@ -66,13 +75,13 @@
                 <tbody class="divide-y divide-graphite-100">
                     @forelse($device->sensors as $sensor)
                         <tr>
-                            <td class="px-5 py-3">@include('intranet.monitor.partials.badge', ['status' => $sensor->displayStatus()])</td>
+                            <td class="px-5 py-3"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {{ $sensor->displayStatus()->soft() }}"><span class="h-2 w-2 rounded-full {{ $sensor->displayStatus()->dot() }}"></span>{{ $sensor->displayStatus()->label() }}</span></td>
                             <td class="px-5 py-3">
                                 <a href="{{ route('intranet.monitor.sensors.show', $sensor) }}" class="font-medium text-graphite-900 hover:text-nere-700">{{ $sensor->name }}</a>
-                                <p class="text-xs text-graphite-500">{{ $sensor->kind->label() }} · {{ $sensor->target() }}</p>
+                                <p class="text-sm text-graphite-700">{{ $sensor->last_message ?? 'Pas encore contrôlé' }}</p>
+                                <p class="text-xs text-graphite-400">{{ $sensor->kind->label() }} · {{ $sensor->target() }}</p>
                             </td>
-                            <td class="whitespace-nowrap px-5 py-3 font-semibold text-graphite-900">{{ $sensor->formatValue() }}</td>
-                            <td class="px-5 py-3 text-graphite-700">{{ $sensor->last_message ?? 'Pas encore contrôlé' }}</td>
+                            <td class="whitespace-nowrap px-5 py-3 text-base font-semibold tabular-nums text-graphite-900">{{ $sensor->formatValue() }}</td>
                             <td class="px-5 py-3">
                                 @include('intranet.monitor.partials.chart', ['points' => $sparklines[$sensor->id], 'height' => 32, 'compact' => true, 'label' => $sensor->name.' sur 2 jours', 'unit' => $sensor->unitLabel()])
                             </td>
@@ -85,7 +94,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-5 py-4 text-graphite-600">Aucun capteur. Ajoutez-en un ci-dessous.</td></tr>
+                        <tr><td colspan="6" class="px-5 py-4 text-graphite-600">Aucun capteur. Ajoutez-en un ci-dessous.</td></tr>
                     @endforelse
                 </tbody>
             </table>

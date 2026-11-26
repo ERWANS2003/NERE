@@ -12,6 +12,7 @@ use App\Models\Department;
 use App\Models\MonitorDevice;
 use App\Models\MonitorEvent;
 use App\Models\MonitorGroup;
+use App\Models\MonitorReading;
 use App\Models\MonitorSensor;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
@@ -61,7 +62,22 @@ class MonitorController extends Controller
             'filter' => $filter,
             'durations' => self::DURATIONS,
             'lastCheck' => $this->lastCheck($sensors),
+            'deviceCount' => $devices->count(),
+            'availability' => $this->availability24h(),
         ]);
+    }
+
+    /** Disponibilité moyenne des pings sur 24 heures, tous équipements confondus. */
+    private function availability24h(): ?float
+    {
+        $row = MonitorReading::query()
+            ->join('monitor_sensors', 'monitor_sensors.id', '=', 'monitor_readings.sensor_id')
+            ->where('monitor_sensors.kind', MonitorSensorKind::Ping->value)
+            ->where('monitor_readings.checked_at', '>=', now()->subDay())
+            ->selectRaw('count(*) as samples, sum(case when monitor_readings.ok then 1 else 0 end) as up')
+            ->first();
+
+        return $row && $row->samples > 0 ? round(100 * $row->up / $row->samples, 2) : null;
     }
 
     /** Dernier contrôle effectué : s'il date, le planificateur ne tourne plus. */

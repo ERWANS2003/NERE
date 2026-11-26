@@ -42,22 +42,27 @@
             @if(($devicesByGroup[$group->id] ?? collect())->isNotEmpty())
                 <ul class="divide-y divide-graphite-100">
                     @foreach($devicesByGroup[$group->id] as $device)
-                        <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 pr-5" style="padding-left: {{ $indent + 1.5 }}rem"
+                        @php $deviceStatus = $device->status(); @endphp
+                        <li class="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 pr-5 transition hover:bg-graphite-50/70" style="padding-left: {{ $indent + 1.5 }}rem"
                             data-search="{{ \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($device->name.' '.$device->host.' '.$device->type->label())) }}"
                             x-show="! q || $el.dataset.search.includes(norm(q))">
-                            <div class="w-64 min-w-0">
-                                <a href="{{ route('intranet.monitor.devices.show', $device) }}" class="flex items-center gap-2 font-medium text-graphite-900 hover:text-nere-700">
-                                    <span class="h-3 w-3 shrink-0 rounded-full {{ $device->status()->color() }}" title="{{ $device->status()->label() }}"></span>
-                                    <span class="truncate">{{ $device->name }}</span>
-                                </a>
-                                <p class="truncate pl-5 text-xs text-graphite-500">{{ $device->type->label() }} · {{ $device->host }}</p>
-                            </div>
+                            <a href="{{ route('intranet.monitor.devices.show', $device) }}" class="flex w-72 min-w-0 items-center gap-3 hover:text-nere-700">
+                                @include('intranet.monitor.partials.device-icon', ['type' => $device->type, 'status' => $deviceStatus])
+                                <span class="min-w-0">
+                                    <span class="block truncate font-medium text-graphite-900">{{ $device->name }}</span>
+                                    <span class="block truncate font-mono text-xs text-graphite-500">{{ $device->host }}</span>
+                                </span>
+                            </a>
                             <div class="flex flex-1 flex-wrap gap-1.5">
                                 @foreach($device->sensors as $sensor)
                                     @php $state = $sensor->displayStatus(); @endphp
                                     <a href="{{ route('intranet.monitor.sensors.show', $sensor) }}" title="{{ $state->label() }} : {{ $sensor->last_message ?? 'pas encore vérifié' }}"
-                                       class="rounded px-2 py-1 text-xs font-medium {{ $state->color() }}">
-                                        {{ $sensor->name }}@if($sensor->last_value !== null && $state !== \App\Enums\MonitorStatus::Paused) · {{ $sensor->formatValue() }}@endif
+                                       class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium {{ $state->soft() }} hover:shadow-sm">
+                                        <span class="h-2 w-2 shrink-0 rounded-full {{ $state->dot() }}"></span>
+                                        {{ $sensor->name }}
+                                        @if($sensor->last_value !== null && $state !== \App\Enums\MonitorStatus::Paused)
+                                            <span class="font-semibold tabular-nums">{{ $sensor->formatValue() }}</span>
+                                        @endif
                                     </a>
                                 @endforeach
                             </div>
