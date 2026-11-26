@@ -14,6 +14,7 @@ use App\Http\Controllers\Intranet\DirectoryController;
 use App\Http\Controllers\Intranet\FeedbackController;
 use App\Http\Controllers\Intranet\FormController;
 use App\Http\Controllers\Intranet\KnowledgeBaseController;
+use App\Http\Controllers\Intranet\MonitorController;
 use App\Http\Controllers\Intranet\NotificationController;
 use App\Http\Controllers\Intranet\PushSubscriptionController;
 use App\Http\Controllers\Intranet\ResourceController;
@@ -115,6 +116,22 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::post('/{ticket}/take', [TicketController::class, 'take'])->name('take');
         Route::post('/{ticket}/comments', [TicketController::class, 'comment'])->name('comments.store');
         Route::get('/attachments/{attachment}', [TicketController::class, 'download'])->name('attachments.download');
+    });
+
+    Route::prefix('supervision')->name('monitor.')->middleware('can:monitor')->group(function () {
+        Route::get('/', [MonitorController::class, 'index'])->name('index');
+        Route::post('/devices', [MonitorController::class, 'storeDevice'])->name('devices.store');
+        Route::get('/devices/{device}', [MonitorController::class, 'showDevice'])->name('devices.show');
+        Route::put('/devices/{device}', [MonitorController::class, 'updateDevice'])->name('devices.update');
+        Route::delete('/devices/{device}', [MonitorController::class, 'destroyDevice'])->name('devices.destroy');
+        Route::post('/devices/{device}/pause', [MonitorController::class, 'toggleDevice'])->name('devices.pause');
+        Route::post('/devices/{device}/sensors', [MonitorController::class, 'storeSensor'])->name('sensors.store');
+        Route::get('/sensors/{sensor}', [MonitorController::class, 'showSensor'])->name('sensors.show');
+        Route::put('/sensors/{sensor}', [MonitorController::class, 'updateSensor'])->name('sensors.update');
+        Route::delete('/sensors/{sensor}', [MonitorController::class, 'destroySensor'])->name('sensors.destroy');
+        Route::post('/sensors/{sensor}/pause', [MonitorController::class, 'toggleSensor'])->name('sensors.pause');
+        Route::post('/sensors/{sensor}/check', [MonitorController::class, 'checkSensor'])->name('sensors.check');
+        Route::post('/sensors/{sensor}/acknowledge', [MonitorController::class, 'acknowledge'])->name('sensors.acknowledge');
     });
 
     // Annuaire

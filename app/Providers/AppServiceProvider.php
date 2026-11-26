@@ -75,6 +75,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
         Gate::policy(Resource::class, ResourcePolicy::class);
 
+        // Supervision reseau : l'equipe IT (techniciens et responsables) et les
+        // administrateurs.
+        Gate::define('monitor', function (User $user): bool {
+            if ($user->is_super_admin) {
+                return true;
+            }
+            $it = Department::query()->where('code', 'IT')->where('is_active', true)->value('id');
+
+            return $it !== null && $user->canHandleIn($it);
+        });
+
         Event::listen(NotificationSent::class, function (NotificationSent $event): void {
             if (! config('webpush.enabled')
                 || $event->channel !== 'database'

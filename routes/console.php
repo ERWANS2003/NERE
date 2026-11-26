@@ -2,6 +2,8 @@
 
 use App\Models\ChatMessage;
 use App\Models\ChatRoom;
+use App\Services\Monitor\MonitorHistory;
+use App\Services\Monitor\MonitorPoller;
 use App\Services\SystemHealth;
 use App\Models\AppSetting;
 use App\Services\TicketSlaService;
@@ -30,6 +32,14 @@ Artisan::command('intranet:remind-pending-time-off', function (TimeOffReminderSe
     }
 })->purpose('Rappeler les demandes de congé en attente depuis 48 heures');
 
+Artisan::command('intranet:monitor-poll', function (MonitorPoller $poller) {
+    $this->info($poller->poll().' capteur(s) vérifié(s).');
+})->purpose('Vérifier les équipements supervisés (ping, ports, pages web)');
+
+Artisan::command('intranet:monitor-rollup', function (MonitorHistory $history) {
+    $this->info($history->rollup().' heure(s) consolidée(s).');
+})->purpose('Consolider les mesures de supervision par heure et purger les anciennes');
+
 Artisan::command('webpush:generate-vapid-keys', function () {
     $keys = VAPID::createVapidKeys();
     $this->line('WEB_PUSH_VAPID_PUBLIC_KEY='.$keys['publicKey']);
@@ -49,6 +59,8 @@ Schedule::call(fn () => Cache::forever(SystemHealth::SCHEDULER_HEARTBEAT_KEY, no
     ->everyMinute()
     ->name('sante-scheduler');
 Schedule::command('intranet:alerte-sante')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('intranet:monitor-poll')->everyMinute()->withoutOverlapping(5);
+Schedule::command('intranet:monitor-rollup')->hourlyAt(2)->withoutOverlapping();
 
 // Rappels des événements du calendrier prévus le lendemain, chaque jour à 7h.
 Schedule::command('intranet:rappels-evenements')->dailyAt('07:00');

@@ -224,6 +224,18 @@
                     </a>
                 </li>
                 @endif
+                @can('monitor')
+                <li>
+                    <a href="{{ route('intranet.monitor.index') }}"
+                       @if(request()->routeIs('intranet.monitor.*')) aria-current="page" @endif
+                       class="sidebar-link {{ request()->routeIs('intranet.monitor.*') ? 'active' : '' }}">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4l3-8 4 16 3-8h4"/>
+                        </svg>
+                        <span>Supervision réseau</span>
+                    </a>
+                </li>
+                @endcan
             </ul>
         </section>
 
