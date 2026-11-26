@@ -38,15 +38,21 @@
                 <input type="hidden" name="items[{{ $device->id }}][y]" value="{{ $item->y }}" data-y>
             @endif
             <a @unless($editing) href="{{ route('intranet.monitor.devices.show', $device) }}" @endunless
-               class="flex flex-col items-center gap-1 focus:outline-none" aria-label="{{ $device->name }} : {{ $status->label() }}">
-                <span class="relative flex h-10 w-10 items-center justify-center rounded-full shadow-lg ring-4 {{ $status->color() }} {{ ($dark ?? false) ? 'ring-graphite-900/60' : 'ring-white/80' }}">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $device->type->iconPath() }}"/></svg>
+               class="flex flex-col items-center gap-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-nere-500" aria-label="{{ $device->name }} : {{ $status->label() }}">
+                <span class="relative flex h-7 w-7 items-center justify-center rounded-full shadow-lg ring-2 sm:h-10 sm:w-10 sm:ring-4 {{ $status->color() }} {{ ($dark ?? false) ? 'ring-graphite-900/60' : 'ring-white/80' }}">
+                    <svg class="h-3.5 w-3.5 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $device->type->iconPath() }}"/></svg>
                     @if($status === \App\Enums\MonitorStatus::Down)
                         <span class="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-40" aria-hidden="true"></span>
                     @endif
                 </span>
-                <span class="max-w-40 truncate rounded px-1.5 py-0.5 text-xs font-semibold shadow-sm {{ ($dark ?? false) ? 'bg-graphite-900/80 text-white' : 'bg-white/90 text-graphite-900' }}">{{ $device->name }}</span>
+                <span class="max-w-24 truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight shadow-sm sm:max-w-48 sm:px-1.5 sm:text-xs {{ ($dark ?? false) ? 'bg-graphite-900/80 text-white' : 'bg-white/90 text-graphite-900' }}"
+                      title="{{ $device->name }}">{{ $device->name }}</span>
             </a>
+            @if($editing)
+                <button type="submit" form="retirer-{{ $device->id }}" title="Retirer {{ $device->name }} de la carte"
+                        class="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-graphite-600 shadow ring-1 ring-graphite-300 hover:bg-red-600 hover:text-white"
+                        onpointerdown="event.stopPropagation()">×</button>
+            @endif
             @unless($editing)
                 {{-- Détail au survol ou au focus : chaque capteur avec son état. --}}
                 <div class="pointer-events-none invisible absolute {{ $item->y < 40 ? 'top-full mt-2' : 'bottom-full mb-2' }} left-1/2 z-30 w-64 -translate-x-1/2 rounded-xl border border-graphite-200 bg-white p-3 text-left text-xs text-graphite-800 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">

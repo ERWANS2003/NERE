@@ -440,6 +440,14 @@ it('draws maps with icons, dependency lines, alarms, a wall screen and whole gro
         ->assertSee('Caméra portail')
         ->assertDontSee('intranet-sidebar', false);
     $this->get(route('intranet.monitor.maps'))->assertOk()->assertSee('2 en panne');
+
+    // Déplacement enregistré aussitôt, et croix de retrait en mode modification.
+    $this->patchJson(route('intranet.monitor.maps.items.move', [$map, $camera]), ['x' => 33, 'y' => 66])->assertOk()->assertJson(['saved' => true]);
+    expect($map->items()->where('device_id', $camera->id)->first()->only('x', 'y'))->toBe(['x' => 33.0, 'y' => 66.0]);
+    $this->patchJson(route('intranet.monitor.maps.items.move', [$map, $camera]), ['x' => 140, 'y' => 66])->assertUnprocessable();
+    $this->get(route('intranet.monitor.maps.show', [$map, 'edition' => 1]))->assertOk()
+        ->assertSee('form="retirer-'.$camera->id.'"', false)
+        ->assertSee('id="retirer-'.$camera->id.'"', false);
 });
 
 it('sends no e-mail for short outages and groups alerts into one message per check', function () {

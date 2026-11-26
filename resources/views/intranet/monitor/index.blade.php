@@ -25,25 +25,25 @@
     @endphp
 
     {{-- Chiffres clés --}}
-    <section class="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Chiffres clés">
-        <div class="carte p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-graphite-500">Équipements surveillés</p>
-            <p class="mt-1 text-3xl font-bold tabular-nums text-graphite-900">{{ $deviceCount }}</p>
+    <section class="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Chiffres clés">
+        <div class="carte p-3 sm:p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-graphite-500 sm:text-xs">Équipements surveillés</p>
+            <p class="mt-1 text-2xl font-bold sm:text-3xl tabular-nums text-graphite-900">{{ $deviceCount }}</p>
             <p class="mt-1 text-xs text-graphite-500">{{ $total }} capteurs, {{ $groups->count() }} groupe(s)</p>
         </div>
-        <div class="carte p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-graphite-500">Disponibilité sur 24 h</p>
-            <p class="mt-1 text-3xl font-bold tabular-nums {{ $availability !== null && $availability < 99 ? 'text-red-700' : 'text-graphite-900' }}">{{ $availability === null ? '-' : number_format($availability, 2, ',', ' ').' %' }}</p>
+        <div class="carte p-3 sm:p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-graphite-500 sm:text-xs">Disponibilité sur 24 h</p>
+            <p class="mt-1 text-2xl font-bold sm:text-3xl tabular-nums {{ $availability !== null && $availability < 99 ? 'text-red-700' : 'text-graphite-900' }}">{{ $availability === null ? '-' : number_format($availability, 2, ',', ' ').' %' }}</p>
             <p class="mt-1 text-xs text-graphite-500">moyenne des pings de tous les équipements</p>
         </div>
-        <a href="#alarmes" class="carte block p-4 {{ $downCount ? 'ring-2 ring-red-200' : '' }}">
-            <p class="text-xs font-semibold uppercase tracking-wide text-graphite-500">Alarmes en cours</p>
-            <p class="mt-1 text-3xl font-bold tabular-nums {{ $downCount ? 'text-red-700' : ($alarmCount ? 'text-amber-700' : 'text-green-700') }}">{{ $alarmCount }}</p>
+        <a href="#alarmes" class="carte block p-3 sm:p-4 {{ $downCount ? 'ring-2 ring-red-200' : '' }}">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-graphite-500 sm:text-xs">Alarmes en cours</p>
+            <p class="mt-1 text-2xl font-bold sm:text-3xl tabular-nums {{ $downCount ? 'text-red-700' : ($alarmCount ? 'text-amber-700' : 'text-green-700') }}">{{ $alarmCount }}</p>
             <p class="mt-1 text-xs text-graphite-500">{{ $downCount }} en panne · {{ $alarmCount - $downCount }} à surveiller</p>
         </a>
-        <div class="carte p-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-graphite-500">Dernier contrôle</p>
-            <p class="mt-1 text-3xl font-bold text-graphite-900">{{ $lastCheck ? $lastCheck->format('H:i') : '-' }}</p>
+        <div class="carte p-3 sm:p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-graphite-500 sm:text-xs">Dernier contrôle</p>
+            <p class="mt-1 text-2xl font-bold sm:text-3xl text-graphite-900">{{ $lastCheck ? $lastCheck->format('H:i') : '-' }}</p>
             <p class="mt-1 text-xs {{ $lastCheck && $lastCheck->lt(now()->subMinutes(5)) ? 'font-semibold text-red-700' : 'text-graphite-500' }}">{{ $lastCheck ? $lastCheck->diffForHumans() : 'aucun contrôle pour l’instant' }}</p>
         </div>
     </section>
@@ -95,7 +95,7 @@
         </div>
         @forelse($alarms as $index => $sensor)
             @php $state = $sensor->displayStatus(); @endphp
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-l-4 border-b-graphite-100 {{ $state->accent() }} px-5 py-3 text-sm last:border-b-0"
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-l-4 border-b-graphite-100 {{ $state->accent() }} px-3 py-3 text-sm last:border-b-0 sm:gap-x-4 sm:px-5"
                  @if($index >= 8) x-show="all" x-cloak @endif>
                 @include('intranet.monitor.partials.device-icon', ['type' => $sensor->device->type, 'status' => $state, 'size' => 'sm'])
                 <div class="min-w-0 flex-1">
@@ -104,12 +104,13 @@
                         <span class="text-graphite-600">· {{ $sensor->name }}</span>
                         <span class="ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold {{ $state->soft() }}">{{ $state->label() }}</span>
                     </p>
-                    <p class="truncate text-graphite-600">{{ $sensor->last_message }}</p>
+                    <p class="text-graphite-600 sm:truncate">{{ $sensor->last_message }}</p>
+                    <p class="text-xs text-graphite-500 sm:hidden">depuis {{ $sensor->status_changed_at?->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</p>
                     @if($state === \App\Enums\MonitorStatus::DownAcknowledged)
                         <p class="text-xs text-graphite-500">Pris en compte par {{ $sensor->acknowledger?->name }}@if($sensor->acknowledged_until) jusqu’à {{ $sensor->acknowledged_until->format('H:i') }}@endif @if($sensor->acknowledgement) : « {{ $sensor->acknowledgement }} »@endif</p>
                     @endif
                 </div>
-                <span class="w-28 shrink-0 text-right text-xs text-graphite-500" title="{{ $sensor->status_changed_at?->format('d/m/Y H:i') }}">depuis {{ $sensor->status_changed_at?->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
+                <span class="hidden w-28 shrink-0 text-right text-xs text-graphite-500 sm:block" title="{{ $sensor->status_changed_at?->format('d/m/Y H:i') }}">depuis {{ $sensor->status_changed_at?->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
                 @if($state === \App\Enums\MonitorStatus::Down)
                     @include('intranet.monitor.partials.acknowledge', ['sensor' => $sensor])
                 @endif

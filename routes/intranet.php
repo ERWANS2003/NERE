@@ -149,6 +149,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/cartes/{map}', [MonitorExtrasController::class, 'showMap'])->name('maps.show');
         Route::put('/cartes/{map}', [MonitorExtrasController::class, 'updateMap'])->name('maps.update');
         Route::delete('/cartes/{map}', [MonitorExtrasController::class, 'destroyMap'])->name('maps.destroy');
+        Route::patch('/cartes/{map}/equipements/{device}', [MonitorExtrasController::class, 'moveMapItem'])->name('maps.items.move');
         Route::delete('/cartes/{map}/equipements/{device}', [MonitorExtrasController::class, 'removeMapItem'])->name('maps.items.destroy');
         Route::get('/cartes/{map}/ecran', [MonitorExtrasController::class, 'mapScreen'])->name('maps.screen');
         Route::get('/cartes/{map}/fond', [MonitorExtrasController::class, 'mapBackground'])->name('maps.background');

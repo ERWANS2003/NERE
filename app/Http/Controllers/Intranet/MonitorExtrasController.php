@@ -105,6 +105,15 @@ class MonitorExtrasController extends Controller
         return redirect()->route('intranet.monitor.maps.show', [$map, 'edition' => 1])->with('success', 'Carte enregistrée.');
     }
 
+    /** Déplacement d'un équipement sur la carte, enregistré dès qu'on le lâche. */
+    public function moveMapItem(Request $request, MonitorMap $map, MonitorDevice $device): \Illuminate\Http\JsonResponse
+    {
+        $position = $request->validate(['x' => ['required', 'numeric', 'between:0,100'], 'y' => ['required', 'numeric', 'between:0,100']]);
+        abort_unless($map->items()->where('device_id', $device->id)->update($position) > 0, 404);
+
+        return response()->json(['saved' => true]);
+    }
+
     public function removeMapItem(MonitorMap $map, MonitorDevice $device): RedirectResponse
     {
         $map->items()->where('device_id', $device->id)->delete();

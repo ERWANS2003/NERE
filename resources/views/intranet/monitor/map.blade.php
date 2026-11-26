@@ -66,8 +66,10 @@
                     @endif
                 </div>
                 <p class="text-sm text-graphite-600 sm:col-span-2 lg:col-span-5">
-                    Faites glisser les équipements à leur place, puis « Enregistrer ». Les nouveaux arrivent en bas de la carte.
-                    Les lignes relient chaque équipement à celui dont il dépend (réglage « Dépend de » de l’équipement).
+                    Faites glisser les équipements à leur place : chaque déplacement est enregistré aussitôt.
+                    « Enregistrer » sert au nom, au plan de fond et aux ajouts ; les nouveaux équipements arrivent en bas de la carte.
+                    La croix d’un équipement le retire de la carte. Les lignes relient chaque équipement à celui dont il dépend.
+                    <span class="ml-1 font-semibold" data-save-status role="status" aria-live="polite"></span>
                 </p>
             </div>
         @else
@@ -113,15 +115,14 @@
     </div>
 
     @if($editing)
-        <div class="mt-4 flex flex-wrap gap-2 text-sm">
-            @foreach($map->items as $item)
-                <form method="POST" action="{{ route('intranet.monitor.maps.items.destroy', [$map, $item->device]) }}">
-                    @csrf
-                    @method('DELETE')
-                    <button class="rounded border border-graphite-300 px-2 py-1 hover:bg-graphite-50">Retirer {{ $item->device->name }}</button>
-                </form>
-            @endforeach
-        </div>
+        {{-- Formulaires des croix « retirer » (hors du formulaire de la carte). --}}
+        @foreach($map->items as $item)
+            <form method="POST" action="{{ route('intranet.monitor.maps.items.destroy', [$map, $item->device]) }}" id="retirer-{{ $item->device_id }}" class="hidden"
+                  onsubmit="return confirm('Retirer {{ addslashes($item->device->name) }} de la carte ?')">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endforeach
         <form method="POST" action="{{ route('intranet.monitor.maps.destroy', $map) }}" class="mt-6" onsubmit="return confirm('Supprimer cette carte ?')">
             @csrf
             @method('DELETE')
@@ -130,15 +131,36 @@
         <script>
             (() => {
                 const canvas = document.querySelector('[data-map-canvas]');
+                const status = document.querySelector('[data-save-status]');
+                const token = document.querySelector('meta[name="csrf-token"]')?.content;
+                const save = (id, x, y) => {
+                    status.textContent = 'Enregistrement…';
+                    status.className = 'ml-1 font-semibold text-graphite-500';
+                    fetch(@js(route('intranet.monitor.maps.items.move', [$map, '__ID__'])).replace('__ID__', id), {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                        body: JSON.stringify({ x, y }),
+                    }).then((response) => {
+                        if (! response.ok) throw new Error();
+                        status.textContent = 'Position enregistrée.';
+                        status.className = 'ml-1 font-semibold text-green-700';
+                    }).catch(() => {
+                        status.textContent = 'Échec de l’enregistrement : utilisez « Enregistrer ».';
+                        status.className = 'ml-1 font-semibold text-red-700';
+                    });
+                };
                 canvas.querySelectorAll('[data-map-item]').forEach((item) => {
                     item.addEventListener('pointerdown', (start) => {
                         start.preventDefault();
                         item.setPointerCapture(start.pointerId);
                         const id = item.dataset.device;
+                        let moved = false;
                         const move = (event) => {
                             const box = canvas.getBoundingClientRect();
-                            const x = Math.min(100, Math.max(0, (event.clientX - box.left) / box.width * 100)).toFixed(2);
-                            const y = Math.min(100, Math.max(0, (event.clientY - box.top) / box.height * 100)).toFixed(2);
+                            // Grille magnétique de 1 % pour aligner proprement les équipements.
+                            const x = Math.min(100, Math.max(0, Math.round((event.clientX - box.left) / box.width * 100)));
+                            const y = Math.min(100, Math.max(0, Math.round((event.clientY - box.top) / box.height * 100)));
+                            moved = true;
                             item.style.left = x + '%';
                             item.style.top = y + '%';
                             item.querySelector('[data-x]').value = x;
@@ -148,7 +170,12 @@
                             canvas.querySelectorAll(`[data-line-to="${id}"]`).forEach((line) => { line.setAttribute('x2', x); line.setAttribute('y2', y); });
                         };
                         item.addEventListener('pointermove', move);
-                        item.addEventListener('pointerup', () => item.removeEventListener('pointermove', move), { once: true });
+                        item.addEventListener('pointerup', () => {
+                            item.removeEventListener('pointermove', move);
+                            if (moved) {
+                                save(id, Number(item.querySelector('[data-x]').value), Number(item.querySelector('[data-y]').value));
+                            }
+                        }, { once: true });
                     });
                 });
             })();

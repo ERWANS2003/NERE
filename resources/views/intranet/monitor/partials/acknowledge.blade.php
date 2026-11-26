@@ -1,7 +1,7 @@
 {{-- Bouton « Je m'en occupe » : la note et la durée s'ouvrent dans une petite fenêtre. --}}
 <details class="relative">
     <summary class="bouton-secondaire cursor-pointer list-none whitespace-nowrap">Je m’en occupe</summary>
-    <form method="POST" action="{{ route('intranet.monitor.sensors.acknowledge', $sensor) }}" class="absolute right-0 z-30 mt-2 w-80 space-y-3 rounded-xl border border-graphite-200 bg-white p-4 shadow-xl">
+    <form method="POST" action="{{ route('intranet.monitor.sensors.acknowledge', $sensor) }}" class="fixed inset-x-3 bottom-3 z-50 space-y-3 rounded-xl border border-graphite-200 bg-white p-4 shadow-2xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:z-30 sm:mt-2 sm:w-80 sm:shadow-xl">
         @csrf
         <p class="text-sm text-graphite-700">L’équipe verra que vous prenez cette panne en charge. Les rappels et l’escalade s’arrêtent.</p>
         <label class="block">
