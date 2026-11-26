@@ -15,6 +15,8 @@ enum MonitorSensorKind: string
     case SnmpMemory = 'snmp_memory';
     case SnmpDisk = 'snmp_disk';
     case SnmpPrinter = 'snmp_printer';
+    case SnmpPrinterStatus = 'snmp_printer_status';
+    case SnmpPages = 'snmp_pages';
     case SnmpCustom = 'snmp_custom';
 
     public function label(): string
@@ -31,6 +33,8 @@ enum MonitorSensorKind: string
             self::SnmpMemory => 'SNMP : mémoire',
             self::SnmpDisk => 'SNMP : espace disque',
             self::SnmpPrinter => 'SNMP : consommables d’imprimante',
+            self::SnmpPrinterStatus => 'SNMP : état de l’imprimante (écran, bourrage, capot…)',
+            self::SnmpPages => 'SNMP : compteur de pages',
             self::SnmpCustom => 'SNMP : valeur personnalisée (OID)',
         };
     }
@@ -42,7 +46,8 @@ enum MonitorSensorKind: string
             self::Ssl, self::SnmpUptime => 'jours',
             self::SnmpTraffic => 'kbit/s',
             self::SnmpCpu, self::SnmpMemory, self::SnmpDisk, self::SnmpPrinter => '%',
-            self::SnmpCustom => '',
+            self::SnmpPages => 'pages',
+            self::SnmpCustom, self::SnmpPrinterStatus => '',
         };
     }
 
@@ -76,6 +81,8 @@ enum MonitorSensorKind: string
             self::SnmpCpu => ['warn_above' => 80, 'error_above' => 95],
             self::SnmpMemory, self::SnmpDisk => ['warn_above' => 85, 'error_above' => 95],
             self::SnmpPrinter => ['warn_below' => 15, 'error_below' => 5],
+            // Gravité 0 = prête, 1 = à surveiller, 2 = bloquée.
+            self::SnmpPrinterStatus => ['warn_above' => 0.5, 'error_above' => 1.5],
             default => [],
         };
     }

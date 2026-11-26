@@ -123,7 +123,10 @@ class MonitorPoller
             }
         } else {
             [$status, $limitMessage] = $this->applyLimits($sensor, $value);
-            $message = $limitMessage ?? $message;
+            // L'état d'une imprimante s'explique par son écran, pas par le chiffre de gravité.
+            if ($sensor->kind !== MonitorSensorKind::SnmpPrinterStatus) {
+                $message = $limitMessage ?? $message;
+            }
             if ($status === MonitorStatus::Up && $value !== null && $this->isUnusual($sensor, $value)) {
                 $status = MonitorStatus::Unusual;
                 $message .= ' (inhabituel pour ce jour et cette heure)';

@@ -17,6 +17,7 @@ use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use App\Services\Monitor\DeviceInventory;
 use App\Services\Monitor\MonitorHistory;
 use App\Services\Monitor\MonitorPoller;
 use App\Services\TicketSlaService;
@@ -137,13 +138,28 @@ class MonitorController extends Controller
     public function showDevice(MonitorDevice $device, MonitorHistory $history): View
     {
         $device->load('sensors.device', 'group', 'parentDevice');
+        $reference = $device->sensors->firstWhere('kind', MonitorSensorKind::Ping) ?? $device->sensors->first();
+        $availability = $reference ? collect(['24 heures' => 1, '7 jours' => 7, '30 jours' => 30])
+            ->map(fn (int $days) => $history->report(collect([$reference]), now()->subDays($days), now())[0])
+            : collect();
 
         return view('intranet.monitor.device', [
+            'availability' => $availability,
+            'reference' => $reference,
+            'hasSnmp' => $device->sensors->contains(fn (MonitorSensor $sensor) => $sensor->kind->isSnmp()),
             'device' => $device,
             'kinds' => MonitorSensorKind::cases(),
             'durations' => self::DURATIONS,
             'sparklines' => $device->sensors->mapWithKeys(fn (MonitorSensor $sensor) => [$sensor->id => $history->series($sensor, '2j')['points']]),
         ]);
+    }
+
+    /** Fiche SNMP de l'équipement, chargée après la page (elle peut prendre quelques secondes). */
+    public function deviceSheet(Request $request, MonitorDevice $device, DeviceInventory $inventory): View
+    {
+        $device->load('group');
+
+        return view('intranet.monitor.partials.inventory', ['device' => $device, 'info' => $inventory->get($device, $request->boolean('actualiser'))]);
     }
 
     public function editDevice(MonitorDevice $device): View

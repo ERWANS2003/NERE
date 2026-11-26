@@ -374,3 +374,38 @@ it('helps with search, colour legend, quick add and a one-click acknowledgement'
     expect($rdp->checked_at)->not->toBeNull();
     $this->get(route('intranet.monitor.devices.show', $device))->assertDontSee('+ Bureau à distance (3389)');
 });
+
+it('reads printer status, page counter and the device sheet over SNMP', function () {
+    expect(\App\Services\Monitor\SensorChecks::printerState(['Prêt.'], "\x00"))->toBe([0, 'Écran : Prêt.'])
+        ->and(\App\Services\Monitor\SensorChecks::printerState(['Fermer couvercle du bac de récupération de toner.'], "\x00")[0])->toBe(2)
+        ->and(\App\Services\Monitor\SensorChecks::printerState(['En veille...'], "\x20"))->toBe([1, 'Écran : En veille... · Toner bas'])
+        ->and(\App\Services\Monitor\SensorChecks::printerState([], "\x04")[0])->toBe(2);
+
+    $snmp = new FakeSnmp([
+        '1.3.6.1.2.1.1.1.0' => 'KYOCERA Document Solutions Printing System', '1.3.6.1.2.1.1.3.0' => 360000,
+        '1.3.6.1.2.1.25.3.2.1.3.1' => 'TASKalfa 2554ci', '1.3.6.1.2.1.43.5.1.1.17.1' => 'H721400190',
+        '1.3.6.1.2.1.25.3.5.1.2.1' => "\x00", '1.3.6.1.2.1.43.16.5.1.2.1.1' => 'Fermer couvercle du bac de récupération de toner.',
+        '1.3.6.1.2.1.43.10.2.1.4.1.1' => 365593,
+        '1.3.6.1.2.1.43.11.1.1.6.1.1' => 'TK-8368C', '1.3.6.1.2.1.43.11.1.1.8.1.1' => 12000, '1.3.6.1.2.1.43.11.1.1.9.1.1' => 5040,
+        '1.3.6.1.2.1.43.8.2.1.9.1.1' => 500, '1.3.6.1.2.1.43.8.2.1.10.1.1' => 150,
+        '1.3.6.1.2.1.2.2.1.2.1' => 'eth0', '1.3.6.1.2.1.2.2.1.8.1' => 1, '1.3.6.1.2.1.2.2.1.5.1' => 1000000000,
+    ]);
+    app()->instance(SnmpClient::class, $snmp);
+    $printer = monitorDevice(['name' => 'Imprimante sous-sol', 'host' => '192.168.10.10', 'type' => 'printer'], template: false);
+    $printer->applyTemplate(true);
+    $sensors = $printer->sensors()->get()->keyBy(fn ($s) => $s->kind->value);
+    foreach (['snmp_printer_status', 'snmp_pages'] as $kind) {
+        app(MonitorPoller::class)->checkNow($sensors[$kind]);
+    }
+
+    expect($sensors['snmp_printer_status']->fresh()->status)->toBe(MonitorStatus::Down)
+        ->and($sensors['snmp_printer_status']->fresh()->last_message)->toBe('Écran : Fermer couvercle du bac de récupération de toner.')
+        ->and($sensors['snmp_printer_status']->fresh()->formatValue())->toBe('Bloquée')
+        ->and($sensors['snmp_pages']->fresh()->last_value)->toBe(365593.0);
+
+    $this->actingAs(monitorTechnician());
+    $this->get(route('intranet.monitor.devices.show', $printer))->assertOk()->assertSee('Fiche de l’équipement')->assertSee('Disponibilité sur 30 jours');
+    $this->get(route('intranet.monitor.devices.sheet', $printer))->assertOk()
+        ->assertSee('TASKalfa 2554ci')->assertSee('H721400190')->assertSee('365 593')
+        ->assertSee('TK-8368C')->assertSee('42 %')->assertSee('150 / 500 feuilles')->assertSee('eth0');
+});

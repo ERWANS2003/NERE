@@ -54,7 +54,11 @@ enum MonitorDeviceType: string
                     ['kind' => 'snmp_memory', 'name' => 'Mémoire'],
                     ['kind' => 'snmp_disk', 'name' => 'Disque'],
                 ],
-                self::Printer => [['kind' => 'snmp_printer', 'name' => 'Consommables']],
+                self::Printer => [
+                    ['kind' => 'snmp_printer_status', 'name' => 'État de l’imprimante'],
+                    ['kind' => 'snmp_printer', 'name' => 'Consommables'],
+                    ['kind' => 'snmp_pages', 'name' => 'Compteur de pages'],
+                ],
                 self::Camera => [['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement']],
                 self::Antenna, self::Network => [
                     ['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement'],

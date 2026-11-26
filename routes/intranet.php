@@ -130,6 +130,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
         Route::get('/equipements/nouveau', [MonitorController::class, 'createDevice'])->name('devices.create');
         Route::post('/equipements', [MonitorController::class, 'storeDevice'])->name('devices.store');
         Route::get('/equipements/{device}', [MonitorController::class, 'showDevice'])->name('devices.show');
+        Route::get('/equipements/{device}/fiche', [MonitorController::class, 'deviceSheet'])->name('devices.sheet');
         Route::get('/equipements/{device}/modifier', [MonitorController::class, 'editDevice'])->name('devices.edit');
         Route::put('/equipements/{device}', [MonitorController::class, 'updateDevice'])->name('devices.update');
         Route::delete('/equipements/{device}', [MonitorController::class, 'destroyDevice'])->name('devices.destroy');

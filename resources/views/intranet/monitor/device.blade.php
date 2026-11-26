@@ -31,6 +31,21 @@
         </div>
     </div>
 
+    @if($reference)
+        <section class="mb-6 grid gap-3 sm:grid-cols-3" aria-label="Disponibilité">
+            @foreach($availability as $period => $row)
+                <div class="carte p-4">
+                    <p class="text-sm text-graphite-500">Disponibilité sur {{ $period }}</p>
+                    <p class="mt-1 text-2xl font-bold {{ $row['uptime'] !== null && $row['uptime'] < 99 ? 'text-red-700' : 'text-graphite-900' }}">{{ $row['uptime'] === null ? '-' : number_format($row['uptime'], 2, ',', ' ').' %' }}</p>
+                    <p class="mt-1 text-xs text-graphite-500">
+                        {{ $row['outages'] }} panne(s){{ $row['downtime_minutes'] ? ', '.\App\Services\Monitor\SensorChecks::duration($row['downtime_minutes'] * 60).' au total' : '' }}
+                        @if($row['avg'] !== null) · {{ $reference->name }} moyen {{ $reference->formatValue($row['avg']) }} @endif
+                    </p>
+                </div>
+            @endforeach
+        </section>
+    @endif
+
     <section class="carte mb-6 overflow-hidden">
         <h2 class="border-b border-graphite-100 px-5 py-3 font-semibold text-graphite-900">Capteurs</h2>
         <div class="overflow-x-auto">
@@ -75,6 +90,15 @@
         </div>
     </section>
 
+    <section class="carte mb-6 p-5" x-data="{ html: '', loading: true, load(refresh = false) { this.loading = true; fetch(@js(route('intranet.monitor.devices.sheet', $device)) + (refresh ? '?actualiser=1' : ''), { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(r => r.text()).then(t => { this.html = t; this.loading = false }).catch(() => { this.html = '<p class=&quot;text-sm text-red-700&quot;>Fiche impossible à charger.</p>'; this.loading = false }) } }" x-init="load()">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <h2 class="font-semibold text-graphite-900">Fiche de l’équipement</h2>
+            <button type="button" class="text-sm font-medium text-nere-700 hover:underline" @click="load(true)" :disabled="loading">Relire maintenant</button>
+        </div>
+        <p class="text-sm text-graphite-500" x-show="loading">Lecture des informations de l’équipement en SNMP…</p>
+        <div x-show="! loading" x-html="html"></div>
+    </section>
+
     @php
         $quick = collect([
             ['kind' => 'tcp', 'name' => 'Bureau à distance', 'port' => 3389],
@@ -84,6 +108,16 @@
             ['kind' => 'ssl', 'name' => 'Certificat SSL', 'port' => 443],
             ['kind' => 'tcp', 'name' => 'Base PostgreSQL', 'port' => 5432],
             ['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement (SNMP)', 'port' => null],
+            ...($device->type === \App\Enums\MonitorDeviceType::Printer ? [
+                ['kind' => 'snmp_printer_status', 'name' => 'État de l’imprimante', 'port' => null],
+                ['kind' => 'snmp_printer', 'name' => 'Consommables', 'port' => null],
+                ['kind' => 'snmp_pages', 'name' => 'Compteur de pages', 'port' => null],
+            ] : []),
+            ...($device->type === \App\Enums\MonitorDeviceType::Server ? [
+                ['kind' => 'snmp_cpu', 'name' => 'Processeur', 'port' => null],
+                ['kind' => 'snmp_memory', 'name' => 'Mémoire', 'port' => null],
+                ['kind' => 'snmp_disk', 'name' => 'Disque', 'port' => null],
+            ] : []),
         ])->reject(fn ($q) => $device->sensors->contains(fn ($s) => $s->kind->value === $q['kind'] && $s->port === $q['port']));
     @endphp
     @if($quick->isNotEmpty())

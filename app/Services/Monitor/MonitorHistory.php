@@ -68,13 +68,19 @@ class MonitorHistory
      */
     public function rows(MonitorSensor $sensor, Carbon $from, Carbon $to): Collection
     {
-        $raw = $from->gte(now()->subDays((int) config('monitor.raw_days', 7))->addHour());
+        $raw = fn (Carbon $start) => MonitorReading::query()->where('sensor_id', $sensor->id)->whereBetween('checked_at', [$start, $to])->orderBy('checked_at')->get()
+            ->map(fn (MonitorReading $r) => ['at' => $r->checked_at, 'samples' => 1, 'failures' => $r->ok ? 0 : 1, 'avg' => $r->value, 'max' => $r->value]);
 
-        return $raw
-            ? MonitorReading::query()->where('sensor_id', $sensor->id)->whereBetween('checked_at', [$from, $to])->orderBy('checked_at')->get()
-                ->map(fn (MonitorReading $r) => ['at' => $r->checked_at, 'samples' => 1, 'failures' => $r->ok ? 0 : 1, 'avg' => $r->value, 'max' => $r->value])
-            : DB::table('monitor_hourly')->where('sensor_id', $sensor->id)->whereBetween('hour', [$from, $to])->orderBy('hour')->get()
-                ->map(fn ($r) => ['at' => Carbon::parse($r->hour), 'samples' => (int) $r->samples, 'failures' => (int) $r->failures, 'avg' => $r->avg_value === null ? null : (float) $r->avg_value, 'max' => $r->max_value === null ? null : (float) $r->max_value]);
+        if ($from->gte(now()->subDays((int) config('monitor.raw_days', 7))->addHour())) {
+            return $raw($from);
+        }
+
+        // Au-delà : moyennes horaires, complétées par les mesures pas encore consolidées.
+        $hourly = DB::table('monitor_hourly')->where('sensor_id', $sensor->id)->whereBetween('hour', [$from, $to])->orderBy('hour')->get()
+            ->map(fn ($r) => ['at' => Carbon::parse($r->hour), 'samples' => (int) $r->samples, 'failures' => (int) $r->failures, 'avg' => $r->avg_value === null ? null : (float) $r->avg_value, 'max' => $r->max_value === null ? null : (float) $r->max_value]);
+        $consolidatedUntil = $hourly->isEmpty() ? $from : $hourly->last()['at']->copy()->addHour();
+
+        return $hourly->concat($raw($consolidatedUntil->max($from)))->values();
     }
 
     /**

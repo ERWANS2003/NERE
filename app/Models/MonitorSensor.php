@@ -94,6 +94,9 @@ class MonitorSensor extends Model
         if ($value === null) {
             return '-';
         }
+        if ($this->kind === MonitorSensorKind::SnmpPrinterStatus) {
+            return ['Prête', 'À surveiller', 'Bloquée'][(int) round(max(0, min(2, $value)))];
+        }
         $digits = abs($value) >= 100 || floor($value) == $value ? 0 : 1;
 
         return trim(number_format($value, $digits, ',', ' ').' '.$this->unitLabel());

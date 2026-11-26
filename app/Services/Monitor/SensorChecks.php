@@ -259,6 +259,25 @@ class SensorChecks
 
                 return [true, (float) $supplies[0]['percent'], implode(', ', array_map(fn ($s) => $s['name'].' '.$s['percent'].' %', array_slice($supplies, 0, 4)))];
 
+            case MonitorSensorKind::SnmpPrinterStatus:
+                [$severity, $message] = self::printerState(
+                    array_values(array_filter(array_map('strval', $snmp->walk($host, $community, '1.3.6.1.2.1.43.16.5.1.2', 10)))),
+                    (string) ($snmp->get($host, $community, ['1.3.6.1.2.1.25.3.5.1.2.1'])['1.3.6.1.2.1.25.3.5.1.2.1'] ?? ''),
+                );
+
+                return [true, (float) $severity, $message];
+
+            case MonitorSensorKind::SnmpPages:
+                $oid = '1.3.6.1.2.1.43.10.2.1.4.1.1';
+                $pages = $snmp->get($host, $community, [$oid])[$oid];
+                if (! is_numeric($pages)) {
+                    throw new RuntimeException('SNMP : compteur de pages non publié');
+                }
+                $first = $sensor->readings()->where('checked_at', '>=', now()->startOfDay())->whereNotNull('value')->orderBy('checked_at')->value('value');
+                $today = $first === null ? null : max(0, (int) ($pages - $first));
+
+                return [true, (float) $pages, number_format((float) $pages, 0, ',', ' ').' pages au total'.($today === null ? '' : ' · '.number_format($today, 0, ',', ' ').' aujourd’hui')];
+
             case MonitorSensorKind::SnmpTraffic:
                 $index = filled($sensor->parameter) ? (int) $sensor->parameter : ($sensor->state['index'] ?? $this->busiestInterface($host, $community));
                 $in = "1.3.6.1.2.1.31.1.1.1.6.{$index}";
@@ -316,6 +335,46 @@ class SensorChecks
         arsort($counters);
 
         return (int) substr((string) array_key_first($counters), strlen('1.3.6.1.2.1.31.1.1.1.6.'));
+    }
+
+    /**
+     * Gravité d'une imprimante d'après le texte de son écran et ses erreurs
+     * déclarées (hrPrinterDetectedErrorState) : 0 prête, 1 à surveiller, 2 bloquée.
+     *
+     * @param  list<string>  $display
+     * @return array{0: int, 1: string}
+     */
+    public static function printerState(array $display, string $errorBits): array
+    {
+        $blocking = [0 => [0x40 => 'plus de papier', 0x10 => 'plus de toner', 0x08 => 'porte ouverte', 0x04 => 'bourrage', 0x02 => 'hors ligne'], 1 => [0x80 => 'bac absent', 0x20 => 'consommable absent', 0x08 => 'bac de sortie plein']];
+        $watch = [0 => [0x80 => 'papier bas', 0x20 => 'toner bas', 0x01 => 'intervention demandée'], 1 => [0x10 => 'bac de sortie presque plein', 0x04 => 'bac vide', 0x02 => 'maintenance en retard']];
+        $problems = [];
+        $severity = 0;
+        foreach ([2 => $blocking, 1 => $watch] as $level => $bitsByByte) {
+            foreach ($bitsByByte as $byte => $bits) {
+                $value = isset($errorBits[$byte]) ? ord($errorBits[$byte]) : 0;
+                foreach ($bits as $bit => $label) {
+                    if ($value & $bit) {
+                        $problems[] = $label;
+                        $severity = max($severity, $level);
+                    }
+                }
+            }
+        }
+
+        $text = trim(implode(' · ', $display));
+        if (preg_match('/bourrage|jam|fermer|ouvert|porte|capot|couvercle|cover|door|erreur|error|appel|service|toner vide|plus de toner|remplacer.*toner|no toner|replace toner|charger.*papier|ajouter.*papier|plus de papier|load paper|add paper|out of paper|paper out/iu', $text) === 1) {
+            $severity = 2;
+        } elseif (preg_match('/faible|bas\b|bientôt|presque|low|nearly|soon|maintenance/iu', $text) === 1) {
+            $severity = max($severity, 1);
+        }
+
+        $message = $text !== '' ? 'Écran : '.$text : 'Écran non publié';
+        if ($problems) {
+            $message .= ' · '.ucfirst(implode(', ', array_unique($problems)));
+        }
+
+        return [$severity, $message];
     }
 
     public static function duration(int $seconds): string
