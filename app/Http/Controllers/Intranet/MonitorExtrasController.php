@@ -32,7 +32,7 @@ class MonitorExtrasController extends Controller
 
     public function maps(): View
     {
-        return view('intranet.monitor.maps', ['maps' => MonitorMap::query()->withCount('items')->orderBy('name')->get()]);
+        return view('intranet.monitor.maps', ['maps' => MonitorMap::query()->with('items.device.sensors.device')->orderBy('name')->get()]);
     }
 
     public function storeMap(Request $request): RedirectResponse
@@ -50,7 +50,16 @@ class MonitorExtrasController extends Controller
             'map' => $map,
             'editing' => $request->boolean('edition'),
             'devices' => MonitorDevice::query()->whereNotIn('id', $map->items->pluck('device_id'))->orderBy('name')->get(['id', 'name', 'host']),
+            'groups' => MonitorGroup::query()->get()->mapWithKeys(fn (MonitorGroup $g) => [$g->id => $g->path()])->sort(),
         ]);
+    }
+
+    /** Mode écran mural : la carte en plein écran, sans menu, avec ses alarmes. */
+    public function mapScreen(MonitorMap $map): View
+    {
+        $map->load('items.device.sensors.device', 'items.device.sensors.acknowledger');
+
+        return view('intranet.monitor.map-screen', ['map' => $map]);
     }
 
     public function updateMap(Request $request, MonitorMap $map): RedirectResponse
@@ -63,6 +72,7 @@ class MonitorExtrasController extends Controller
             'items.*.x' => ['required', 'numeric', 'between:0,100'],
             'items.*.y' => ['required', 'numeric', 'between:0,100'],
             'add_device_id' => ['nullable', 'integer', Rule::exists('monitor_devices', 'id')],
+            'add_group_id' => ['nullable', 'integer', Rule::exists('monitor_groups', 'id')],
         ], [], ['name' => 'nom', 'background' => 'image de fond']);
 
         $map->name = $validated['name'];
@@ -79,6 +89,17 @@ class MonitorExtrasController extends Controller
         }
         if ($deviceId = $validated['add_device_id'] ?? null) {
             $map->items()->firstOrCreate(['device_id' => $deviceId], ['x' => 50, 'y' => 50]);
+        }
+        if ($groupId = $validated['add_group_id'] ?? null) {
+            // Les équipements du groupe arrivent alignés en bas de la carte, prêts à être placés.
+            $existing = $map->items()->pluck('device_id');
+            MonitorDevice::query()->whereIn('group_id', MonitorGroup::findOrFail($groupId)->descendantIds())
+                ->whereNotIn('id', $existing)->orderBy('name')->get()
+                ->each(fn (MonitorDevice $device, int $i) => $map->items()->create([
+                    'device_id' => $device->id,
+                    'x' => 8 + ($i % 8) * 12,
+                    'y' => max(10, 88 - intdiv($i, 8) * 10),
+                ]));
         }
 
         return redirect()->route('intranet.monitor.maps.show', [$map, 'edition' => 1])->with('success', 'Carte enregistrée.');

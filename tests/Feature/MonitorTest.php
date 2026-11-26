@@ -409,3 +409,28 @@ it('reads printer status, page counter and the device sheet over SNMP', function
         ->assertSee('TASKalfa 2554ci')->assertSee('H721400190')->assertSee('365 593')
         ->assertSee('TK-8368C')->assertSee('42 %')->assertSee('150 / 500 feuilles')->assertSee('eth0');
 });
+
+it('draws maps with icons, dependency lines, alarms, a wall screen and whole groups', function () {
+    $technician = monitorTechnician();
+    $antenna = monitorDevice(['name' => 'Antenne', 'host' => '10.0.0.2', 'type' => 'antenna']);
+    $camera = monitorDevice(['name' => 'Caméra portail', 'host' => '10.0.0.3', 'type' => 'camera', 'parent_device_id' => $antenna->id]);
+    $map = MonitorMap::create(['name' => 'Mine']);
+
+    $this->actingAs($technician)->put(route('intranet.monitor.maps.update', $map), ['name' => 'Mine', 'add_group_id' => $antenna->group_id])->assertRedirect();
+    expect($map->items()->count())->toBe(2);
+
+    pingFails();
+    app(MonitorPoller::class)->poll();
+    app(MonitorPoller::class)->poll();
+
+    $this->get(route('intranet.monitor.maps.show', $map))->assertOk()
+        ->assertSee('data-line-from="'.$antenna->id.'"', false)
+        ->assertSee('stroke-dasharray', false)
+        ->assertSee('Alarmes sur cette carte')
+        ->assertSee('Écran mural');
+    $this->get(route('intranet.monitor.maps.screen', $map))->assertOk()
+        ->assertSee('http-equiv="refresh" content="30"', false)
+        ->assertSee('Caméra portail')
+        ->assertDontSee('intranet-sidebar', false);
+    $this->get(route('intranet.monitor.maps'))->assertOk()->assertSee('2 en panne');
+});
