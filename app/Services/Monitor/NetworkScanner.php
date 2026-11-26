@@ -41,7 +41,7 @@ class NetworkScanner
     }
 
     /** @return list<array<string, mixed>> */
-    public function scan(string $cidr, string $community): array
+    public function scan(string $cidr, string|array $community): array
     {
         $alive = [];
         foreach (SensorChecks::pingMany(self::hosts($cidr), 700) as $ip => $output) {

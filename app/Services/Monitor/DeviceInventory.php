@@ -31,7 +31,7 @@ class DeviceInventory
     private function read(MonitorDevice $device): array
     {
         $host = $device->host;
-        $community = (string) $device->setting('snmp_community');
+        $community = $device->snmpCredentials();
         try {
             $system = $this->snmp->get($host, $community, [
                 '1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.4.0', '1.3.6.1.2.1.1.5.0', '1.3.6.1.2.1.1.6.0',
@@ -72,7 +72,7 @@ class DeviceInventory
     }
 
     /** @return list<array{index: int, name: string, up: bool, speed: string|null}> */
-    private function interfaces(string $host, string $community): array
+    private function interfaces(string $host, string|array $community): array
     {
         $names = $this->snmp->walk($host, $community, '1.3.6.1.2.1.2.2.1.2', 48);
         $states = $this->snmp->walk($host, $community, '1.3.6.1.2.1.2.2.1.8', 48);
@@ -94,7 +94,7 @@ class DeviceInventory
     }
 
     /** @return array<string, mixed> */
-    private function printer(string $host, string $community): array
+    private function printer(string $host, string|array $community): array
     {
         $column = fn (string $base) => collect($this->snmp->walk($host, $community, $base, 40))->mapWithKeys(fn ($v, $oid) => [substr($oid, strlen($base) + 1) => $v]);
         $supplyNames = $column('1.3.6.1.2.1.43.11.1.1.6');
@@ -127,7 +127,7 @@ class DeviceInventory
     }
 
     /** @return list<array{name: string, percent: float, free: string, total: string}> */
-    private function storage(string $host, string $community): array
+    private function storage(string $host, string|array $community): array
     {
         $base = '1.3.6.1.2.1.25.2.3.1.';
         $rows = [];

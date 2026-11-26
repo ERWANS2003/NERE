@@ -30,7 +30,8 @@ class RunNetworkDiscovery implements ShouldQueue
             return;
         }
         $discovery->update(['status' => 'running']);
-        $community = (string) ($discovery->group?->setting('snmp_community') ?? config('monitor.snmp_community'));
+        $v3 = $discovery->group?->setting('snmp_v3');
+        $community = is_array($v3) && filled($v3['user'] ?? null) ? $v3 : (string) ($discovery->group?->setting('snmp_community') ?? config('monitor.snmp_community'));
 
         try {
             $discovery->update(['status' => 'done', 'results' => $scanner->scan($discovery->cidr, $community)]);

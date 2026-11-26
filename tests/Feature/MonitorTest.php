@@ -61,7 +61,7 @@ class FakeSnmp extends SnmpClient
 {
     public function __construct(public array $values = []) {}
 
-    protected function request(string $host, string $community, int $pduType, array $oids): array
+    protected function request(string $host, string|array $community, int $pduType, array $oids): array
     {
         $oid = ltrim($oids[0], '.');
         if ($pduType === 0xA0) {
@@ -527,4 +527,104 @@ it('posts alerts to a chat webhook, exposes a JSON status, trends, a watchdog an
 
     app()->instance(SnmpClient::class, new FakeSnmp(['1.3.6.1.2.1.1.1.0' => 'Cisco IOS', '1.3.6.1.2.1.2.2.1.2.3' => 'Gi0/3', '1.3.6.1.2.1.2.2.1.8.3' => 1, '1.3.6.1.2.1.2.2.1.5.3' => 1000000000]));
     $this->get(route('intranet.monitor.devices.sheet', $device))->assertOk()->assertSee('Gi0/3')->assertSee('Surveiller le trafic')->assertSee('name="parameter" value="3"', false);
+});
+
+/**
+ * Faux équipement SNMPv3 : découverte du moteur, vérification de la signature
+ * HMAC et déchiffrement AES de la question, réponse chiffrée et signée.
+ */
+class FakeSnmpV3Agent extends SnmpClient
+{
+    public const ENGINE = "\x80\x00\x1f\x88\x80NEREAGENT";
+
+    public array $asked = [];
+
+    public function __construct(private string $authPassword, private string $privPassword) {}
+
+    protected function exchange(string $host, string $packet): string
+    {
+        $o = 0;
+        [, $message] = $this->read($packet, $o);
+        $p = 0;
+        $this->read($message, $p);
+        $this->read($message, $p);
+        [, $securityBlob] = $this->read($message, $p);
+        $s = 0;
+        [, $security] = $this->read($securityBlob, $s);
+        $q = 0;
+        [, $engine] = $this->read($security, $q);
+        $this->read($security, $q);
+        $this->read($security, $q);
+        [, $user] = $this->read($security, $q);
+        [, $mac] = $this->read($security, $q);
+        [, $salt] = $this->read($security, $q);
+        [, $msgData] = $this->read($message, $p);
+
+        if ($engine === '') {
+            return $this->reply('', '', 0x04, $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->tlv(0x04, '').$this->pdu(0xA8, 0, '1.3.6.1.6.3.15.1.1.4.0', $this->tlv(0x41, "\x01"))));
+        }
+        $key = SnmpClient::localizeKey('sha256', $this->authPassword, self::ENGINE);
+        $expected = substr(hash_hmac('sha256', str_replace($mac, str_repeat("\0", 24), $packet), $key, true), 0, 24);
+        if (! hash_equals($expected, $mac)) {
+            return $this->reply('', '', 0x04, $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->tlv(0x04, '').$this->pdu(0xA8, 0, '1.3.6.1.6.3.15.1.1.5.0', $this->tlv(0x41, "\x01"))));
+        }
+        $privKey = substr(SnmpClient::localizeKey('sha256', $this->privPassword, self::ENGINE), 0, 16);
+        $scoped = openssl_decrypt($msgData, 'aes-128-cfb', $privKey, OPENSSL_RAW_DATA, pack('NN', 3, 1000).$salt);
+        $c = 0;
+        [, $scopedBody] = $this->read($scoped, $c);
+        $d = 0;
+        $this->read($scopedBody, $d);
+        $this->read($scopedBody, $d);
+        [, $pdu] = $this->read($scopedBody, $d);
+        $e = 0;
+        [, $id] = $this->read($pdu, $e);
+        $this->asked[] = $user;
+        $answer = $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->tlv(0x04, '').$this->pdu(0xA2, (int) $this->toInt($id), '1.3.6.1.2.1.1.3.0', $this->tlv(0x43, "\x10\x92")));
+        $newSalt = random_bytes(8);
+
+        return $this->reply($user, $newSalt, 0x03, $this->tlv(0x04, openssl_encrypt($answer, 'aes-128-cfb', $privKey, OPENSSL_RAW_DATA, pack('NN', 3, 1000).$newSalt)));
+    }
+
+    private function pdu(int $type, int $id, string $oid, string $value): string
+    {
+        return $this->tlv($type, $this->integer($id).$this->integer(0).$this->integer(0).$this->tlv(0x30, $this->tlv(0x30, $this->encodeOid($oid).$value)));
+    }
+
+    private function reply(string $user, string $salt, int $flags, string $msgData): string
+    {
+        $security = $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->integer(3).$this->integer(1000).$this->tlv(0x04, $user).$this->tlv(0x04, str_repeat("\0", 24)).$this->tlv(0x04, $salt));
+
+        return $this->tlv(0x30, $this->integer(3).$this->tlv(0x30, $this->integer(1).$this->integer(65507).$this->tlv(0x04, chr($flags)).$this->integer(3)).$this->tlv(0x04, $security).$msgData);
+    }
+}
+
+it('speaks SNMPv3 with SHA-256 authentication and AES encryption', function () {
+    // Valeurs de référence de la RFC 3414 (A.3.2) pour la localisation des clés.
+    expect(bin2hex(SnmpClient::localizeKey('sha1', 'maplesyrup', hex2bin('000000000000000000000002'))))
+        ->toBe('6695febc9288e36282235fc7151f128497b38f3f');
+
+    $agent = new FakeSnmpV3Agent('motdepasse-auth', 'motdepasse-chiffre');
+    $credentials = ['user' => 'supervision', 'auth' => 'SHA256', 'auth_password' => 'motdepasse-auth', 'priv' => 'AES', 'priv_password' => 'motdepasse-chiffre'];
+    expect($agent->get('10.9.9.9', $credentials, ['1.3.6.1.2.1.1.3.0']))->toBe(['1.3.6.1.2.1.1.3.0' => 4242])
+        ->and($agent->asked)->toBe(['supervision']);
+
+    $wrong = new FakeSnmpV3Agent('autre-mot-de-passe', 'motdepasse-chiffre');
+    expect(fn () => $wrong->get('10.9.9.8', $credentials, ['1.3.6.1.2.1.1.3.0']))->toThrow(RuntimeException::class, 'mot de passe d’authentification refusé');
+
+    // Saisie dans les réglages du groupe, chiffrée en base, puis utilisée par l'équipement.
+    $technician = monitorTechnician();
+    $device = monitorDevice();
+    $this->actingAs($technician)->put(route('intranet.monitor.groups.update', $device->group), [
+        'name' => $device->group->name, 'snmp_v3_user' => 'supervision', 'snmp_v3_auth' => 'SHA256',
+        'snmp_v3_auth_password' => 'motdepasse-auth', 'snmp_v3_priv' => 'AES', 'snmp_v3_priv_password' => 'motdepasse-chiffre',
+    ])->assertSessionHasNoErrors();
+    expect(DB::table('monitor_groups')->value('snmp_v3'))->not->toContain('motdepasse')
+        ->and($device->fresh()->snmpCredentials())->toBe($credentials);
+    $this->get(route('intranet.monitor.groups.edit', $device->group))->assertSee('SNMPv3 actif')->assertDontSee('motdepasse-auth');
+
+    $this->put(route('intranet.monitor.groups.update', $device->group), ['name' => $device->group->name, 'snmp_v3_user' => 'autre', 'snmp_v3_auth' => 'SHA', 'snmp_v3_priv' => 'AES'])
+        ->assertSessionHasNoErrors();
+    expect($device->fresh()->snmpCredentials()['auth_password'])->toBe('motdepasse-auth');
+    $this->put(route('intranet.monitor.groups.update', $device->group), ['name' => $device->group->name, 'clear_snmp_v3' => 1]);
+    expect($device->fresh()->snmpCredentials())->toBe('public');
 });

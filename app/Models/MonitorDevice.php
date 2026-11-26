@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MonitorDevice extends Model
 {
-    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', 'maintenance', ...MonitorGroup::SETTINGS];
+    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', 'maintenance', 'snmp_v3', ...MonitorGroup::SETTINGS];
 
-    protected $hidden = ['snmp_community'];
+    protected $hidden = ['snmp_community', 'snmp_v3'];
 
     protected function casts(): array
     {
@@ -23,6 +23,7 @@ class MonitorDevice extends Model
             'paused_until' => 'datetime',
             'snmp_community' => 'encrypted',
             'maintenance' => 'array',
+            'snmp_v3' => 'encrypted:array',
         ];
     }
 
@@ -53,6 +54,16 @@ class MonitorDevice extends Model
     public function setting(string $key): mixed
     {
         return $this->{$key} !== null && $this->{$key} !== '' ? $this->{$key} : $this->group->setting($key);
+    }
+
+    /** Identifiants SNMP : SNMPv3 s'il est réglé (ici ou sur un groupe parent), sinon la communauté v2c. */
+    public function snmpCredentials(): string|array
+    {
+        $v3 = $this->snmp_v3 ?: MonitorGroup::settingFor($this->group_id, 'snmp_v3');
+
+        return is_array($v3) && filled($v3['user'] ?? null)
+            ? $v3
+            : (string) ($this->snmp_community ?: MonitorGroup::settingFor($this->group_id, 'snmp_community'));
     }
 
     public function isPaused(): bool

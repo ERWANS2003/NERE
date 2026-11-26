@@ -415,7 +415,45 @@ class MonitorController extends Controller
             unset($data['snmp_community']);
         }
 
+        if ($request->boolean('clear_snmp_v3')) {
+            $data['snmp_v3'] = null;
+        } elseif (filled($request->input('snmp_v3_user'))) {
+            $data['snmp_v3'] = $this->snmpV3From($request, $model?->snmp_v3 ?? []);
+        }
+
         return $data;
+    }
+
+    /** Identifiants SNMPv3 saisis ; un mot de passe laissé vide garde le précédent. */
+    private function snmpV3From(Request $request, array $previous): array
+    {
+        $v = $request->validate([
+            'snmp_v3_user' => ['required', 'string', 'max:32'],
+            'snmp_v3_auth' => ['required', Rule::in(['SHA', 'SHA256'])],
+            'snmp_v3_auth_password' => ['nullable', 'string', 'min:8', 'max:64'],
+            'snmp_v3_priv' => ['required', Rule::in(['AES', 'none'])],
+            'snmp_v3_priv_password' => ['nullable', 'string', 'min:8', 'max:64'],
+        ], [], [
+            'snmp_v3_user' => 'utilisateur SNMPv3', 'snmp_v3_auth_password' => 'mot de passe d’authentification',
+            'snmp_v3_priv_password' => 'mot de passe de chiffrement',
+        ]);
+        $authPassword = $v['snmp_v3_auth_password'] ?: ($previous['auth_password'] ?? null);
+        $privPassword = $v['snmp_v3_priv_password'] ?: ($previous['priv_password'] ?? null);
+        $errors = array_filter([
+            'snmp_v3_auth_password' => $authPassword ? null : 'Le mot de passe d’authentification est obligatoire (8 caractères au moins).',
+            'snmp_v3_priv_password' => $v['snmp_v3_priv'] === 'AES' && ! $privPassword ? 'Le mot de passe de chiffrement est obligatoire (8 caractères au moins).' : null,
+        ]);
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return [
+            'user' => $v['snmp_v3_user'],
+            'auth' => $v['snmp_v3_auth'],
+            'auth_password' => $authPassword,
+            'priv' => $v['snmp_v3_priv'],
+            'priv_password' => $v['snmp_v3_priv'] === 'AES' ? $privPassword : null,
+        ];
     }
 
     private function validateGroup(Request $request, ?MonitorGroup $group = null): array

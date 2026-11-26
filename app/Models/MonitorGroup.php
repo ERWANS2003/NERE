@@ -10,16 +10,16 @@ class MonitorGroup extends Model
 {
     public const SETTINGS = ['interval_seconds', 'notify_delay_minutes', 'notify_repeat_minutes', 'escalate_after_minutes', 'snmp_community'];
 
-    protected $fillable = ['parent_id', 'name', 'maintenance', ...self::SETTINGS];
+    protected $fillable = ['parent_id', 'name', 'maintenance', 'snmp_v3', ...self::SETTINGS];
 
     /** Réglages résolus par groupe, gardés le temps d'une requête ou d'un passage. */
     private static array $resolved = [];
 
-    protected $hidden = ['snmp_community'];
+    protected $hidden = ['snmp_community', 'snmp_v3'];
 
     protected function casts(): array
     {
-        return ['snmp_community' => 'encrypted', 'maintenance' => 'array'];
+        return ['snmp_community' => 'encrypted', 'maintenance' => 'array', 'snmp_v3' => 'encrypted:array'];
     }
 
     protected static function booted(): void

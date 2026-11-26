@@ -200,7 +200,7 @@ class SensorChecks
     private function snmp(MonitorSensorKind $kind, MonitorSensor $sensor): array
     {
         $host = $sensor->device->host;
-        $community = (string) $sensor->device->setting('snmp_community');
+        $community = $sensor->device->snmpCredentials();
         $snmp = $this->snmp;
 
         switch ($kind) {
@@ -315,7 +315,7 @@ class SensorChecks
     }
 
     /** @return list<array{type: string, descr: string, units: int, size: int, used: int}> */
-    private function storage(string $host, string $community): array
+    private function storage(string $host, string|array $community): array
     {
         $base = '1.3.6.1.2.1.25.2.3.1.';
         $columns = [];
@@ -330,7 +330,7 @@ class SensorChecks
             : null, $columns)));
     }
 
-    private function busiestInterface(string $host, string $community): int
+    private function busiestInterface(string $host, string|array $community): int
     {
         $counters = array_filter($this->snmp->walk($host, $community, '1.3.6.1.2.1.31.1.1.1.6'), 'is_numeric');
         if (! $counters) {
