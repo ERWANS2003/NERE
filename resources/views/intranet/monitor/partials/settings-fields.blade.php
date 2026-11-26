@@ -25,7 +25,7 @@
         <fieldset class="sm:col-span-2 rounded-lg border border-graphite-200 p-4" x-data="{ on: @js(filled(old('snmp_v3_user')) || filled($v3)), priv: @js(old('snmp_v3_priv', $v3['priv'] ?? 'AES')) }">
             <legend class="px-1 text-sm font-semibold text-graphite-900">SNMPv3 (chiffré, recommandé)</legend>
             @if($v3)
-                <p class="mb-3 text-sm text-green-800">SNMPv3 actif : utilisateur « {{ $v3['user'] }} », {{ $v3['auth'] === 'SHA256' ? 'SHA-256' : 'SHA' }}{{ ($v3['priv'] ?? 'AES') === 'AES' ? ' + AES' : ', sans chiffrement' }}. Il remplace la communauté. Laissez les mots de passe vides pour les garder.</p>
+                <p class="mb-3 text-sm text-green-800">SNMPv3 actif : utilisateur « {{ $v3['user'] }} », {{ ['SHA' => 'SHA-1', 'SHA256' => 'SHA-256', 'SHA384' => 'SHA-384', 'SHA512' => 'SHA-512'][$v3['auth']] ?? $v3['auth'] }}{{ ($v3['priv'] ?? 'AES') === 'AES' ? ' + AES' : ', sans chiffrement' }}. Il remplace la communauté. Laissez les mots de passe vides pour les garder.</p>
                 <label class="mb-3 flex items-center gap-2 text-sm text-graphite-700">
                     <input type="checkbox" name="clear_snmp_v3" value="1" class="rounded border-graphite-300">
                     Désactiver SNMPv3 ici (reprendre le réglage du niveau au-dessus)
@@ -45,11 +45,12 @@
                 <label class="block">
                     <span class="etiquette">Authentification</span>
                     <select name="snmp_v3_auth" class="champ" :disabled="! on">
-                        @foreach(['SHA256' => 'SHA-256 (recommandé)', 'SHA' => 'SHA-1'] as $value => $label)
+                        @foreach(['SHA256' => 'SHA-256 (recommandé)', 'SHA512' => 'SHA-512', 'SHA384' => 'SHA-384', 'SHA' => 'SHA-1 (ancien)'] as $value => $label)
                             <option value="{{ $value }}" @selected(old('snmp_v3_auth', $v3['auth'] ?? 'SHA256') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </label>
+                <p class="text-xs text-graphite-500 sm:col-span-2">Choisissez le même algorithme que sur l’équipement (« Hash » sur les Kyocera). Si l’équipement n’a qu’un seul mot de passe, saisissez-le dans les deux champs.</p>
                 <label class="block">
                     <span class="etiquette">Mot de passe d’authentification</span>
                     <input type="password" name="snmp_v3_auth_password" minlength="8" maxlength="64" autocomplete="new-password" placeholder="{{ $v3 ? 'Inchangé' : '8 caractères au moins' }}" class="champ" :disabled="! on">

@@ -539,7 +539,7 @@ class FakeSnmpV3Agent extends SnmpClient
 
     public array $asked = [];
 
-    public function __construct(private string $authPassword, private string $privPassword) {}
+    public function __construct(private string $authPassword, private string $privPassword, private string $algo = 'sha256', private int $macLength = 24) {}
 
     protected function exchange(string $host, string $packet): string
     {
@@ -563,12 +563,12 @@ class FakeSnmpV3Agent extends SnmpClient
         if ($engine === '') {
             return $this->reply('', '', 0x04, $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->tlv(0x04, '').$this->pdu(0xA8, 0, '1.3.6.1.6.3.15.1.1.4.0', $this->tlv(0x41, "\x01"))));
         }
-        $key = SnmpClient::localizeKey('sha256', $this->authPassword, self::ENGINE);
-        $expected = substr(hash_hmac('sha256', str_replace($mac, str_repeat("\0", 24), $packet), $key, true), 0, 24);
+        $key = SnmpClient::localizeKey($this->algo, $this->authPassword, self::ENGINE);
+        $expected = substr(hash_hmac($this->algo, str_replace($mac, str_repeat("\0", $this->macLength), $packet), $key, true), 0, $this->macLength);
         if (! hash_equals($expected, $mac)) {
             return $this->reply('', '', 0x04, $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->tlv(0x04, '').$this->pdu(0xA8, 0, '1.3.6.1.6.3.15.1.1.5.0', $this->tlv(0x41, "\x01"))));
         }
-        $privKey = substr(SnmpClient::localizeKey('sha256', $this->privPassword, self::ENGINE), 0, 16);
+        $privKey = substr(SnmpClient::localizeKey($this->algo, $this->privPassword, self::ENGINE), 0, 16);
         $scoped = openssl_decrypt($msgData, 'aes-128-cfb', $privKey, OPENSSL_RAW_DATA, pack('NN', 3, 1000).$salt);
         $c = 0;
         [, $scopedBody] = $this->read($scoped, $c);
@@ -592,7 +592,7 @@ class FakeSnmpV3Agent extends SnmpClient
 
     private function reply(string $user, string $salt, int $flags, string $msgData): string
     {
-        $security = $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->integer(3).$this->integer(1000).$this->tlv(0x04, $user).$this->tlv(0x04, str_repeat("\0", 24)).$this->tlv(0x04, $salt));
+        $security = $this->tlv(0x30, $this->tlv(0x04, self::ENGINE).$this->integer(3).$this->integer(1000).$this->tlv(0x04, $user).$this->tlv(0x04, str_repeat("\0", $this->macLength)).$this->tlv(0x04, $salt));
 
         return $this->tlv(0x30, $this->integer(3).$this->tlv(0x30, $this->integer(1).$this->integer(65507).$this->tlv(0x04, chr($flags)).$this->integer(3)).$this->tlv(0x04, $security).$msgData);
     }
@@ -607,6 +607,11 @@ it('speaks SNMPv3 with SHA-256 authentication and AES encryption', function () {
     $credentials = ['user' => 'supervision', 'auth' => 'SHA256', 'auth_password' => 'motdepasse-auth', 'priv' => 'AES', 'priv_password' => 'motdepasse-chiffre'];
     expect($agent->get('10.9.9.9', $credentials, ['1.3.6.1.2.1.1.3.0']))->toBe(['1.3.6.1.2.1.1.3.0' => 4242])
         ->and($agent->asked)->toBe(['supervision']);
+
+    // SHA-512 avec un seul mot de passe pour les deux usages, comme sur les Kyocera.
+    $kyocera = new FakeSnmpV3Agent('un-seul-motdepasse', 'un-seul-motdepasse', 'sha512', 48);
+    expect($kyocera->get('10.9.9.7', ['user' => 'superviseur', 'auth' => 'SHA512', 'auth_password' => 'un-seul-motdepasse', 'priv' => 'AES', 'priv_password' => 'un-seul-motdepasse'], ['1.3.6.1.2.1.1.3.0']))
+        ->toBe(['1.3.6.1.2.1.1.3.0' => 4242]);
 
     $wrong = new FakeSnmpV3Agent('autre-mot-de-passe', 'motdepasse-chiffre');
     expect(fn () => $wrong->get('10.9.9.8', $credentials, ['1.3.6.1.2.1.1.3.0']))->toThrow(RuntimeException::class, 'mot de passe d’authentification refusé');

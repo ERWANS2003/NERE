@@ -9,7 +9,7 @@ use RuntimeException;
  * n'a pas besoin de l'extension PHP SNMP. Lecture seule.
  *
  * - SNMP v2c : une communauté (chaîne de caractères) ;
- * - SNMPv3 (RFC 3414 et 3826) : un tableau {user, auth: SHA|SHA256,
+ * - SNMPv3 (RFC 3414, 3826 et 7860) : un tableau {user, auth: SHA|SHA256|SHA384|SHA512,
  *   auth_password, priv: AES|none, priv_password}, messages signés et chiffrés.
  */
 class SnmpClient
@@ -19,6 +19,8 @@ class SnmpClient
 
     /** Clés localisées (calcul coûteux : 1 Mo haché par clé). */
     private static array $keys = [];
+
+    public const AUTH = ['SHA' => ['sha1', 12], 'SHA256' => ['sha256', 24], 'SHA384' => ['sha384', 32], 'SHA512' => ['sha512', 48]];
 
     private const REPORTS = [
         '1.3.6.1.6.3.15.1.1.1.0' => 'SNMPv3 : niveau de sécurité refusé par l’équipement',
@@ -134,7 +136,8 @@ class SnmpClient
     /** @return array<string, int|float|string|null> */
     private function requestV3(string $host, array $v3, string $pdu, int $requestId): array
     {
-        [$algo, $macLength] = ($v3['auth'] ?? 'SHA') === 'SHA256' ? ['sha256', 24] : ['sha1', 12];
+        // Algorithme et longueur de signature (RFC 3414 pour SHA-1, RFC 7860 pour SHA-2).
+        [$algo, $macLength] = self::AUTH[$v3['auth'] ?? 'SHA'] ?? self::AUTH['SHA'];
         $priv = ($v3['priv'] ?? 'AES') === 'AES';
 
         for ($try = 0; $try < 2; $try++) {

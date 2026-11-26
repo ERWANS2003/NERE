@@ -429,7 +429,7 @@ class MonitorController extends Controller
     {
         $v = $request->validate([
             'snmp_v3_user' => ['required', 'string', 'max:32'],
-            'snmp_v3_auth' => ['required', Rule::in(['SHA', 'SHA256'])],
+            'snmp_v3_auth' => ['required', Rule::in(array_keys(\App\Services\Monitor\SnmpClient::AUTH))],
             'snmp_v3_auth_password' => ['nullable', 'string', 'min:8', 'max:64'],
             'snmp_v3_priv' => ['required', Rule::in(['AES', 'none'])],
             'snmp_v3_priv_password' => ['nullable', 'string', 'min:8', 'max:64'],
