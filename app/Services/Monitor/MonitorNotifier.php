@@ -9,6 +9,8 @@ use App\Models\MonitorSensor;
 use App\Models\User;
 use App\Notifications\MonitorAlert;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -80,13 +82,32 @@ class MonitorNotifier
     private function flush(): void
     {
         if ($this->team !== []) {
-            Notification::send($this->team(), new MonitorAlert($this->team));
+            $alert = new MonitorAlert($this->team);
+            Notification::send($this->team(), $alert);
+            $this->toWebhook($alert);
         }
         if ($this->escalations !== []) {
             Notification::send($this->managers(), new MonitorAlert($this->escalations));
         }
         $this->team = [];
         $this->escalations = [];
+    }
+
+    /** Publie l'alerte dans le canal de discussion de l'équipe, si un webhook est réglé. */
+    private function toWebhook(MonitorAlert $alert): void
+    {
+        $url = config('monitor.webhook_url');
+        if (blank($url)) {
+            return;
+        }
+        $lines = array_map(fn (array $item) => '• '.$item['title'].' : '.$item['message'], $alert->items);
+        $text = "Supervision réseau NÉRÉ Mining\n".implode("\n", $lines)."\n".route('intranet.monitor.index');
+        try {
+            // « text » pour Teams, Slack, Google Chat et Mattermost ; « content » pour Discord.
+            Http::timeout(5)->post($url, ['text' => $text, 'content' => mb_substr($text, 0, 1900)])->throw();
+        } catch (\Throwable $exception) {
+            Log::warning('Supervision : envoi au webhook impossible.', ['erreur' => $exception->getMessage()]);
+        }
     }
 
     /** Techniciens et responsables IT, et administrateurs. @return Collection<int, User> */

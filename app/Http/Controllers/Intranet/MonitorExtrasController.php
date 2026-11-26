@@ -182,7 +182,19 @@ class MonitorExtrasController extends Controller
             ]);
         }
 
+        // Tendances des 7 derniers jours, tous équipements confondus.
+        $week = collect($history->report(MonitorSensor::query()->with('device.group')->get(), now()->subDays(7), now()));
+        $trends = [
+            'Les moins disponibles' => $week->filter(fn ($row) => $row['uptime'] !== null && $row['uptime'] < 100)->sortBy('uptime')->take(5)
+                ->map(fn ($row) => [$row['sensor'], number_format($row['uptime'], 2, ',', ' ').' %']),
+            'Le plus de pannes' => $week->filter(fn ($row) => $row['outages'] > 0)->sortByDesc('outages')->take(5)
+                ->map(fn ($row) => [$row['sensor'], $row['outages'].' panne(s)'.($row['downtime_minutes'] ? ', '.\App\Services\Monitor\SensorChecks::duration($row['downtime_minutes'] * 60) : '')]),
+            'Les plus lents (ping)' => $week->filter(fn ($row) => $row['sensor']->kind === \App\Enums\MonitorSensorKind::Ping && $row['avg'] !== null)->sortByDesc('avg')->take(5)
+                ->map(fn ($row) => [$row['sensor'], $row['sensor']->formatValue($row['avg']).' en moyenne']),
+        ];
+
         return view('intranet.monitor.report', $data + [
+            'trends' => $trends,
             'groups' => MonitorGroup::query()->get()->mapWithKeys(fn (MonitorGroup $g) => [$g->id => $g->path()])->sort(),
             'ranges' => self::RANGES,
             'filters' => $validated + ['periode' => $range],

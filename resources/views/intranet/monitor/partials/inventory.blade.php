@@ -109,7 +109,21 @@
                     @foreach(array_slice($info['interfaces'], 0, 24) as $interface)
                         <li class="flex items-center justify-between gap-3 py-1.5">
                             <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full {{ $interface['up'] ? 'bg-green-600' : 'bg-graphite-300' }}" title="{{ $interface['up'] ? 'Connectée' : 'Déconnectée' }}"></span>{{ $interface['name'] }}</span>
-                            <span class="text-graphite-500">{{ $interface['up'] ? ($interface['speed'] ?? 'connectée') : 'déconnectée' }}</span>
+                            <span class="flex items-center gap-3 text-graphite-500">
+                                {{ $interface['up'] ? ($interface['speed'] ?? 'connectée') : 'déconnectée' }}
+                                @if(isset($interface['index']) && ! in_array((string) $interface['index'], $watchedPorts ?? [], true))
+                                    <form method="POST" action="{{ route('intranet.monitor.sensors.store', $device) }}">
+                                        @csrf
+                                        <input type="hidden" name="quick" value="1">
+                                        <input type="hidden" name="kind" value="snmp_traffic">
+                                        <input type="hidden" name="name" value="Trafic {{ $interface['name'] }}">
+                                        <input type="hidden" name="parameter" value="{{ $interface['index'] }}">
+                                        <button class="text-xs font-medium text-nere-700 hover:underline">Surveiller le trafic</button>
+                                    </form>
+                                @elseif(isset($interface['index']))
+                                    <span class="text-xs text-green-700">surveillé</span>
+                                @endif
+                            </span>
                         </li>
                     @endforeach
                 </ul>

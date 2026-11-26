@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MonitorDevice extends Model
 {
-    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', ...MonitorGroup::SETTINGS];
+    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', 'maintenance', ...MonitorGroup::SETTINGS];
 
     protected $hidden = ['snmp_community'];
 
@@ -22,6 +22,7 @@ class MonitorDevice extends Model
             'paused' => 'boolean',
             'paused_until' => 'datetime',
             'snmp_community' => 'encrypted',
+            'maintenance' => 'array',
         ];
     }
 
@@ -56,7 +57,33 @@ class MonitorDevice extends Model
 
     public function isPaused(): bool
     {
-        return $this->paused && ($this->paused_until === null || $this->paused_until->isFuture());
+        return ($this->paused && ($this->paused_until === null || $this->paused_until->isFuture())) || $this->inMaintenance();
+    }
+
+    /** @return array{days: list<int>, start: string, end: string}|null fenêtre propre, sinon celle du groupe */
+    public function maintenanceWindow(): ?array
+    {
+        $window = $this->maintenance ?: MonitorGroup::settingFor($this->group_id, 'maintenance');
+
+        return is_array($window) && ! empty($window['days']) && ! empty($window['start']) && ! empty($window['end']) ? $window : null;
+    }
+
+    /** Dans la fenêtre de maintenance hebdomadaire (qui peut passer minuit) ? */
+    public function inMaintenance(?\Illuminate\Support\Carbon $at = null): bool
+    {
+        $window = $this->maintenanceWindow();
+        if ($window === null) {
+            return false;
+        }
+        $at ??= now();
+        $time = $at->format('H:i');
+        $days = array_map('intval', $window['days']);
+        if ($window['start'] <= $window['end']) {
+            return in_array($at->dayOfWeek, $days, true) && $time >= $window['start'] && $time < $window['end'];
+        }
+
+        return (in_array($at->dayOfWeek, $days, true) && $time >= $window['start'])
+            || (in_array($at->copy()->subDay()->dayOfWeek, $days, true) && $time < $window['end']);
     }
 
     public function status(): MonitorStatus

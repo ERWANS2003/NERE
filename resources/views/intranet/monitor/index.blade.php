@@ -9,6 +9,15 @@
 
     @include('intranet.monitor.partials.nav')
 
+    @if($lastCheck && $lastCheck->lt(now()->subMinutes(5)))
+        <div class="mb-4 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800" role="alert">
+            <p class="font-semibold">Les contrôles ne tournent plus depuis {{ $lastCheck->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}.</p>
+            <p class="mt-1">Les états affichés ne sont plus à jour. Vérifiez la tâche planifiée « NERE - Laravel scheduler » sur le serveur.</p>
+        </div>
+    @elseif($lastCheck)
+        <p class="mb-4 text-xs text-graphite-500">Dernier contrôle {{ $lastCheck->diffForHumans() }}.</p>
+    @endif
+
     @error('group')<div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ $message }}</div>@enderror
 
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">

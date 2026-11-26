@@ -41,5 +41,26 @@
         </div>
     </form>
 
+    <section class="mb-6" aria-labelledby="tendances">
+        <h2 id="tendances" class="mb-3 font-semibold text-graphite-900">Tendances des 7 derniers jours</h2>
+        <div class="grid gap-4 lg:grid-cols-3">
+            @foreach($trends as $trendTitle => $trendRows)
+                <div class="carte overflow-hidden">
+                    <h3 class="border-b border-graphite-100 px-4 py-2.5 text-sm font-semibold text-graphite-800">{{ $trendTitle }}</h3>
+                    <ol class="divide-y divide-graphite-100 text-sm">
+                        @forelse($trendRows as [$sensor, $value])
+                            <li class="flex items-center justify-between gap-3 px-4 py-2">
+                                <a href="{{ route('intranet.monitor.sensors.show', $sensor) }}" class="min-w-0 truncate hover:text-nere-700">{{ $sensor->device->name }} · {{ $sensor->name }}</a>
+                                <span class="shrink-0 font-semibold text-graphite-900">{{ $value }}</span>
+                            </li>
+                        @empty
+                            <li class="px-4 py-3 text-graphite-600">Rien à signaler.</li>
+                        @endforelse
+                    </ol>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
     @include('intranet.monitor.partials.report-table')
 </x-intranet-layout>

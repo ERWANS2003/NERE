@@ -122,6 +122,7 @@ Route::middleware(['auth', 'active'])->prefix('intranet')->name('intranet.')->gr
     Route::prefix('supervision')->name('monitor.')->middleware('can:monitor')->group(function () {
         Route::get('/', [MonitorController::class, 'index'])->name('index');
         Route::get('/journal', [MonitorController::class, 'logs'])->name('logs');
+        Route::get('/etat.json', [MonitorController::class, 'statusJson'])->name('status');
         Route::get('/groupes/nouveau', [MonitorController::class, 'createGroup'])->name('groups.create');
         Route::post('/groupes', [MonitorController::class, 'storeGroup'])->name('groups.store');
         Route::get('/groupes/{group}', [MonitorController::class, 'editGroup'])->name('groups.edit');

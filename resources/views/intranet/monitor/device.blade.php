@@ -19,7 +19,9 @@
             @if($device->parentDevice)
                 <p class="mt-1 text-sm text-graphite-600">Dépend de <a href="{{ route('intranet.monitor.devices.show', $device->parentDevice) }}" class="font-medium text-nere-700 hover:underline">{{ $device->parentDevice->name }}</a></p>
             @endif
-            @if($device->isPaused())
+            @if($device->inMaintenance())
+                <p class="mt-1 text-sm text-blue-800">En maintenance planifiée jusqu’à {{ $device->maintenanceWindow()['end'] }} : contrôles et alertes suspendus.</p>
+            @elseif($device->isPaused())
                 <p class="mt-1 text-sm text-blue-800">En pause{{ $device->paused_until ? ' jusqu’au '.$device->paused_until->format('d/m/Y à H:i') : '' }}{{ $device->pause_reason ? ' : '.$device->pause_reason : '' }}</p>
             @endif
         </div>

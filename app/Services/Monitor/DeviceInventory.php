@@ -71,7 +71,7 @@ class DeviceInventory
         return $info;
     }
 
-    /** @return list<array{name: string, up: bool, speed: string|null}> */
+    /** @return list<array{index: int, name: string, up: bool, speed: string|null}> */
     private function interfaces(string $host, string $community): array
     {
         $names = $this->snmp->walk($host, $community, '1.3.6.1.2.1.2.2.1.2', 48);
@@ -82,6 +82,7 @@ class DeviceInventory
             $index = substr($oid, strlen('1.3.6.1.2.1.2.2.1.2.'));
             $speed = $speeds['1.3.6.1.2.1.2.2.1.5.'.$index] ?? null;
             $rows[] = [
+                'index' => (int) $index,
                 'name' => (string) $name,
                 'up' => ($states['1.3.6.1.2.1.2.2.1.8.'.$index] ?? null) === 1,
                 'speed' => is_numeric($speed) && $speed > 0 ? ($speed >= 1e9 ? round($speed / 1e9).' Gbit/s' : round($speed / 1e6).' Mbit/s') : null,

@@ -21,6 +21,7 @@ use App\Services\Monitor\DeviceInventory;
 use App\Services\Monitor\MonitorHistory;
 use App\Services\Monitor\MonitorPoller;
 use App\Services\TicketSlaService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -59,6 +60,46 @@ class MonitorController extends Controller
                 ->values(),
             'filter' => $filter,
             'durations' => self::DURATIONS,
+            'lastCheck' => $this->lastCheck($sensors),
+        ]);
+    }
+
+    /** Dernier contrôle effectué : s'il date, le planificateur ne tourne plus. */
+    private function lastCheck($sensors): ?Carbon
+    {
+        return $sensors->filter(fn (MonitorSensor $sensor) => ! $sensor->isPaused())->max('checked_at');
+    }
+
+    /** État en JSON, pour un écran ou un outil externe (même accès que les pages). */
+    public function statusJson(): JsonResponse
+    {
+        $devices = MonitorDevice::query()->with('sensors.device', 'group')->orderBy('name')->get();
+        $sensors = $devices->flatMap(fn (MonitorDevice $device) => $device->sensors);
+
+        return response()->json([
+            'generated_at' => now()->toIso8601String(),
+            'last_check' => $this->lastCheck($sensors)?->toIso8601String(),
+            'counts' => collect(MonitorStatus::cases())->mapWithKeys(fn (MonitorStatus $status) => [
+                $status->value => $sensors->filter(fn (MonitorSensor $sensor) => $sensor->displayStatus() === $status)->count(),
+            ]),
+            'devices' => $devices->map(fn (MonitorDevice $device) => [
+                'id' => $device->id,
+                'name' => $device->name,
+                'host' => $device->host,
+                'type' => $device->type->value,
+                'group' => $device->group->name,
+                'status' => $device->status()->value,
+                'sensors' => $device->sensors->map(fn (MonitorSensor $sensor) => [
+                    'id' => $sensor->id,
+                    'name' => $sensor->name,
+                    'kind' => $sensor->kind->value,
+                    'status' => $sensor->displayStatus()->value,
+                    'value' => $sensor->last_value,
+                    'unit' => $sensor->unitLabel(),
+                    'message' => $sensor->last_message,
+                    'checked_at' => $sensor->checked_at?->toIso8601String(),
+                ])->values(),
+            ])->values(),
         ]);
     }
 
@@ -159,7 +200,11 @@ class MonitorController extends Controller
     {
         $device->load('group');
 
-        return view('intranet.monitor.partials.inventory', ['device' => $device, 'info' => $inventory->get($device, $request->boolean('actualiser'))]);
+        return view('intranet.monitor.partials.inventory', [
+            'device' => $device,
+            'info' => $inventory->get($device, $request->boolean('actualiser')),
+            'watchedPorts' => $device->sensors()->where('kind', MonitorSensorKind::SnmpTraffic)->pluck('parameter')->map(fn ($p) => (string) $p)->all(),
+        ]);
     }
 
     public function editDevice(MonitorDevice $device): View
@@ -344,8 +389,26 @@ class MonitorController extends Controller
 
     private const SETTING_NAMES = ['interval_seconds' => 'intervalle', 'notify_delay_minutes' => 'délai avant alerte', 'notify_repeat_minutes' => 'répétition', 'escalate_after_minutes' => 'escalade', 'snmp_community' => 'communauté SNMP', 'name' => 'nom', 'host' => 'adresse IP ou nom', 'group_id' => 'groupe', 'parent_id' => 'groupe parent', 'parent_device_id' => 'équipement parent'];
 
+    /** Fenêtre de maintenance hebdomadaire saisie, ou null pour reprendre celle du niveau au-dessus. */
+    private function maintenanceFrom(Request $request): ?array
+    {
+        $validated = $request->validate([
+            'maintenance_days' => ['nullable', 'array'],
+            'maintenance_days.*' => ['integer', 'between:0,6'],
+            'maintenance_start' => ['nullable', 'required_with:maintenance_days', 'date_format:H:i'],
+            'maintenance_end' => ['nullable', 'required_with:maintenance_days', 'date_format:H:i', 'different:maintenance_start'],
+        ], [], ['maintenance_start' => 'début de maintenance', 'maintenance_end' => 'fin de maintenance']);
+
+        return empty($validated['maintenance_days']) ? null : [
+            'days' => array_values(array_unique(array_map('intval', $validated['maintenance_days']))),
+            'start' => $validated['maintenance_start'],
+            'end' => $validated['maintenance_end'],
+        ];
+    }
+
     private function keepSecret(Request $request, array $data, ?object $model): array
     {
+        $data['maintenance'] = $this->maintenanceFrom($request);
         if ($request->boolean('clear_snmp_community')) {
             $data['snmp_community'] = null;
         } elseif (blank($data['snmp_community'] ?? null) && $model?->exists) {

@@ -482,3 +482,49 @@ it('sends no e-mail for short outages and groups alerts into one message per che
         ->and(implode("
 ", $grouped->toMail($technician)->introLines))->toContain('En panne : Imprimante · Ping');
 });
+
+it('honours weekly maintenance windows, including across midnight', function () {
+    $technician = monitorTechnician();
+    $device = monitorDevice();
+    $this->actingAs($technician)->put(route('intranet.monitor.groups.update', $device->group), [
+        'name' => $device->group->name, 'maintenance_days' => [0], 'maintenance_start' => '22:00', 'maintenance_end' => '02:00',
+    ])->assertSessionHasNoErrors();
+    $device = $device->fresh();
+
+    expect($device->inMaintenance(\Illuminate\Support\Carbon::parse('next sunday 23:00')))->toBeTrue()
+        ->and($device->inMaintenance(\Illuminate\Support\Carbon::parse('next monday 01:30')))->toBeTrue()
+        ->and($device->inMaintenance(\Illuminate\Support\Carbon::parse('next monday 02:30')))->toBeFalse()
+        ->and($device->inMaintenance(\Illuminate\Support\Carbon::parse('next saturday 23:00')))->toBeFalse();
+
+    $this->travelTo(\Illuminate\Support\Carbon::parse('next sunday 23:00'));
+    Process::fake();
+    expect(app(MonitorPoller::class)->poll())->toBe(0);
+    $this->get(route('intranet.monitor.devices.show', $device))->assertSee('En maintenance planifiée jusqu’à 02:00');
+});
+
+it('posts alerts to a chat webhook, exposes a JSON status, trends, a watchdog and port monitoring', function () {
+    config(['monitor.webhook_url' => 'https://chat.example.test/hook', 'monitor.notify_delay_minutes' => 0]);
+    Http::fake(['chat.example.test/*' => Http::response('ok', 200)]);
+    Notification::fake();
+    $technician = monitorTechnician();
+    $device = monitorDevice();
+    pingFails();
+    app(MonitorPoller::class)->poll();
+    app(MonitorPoller::class)->poll();
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://chat.example.test/hook'
+        && str_contains($request['text'], 'En panne : Serveur fichiers · Ping'));
+
+    $this->actingAs($technician)->getJson(route('intranet.monitor.status'))->assertOk()
+        ->assertJsonPath('counts.down', 1)
+        ->assertJsonPath('devices.0.name', 'Serveur fichiers')
+        ->assertJsonPath('devices.0.sensors.0.status', 'down');
+
+    $this->get(route('intranet.monitor.reports'))->assertOk()->assertSee('Tendances des 7 derniers jours')->assertSee('Le plus de pannes')->assertSee('Disponibilité de tous les équipements');
+    $this->get(route('intranet.monitor.index'))->assertDontSee('Les contrôles ne tournent plus');
+    $this->travel(10)->minutes();
+    $this->get(route('intranet.monitor.index'))->assertSee('Les contrôles ne tournent plus');
+
+    app()->instance(SnmpClient::class, new FakeSnmp(['1.3.6.1.2.1.1.1.0' => 'Cisco IOS', '1.3.6.1.2.1.2.2.1.2.3' => 'Gi0/3', '1.3.6.1.2.1.2.2.1.8.3' => 1, '1.3.6.1.2.1.2.2.1.5.3' => 1000000000]));
+    $this->get(route('intranet.monitor.devices.sheet', $device))->assertOk()->assertSee('Gi0/3')->assertSee('Surveiller le trafic')->assertSee('name="parameter" value="3"', false);
+});

@@ -15,4 +15,7 @@ return [
     'raw_days' => 7,
     'hourly_days' => 400,
     'queue' => env('MONITOR_QUEUE', 'monitor'),
+    // Adresse d'un webhook entrant (Microsoft Teams, Slack, Google Chat, Mattermost, Discord…) :
+    // les alertes y sont aussi publiées. Vide = désactivé.
+    'webhook_url' => env('MONITOR_WEBHOOK_URL'),
 ];

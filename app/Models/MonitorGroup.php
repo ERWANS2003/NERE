@@ -10,13 +10,32 @@ class MonitorGroup extends Model
 {
     public const SETTINGS = ['interval_seconds', 'notify_delay_minutes', 'notify_repeat_minutes', 'escalate_after_minutes', 'snmp_community'];
 
-    protected $fillable = ['parent_id', 'name', ...self::SETTINGS];
+    protected $fillable = ['parent_id', 'name', 'maintenance', ...self::SETTINGS];
+
+    /** Réglages résolus par groupe, gardés le temps d'une requête ou d'un passage. */
+    private static array $resolved = [];
 
     protected $hidden = ['snmp_community'];
 
     protected function casts(): array
     {
-        return ['snmp_community' => 'encrypted'];
+        return ['snmp_community' => 'encrypted', 'maintenance' => 'array'];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => self::$resolved = []);
+        static::deleted(fn () => self::$resolved = []);
+    }
+
+    /** Réglage hérité d'un groupe, sans recharger le groupe à chaque appel. */
+    public static function settingFor(int $groupId, string $key): mixed
+    {
+        if (! array_key_exists($key, self::$resolved[$groupId] ?? [])) {
+            self::$resolved[$groupId][$key] = self::find($groupId)?->setting($key) ?? config('monitor.'.$key);
+        }
+
+        return self::$resolved[$groupId][$key];
     }
 
     public function parent(): BelongsTo
