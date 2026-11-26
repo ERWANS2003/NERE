@@ -4,196 +4,224 @@ namespace App\Services\Monitor;
 
 use App\Enums\MonitorSensorKind;
 use App\Enums\MonitorStatus;
-use App\Models\Department;
+use App\Models\MonitorDevice;
 use App\Models\MonitorEvent;
 use App\Models\MonitorReading;
 use App\Models\MonitorSensor;
-use App\Models\User;
-use App\Notifications\MonitorAlert;
-use Illuminate\Http\Client\Pool;
-use Illuminate\Http\Client\Response;
-use Illuminate\Process\Pool as ProcessPool;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\DB;
 
 class MonitorPoller
 {
-    /** Vérifie chaque capteur actif au plus une fois par minute. */
+    public function __construct(private readonly SensorChecks $checks, private readonly MonitorNotifier $notifier) {}
+
+    /** Un passage du planificateur : contrôle les capteurs dont c'est l'heure. */
     public function poll(): int
     {
-        $sensors = MonitorSensor::query()
-            ->with('device')
-            ->where('paused', false)
-            ->whereHas('device', fn ($query) => $query->where('paused', false))
-            ->where(fn ($query) => $query->whereNull('checked_at')->orWhere('checked_at', '<=', now()->subSeconds(50)))
-            ->orderBy('checked_at')
-            ->get();
+        $this->expirePausesAndAcknowledgements();
 
-        foreach ($sensors->groupBy(fn (MonitorSensor $sensor) => $sensor->kind->value) as $kind => $group) {
-            foreach ($group->chunk(10) as $chunk) {
-                $this->checkAll(MonitorSensorKind::from($kind), $chunk);
+        $devices = MonitorDevice::query()->with(['group', 'sensors.device'])->get()->keyBy('id');
+        $blocked = $this->blockedDevices($devices);
+        $due = collect();
+
+        foreach ($devices as $device) {
+            foreach ($device->sensors as $sensor) {
+                $sensor->setRelation('device', $device);
+                if ($sensor->isPaused() || ($sensor->next_check_at && $sensor->next_check_at->isFuture())) {
+                    continue;
+                }
+                // Dépendances : l'équipement parent est injoignable, ou le ping de
+                // l'équipement l'est (les autres capteurs en dépendent).
+                $reason = $blocked[$device->id] ?? null;
+                if ($reason === null && $sensor->kind !== MonitorSensorKind::Ping) {
+                    $ping = $device->sensors->firstWhere('kind', MonitorSensorKind::Ping);
+                    if ($ping && ! $ping->paused && in_array($ping->status, [MonitorStatus::Down, MonitorStatus::DownAcknowledged], true)) {
+                        $reason = 'le ping de l’équipement ne répond pas';
+                    }
+                }
+                if ($reason !== null) {
+                    $this->pauseByDependency($sensor, $reason);
+
+                    continue;
+                }
+                $due->push($sensor);
             }
         }
 
-        return $sensors->count();
+        $this->check($due);
+        $this->notifier->run();
+
+        return $due->count();
     }
 
+    /** « Vérifier maintenant » depuis l'interface. */
     public function checkNow(MonitorSensor $sensor): void
     {
-        $this->checkAll($sensor->kind, collect([$sensor]));
+        $sensor->loadMissing('device.group');
+        $this->check(collect([$sensor]));
+        $this->notifier->run();
     }
 
     /** @param  Collection<int, MonitorSensor>  $sensors */
-    private function checkAll(MonitorSensorKind $kind, Collection $sensors): void
+    private function check(Collection $sensors): void
     {
-        $results = match ($kind) {
-            MonitorSensorKind::Ping => $this->ping($sensors),
-            MonitorSensorKind::Tcp => $this->tcp($sensors),
-            MonitorSensorKind::Http => $this->http($sensors),
-        };
-
-        foreach ($sensors as $sensor) {
-            $this->record($sensor, ...$results[$sensor->id]);
+        foreach ($sensors->groupBy(fn (MonitorSensor $sensor) => $sensor->kind->value) as $kind => $group) {
+            foreach ($group->chunk(10) as $chunk) {
+                $results = $this->checks->run(MonitorSensorKind::from($kind), $chunk);
+                foreach ($chunk as $sensor) {
+                    $this->record($sensor, ...$results[$sensor->id]);
+                }
+            }
         }
     }
 
-    /**
-     * @param  Collection<int, MonitorSensor>  $sensors
-     * @return array<int, array{0: bool, 1: int|null, 2: string}>
-     */
-    private function ping(Collection $sensors): array
+    /** @return array<int, string> raison par équipement bloqué par son parent */
+    private function blockedDevices(Collection $devices): array
     {
-        $command = fn (string $host) => PHP_OS_FAMILY === 'Windows'
-            ? ['ping', '-n', '1', '-w', '1000', $host]
-            : ['ping', '-n', '-c', '1', '-W', '1', $host];
-
-        $pool = Process::pool(function (ProcessPool $pool) use ($sensors, $command) {
-            foreach ($sensors as $sensor) {
-                $pool->as((string) $sensor->id)->timeout(5)->command($command($sensor->device->host));
+        $blocked = [];
+        foreach ($devices as $device) {
+            $current = $device;
+            $seen = [];
+            while ($current->parent_device_id && ! isset($seen[$current->id])) {
+                $seen[$current->id] = true;
+                $parent = $devices[$current->parent_device_id] ?? null;
+                if (! $parent) {
+                    break;
+                }
+                $ping = $parent->sensors->firstWhere('kind', MonitorSensorKind::Ping);
+                if ($ping && in_array($ping->status, [MonitorStatus::Down, MonitorStatus::DownAcknowledged, MonitorStatus::Paused], true) && ! $parent->isPaused()) {
+                    $blocked[$device->id] = "dépend de {$parent->name}, injoignable";
+                    break;
+                }
+                $current = $parent;
             }
-        })->start()->wait();
-
-        $results = [];
-        foreach ($sensors as $sensor) {
-            $output = $pool[(string) $sensor->id]->output();
-            // Sous Windows, « Impossible de joindre l'hôte » sort aussi avec le code 0 :
-            // seule une vraie réponse contient TTL.
-            if (stripos($output, 'ttl=') === false) {
-                $results[$sensor->id] = [false, null, 'Aucune réponse au ping'];
-
-                continue;
-            }
-            $ms = preg_match('/(?:temps|time)\s*[=<]\s*([\d.,]+)\s*ms/i', $output, $match) === 1
-                ? (int) round((float) str_replace(',', '.', $match[1]))
-                : 0;
-            $results[$sensor->id] = [true, $ms, "Réponse en {$ms} ms"];
         }
 
-        return $results;
+        return $blocked;
     }
 
-    /**
-     * @param  Collection<int, MonitorSensor>  $sensors
-     * @return array<int, array{0: bool, 1: int|null, 2: string}>
-     */
-    private function tcp(Collection $sensors): array
+    private function pauseByDependency(MonitorSensor $sensor, string $reason): void
     {
-        $results = [];
-        foreach ($sensors as $sensor) {
-            $start = microtime(true);
-            $socket = @fsockopen($sensor->device->host, (int) $sensor->port, $errno, $error, 2);
-            $ms = (int) round((microtime(true) - $start) * 1000);
-            if ($socket === false) {
-                $results[$sensor->id] = [false, null, "Port {$sensor->port} fermé ou injoignable"];
+        $message = 'En pause : '.$reason;
+        if ($sensor->status === MonitorStatus::Paused && $sensor->last_message === $message) {
+            $sensor->forceFill(['next_check_at' => now()->addSeconds($sensor->interval())])->save();
 
-                continue;
-            }
-            fclose($socket);
-            $results[$sensor->id] = [true, $ms, "Port {$sensor->port} ouvert en {$ms} ms"];
+            return;
         }
-
-        return $results;
+        $this->changeStatus($sensor, MonitorStatus::Paused, ['last_message' => $message, 'failures' => 0, 'next_check_at' => now()->addSeconds($sensor->interval())]);
     }
 
-    /**
-     * @param  Collection<int, MonitorSensor>  $sensors
-     * @return array<int, array{0: bool, 1: int|null, 2: string}>
-     */
-    private function http(Collection $sensors): array
+    public function record(MonitorSensor $sensor, bool $ok, ?float $value, string $message, ?array $state = null): void
     {
-        $responses = Http::pool(function (Pool $pool) use ($sensors) {
-            foreach ($sensors as $sensor) {
-                // Les caméras et antennes ont souvent un certificat auto-signé.
-                $pool->as((string) $sensor->id)->timeout(5)->withoutVerifying()->get($sensor->url());
-            }
-        });
-
-        $results = [];
-        foreach ($sensors as $sensor) {
-            $response = $responses[(string) $sensor->id];
-            if (! $response instanceof Response) {
-                $results[$sensor->id] = [false, null, 'Page web injoignable'];
-
-                continue;
-            }
-            $time = $response->transferStats?->getTransferTime();
-            $ms = $time === null ? null : (int) round($time * 1000);
-            // Une page qui demande un mot de passe (401, 403) prouve que le service répond.
-            $results[$sensor->id] = $response->status() < 500
-                ? [true, $ms, 'HTTP '.$response->status().($ms === null ? '' : " en {$ms} ms")]
-                : [false, $ms, 'Erreur HTTP '.$response->status()];
-        }
-
-        return $results;
-    }
-
-    private function record(MonitorSensor $sensor, bool $ok, ?int $ms, string $message): void
-    {
-        MonitorReading::create(['sensor_id' => $sensor->id, 'checked_at' => now(), 'ok' => $ok, 'ms' => $ms]);
+        MonitorReading::create(['sensor_id' => $sensor->id, 'checked_at' => now(), 'ok' => $ok, 'value' => $value]);
 
         $failures = $ok ? 0 : $sensor->failures + 1;
-        if ($ok) {
-            $slow = $sensor->warning_ms !== null && $ms !== null && $ms > $sensor->warning_ms;
-            $status = $slow ? MonitorStatus::Warning : MonitorStatus::Up;
-            if ($slow) {
-                $message = "Lent : {$ms} ms (seuil {$sensor->warning_ms} ms)";
-            }
-        } else {
+        if (! $ok) {
             $status = $failures >= MonitorSensor::DOWN_AFTER ? MonitorStatus::Down : MonitorStatus::Warning;
             if ($status === MonitorStatus::Warning) {
-                $message .= " (échec {$failures}/".MonitorSensor::DOWN_AFTER.')';
+                $message .= " (échec {$failures}/".MonitorSensor::DOWN_AFTER.', nouvel essai)';
+            }
+        } else {
+            [$status, $limitMessage] = $this->applyLimits($sensor, $value);
+            $message = $limitMessage ?? $message;
+            if ($status === MonitorStatus::Up && $value !== null && $this->isUnusual($sensor, $value)) {
+                $status = MonitorStatus::Unusual;
+                $message .= ' (inhabituel pour ce jour et cette heure)';
             }
         }
 
+        // Une panne prise en compte le reste tant qu'elle dure.
+        if ($status === MonitorStatus::Down && $sensor->status === MonitorStatus::DownAcknowledged) {
+            $status = MonitorStatus::DownAcknowledged;
+        }
+
+        // Après un premier échec, PRTG réessaie tout de suite : ici au passage suivant.
+        $next = $status === MonitorStatus::Warning && ! $ok ? now() : now()->addSeconds($sensor->interval());
+        $this->changeStatus($sensor, $status, [
+            'last_value' => $value,
+            'last_message' => mb_substr($message, 0, 255),
+            'failures' => $failures,
+            'checked_at' => now(),
+            'next_check_at' => $next,
+            'state' => $state ?? $sensor->state,
+        ]);
+    }
+
+    /** @return array{0: MonitorStatus, 1: string|null} */
+    private function applyLimits(MonitorSensor $sensor, ?float $value): array
+    {
+        if ($value === null) {
+            return [MonitorStatus::Up, null];
+        }
+        $shown = $sensor->formatValue($value);
+        foreach ([
+            ['error_above', '>', MonitorStatus::Down, 'au-dessus de la limite de panne'],
+            ['error_below', '<', MonitorStatus::Down, 'en dessous de la limite de panne'],
+            ['warn_above', '>', MonitorStatus::Warning, 'au-dessus de la limite d’avertissement'],
+            ['warn_below', '<', MonitorStatus::Warning, 'en dessous de la limite d’avertissement'],
+        ] as [$field, $operator, $status, $text]) {
+            $limit = $sensor->{$field};
+            if ($limit !== null && ($operator === '>' ? $value > $limit : $value < $limit)) {
+                return [$status, "{$shown} : {$text} ({$sensor->formatValue($limit)})"];
+            }
+        }
+
+        return [MonitorStatus::Up, null];
+    }
+
+    /**
+     * Comme l'état « Inhabituel » de PRTG : un temps de réponse plus de trois
+     * fois supérieur à la moyenne des 4 dernières semaines, même jour, même heure.
+     */
+    private function isUnusual(MonitorSensor $sensor, float $value): bool
+    {
+        if ($sensor->unitLabel() !== 'ms') {
+            return false;
+        }
+        $history = DB::table('monitor_hourly')
+            ->where('sensor_id', $sensor->id)
+            ->where('hour', '>=', now()->subDays(28))
+            ->whereNotNull('avg_value')
+            ->get(['hour', 'avg_value'])
+            ->filter(fn ($row) => ($hour = \Illuminate\Support\Carbon::parse($row->hour))->dayOfWeek === now()->dayOfWeek && $hour->hour === now()->hour);
+        if ($history->count() < 3) {
+            return false;
+        }
+        $average = $history->avg('avg_value');
+
+        return $value > 3 * $average && $value - $average >= 50;
+    }
+
+    private function changeStatus(MonitorSensor $sensor, MonitorStatus $status, array $changes): void
+    {
         $previous = $sensor->status;
-        $changes = ['status' => $status, 'last_ms' => $ms, 'last_message' => $message, 'failures' => $failures, 'checked_at' => now()];
+        $changes['status'] = $status;
         if ($status !== $previous) {
             $changes['status_changed_at'] = now();
-            if ($status !== MonitorStatus::Down) {
-                $changes += ['acknowledged_by' => null, 'acknowledged_at' => null, 'acknowledgement' => null];
+            if (! in_array($status, [MonitorStatus::Down, MonitorStatus::DownAcknowledged], true)) {
+                $changes += ['acknowledged_by' => null, 'acknowledged_at' => null, 'acknowledged_until' => null, 'acknowledgement' => null];
             }
         }
         $sensor->forceFill($changes)->save();
 
-        if ($status === $previous) {
-            return;
-        }
-
-        MonitorEvent::create(['sensor_id' => $sensor->id, 'from_status' => $previous, 'to_status' => $status, 'message' => $message]);
-
-        if ($status === MonitorStatus::Down || $previous === MonitorStatus::Down) {
-            Notification::send($this->recipients(), new MonitorAlert($sensor, down: $status === MonitorStatus::Down));
+        if ($status !== $previous) {
+            MonitorEvent::create(['sensor_id' => $sensor->id, 'from_status' => $previous, 'to_status' => $status, 'message' => $sensor->last_message]);
+            $this->notifier->statusChanged($sensor, $previous);
         }
     }
 
-    /** @return Collection<int, User> */
-    private function recipients(): Collection
+    private function expirePausesAndAcknowledgements(): void
     {
-        $it = Department::query()->where('code', 'IT')->where('is_active', true)->first();
-        $handlers = $it ? User::query()->where('actif', true)->handlersOf($it->id)->get() : collect();
+        foreach ([MonitorDevice::class, MonitorSensor::class] as $model) {
+            $model::query()->where('paused', true)->whereNotNull('paused_until')->where('paused_until', '<=', now())
+                ->update(['paused' => false, 'paused_until' => null, 'pause_reason' => null]);
+        }
 
-        return $handlers->merge(User::query()->where('actif', true)->where('is_super_admin', true)->get())->unique('id');
+        MonitorSensor::query()->where('status', MonitorStatus::DownAcknowledged)
+            ->whereNotNull('acknowledged_until')->where('acknowledged_until', '<=', now())
+            ->get()->each(function (MonitorSensor $sensor) {
+                $sensor->forceFill(['status' => MonitorStatus::Down, 'acknowledged_until' => null, 'notified_at' => null])->save();
+                MonitorEvent::create(['sensor_id' => $sensor->id, 'from_status' => MonitorStatus::DownAcknowledged, 'to_status' => MonitorStatus::Down, 'message' => 'Fin de la prise en compte : toujours en panne']);
+            });
     }
 }

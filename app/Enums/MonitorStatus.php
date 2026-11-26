@@ -2,10 +2,13 @@
 
 namespace App\Enums;
 
+/** États d'un capteur, du plus grave au moins grave (même ordre que PRTG). */
 enum MonitorStatus: string
 {
     case Down = 'down';
+    case DownAcknowledged = 'down_ack';
     case Warning = 'warning';
+    case Unusual = 'unusual';
     case Up = 'up';
     case Paused = 'paused';
     case Unknown = 'unknown';
@@ -14,26 +17,33 @@ enum MonitorStatus: string
     {
         return match ($this) {
             self::Down => 'En panne',
+            self::DownAcknowledged => 'En panne (pris en compte)',
             self::Warning => 'Avertissement',
+            self::Unusual => 'Inhabituel',
             self::Up => 'OK',
             self::Paused => 'En pause',
             self::Unknown => 'Inconnu',
         };
     }
 
-    /** Couleur pleine, comme les pastilles d'état de PRTG. */
     public function color(): string
     {
         return match ($this) {
             self::Down => 'bg-red-600 text-white',
+            self::DownAcknowledged => 'bg-red-300 text-red-950',
             self::Warning => 'bg-amber-400 text-graphite-950',
+            self::Unusual => 'bg-orange-500 text-white',
             self::Up => 'bg-green-600 text-white',
             self::Paused => 'bg-blue-600 text-white',
             self::Unknown => 'bg-graphite-400 text-white',
         };
     }
 
-    /** Plus le chiffre est petit, plus l'état est grave. */
+    public function isAlarm(): bool
+    {
+        return in_array($this, [self::Down, self::DownAcknowledged, self::Warning, self::Unusual], true);
+    }
+
     public function rank(): int
     {
         return array_search($this, self::cases(), true);
@@ -42,15 +52,13 @@ enum MonitorStatus: string
     /** @param  iterable<self>  $statuses */
     public static function worst(iterable $statuses): self
     {
-        $worst = self::Unknown;
-        $seen = false;
+        $worst = null;
         foreach ($statuses as $status) {
-            if (! $seen || $status->rank() < $worst->rank()) {
+            if ($worst === null || $status->rank() < $worst->rank()) {
                 $worst = $status;
-                $seen = true;
             }
         }
 
-        return $worst;
+        return $worst ?? self::Unknown;
     }
 }

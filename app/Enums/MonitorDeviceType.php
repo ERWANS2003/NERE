@@ -8,6 +8,7 @@ enum MonitorDeviceType: string
     case Printer = 'printer';
     case Server = 'server';
     case Antenna = 'antenna';
+    case Network = 'network';
 
     public function label(): string
     {
@@ -16,27 +17,53 @@ enum MonitorDeviceType: string
             self::Printer => 'Imprimante',
             self::Server => 'Serveur',
             self::Antenna => 'Antenne',
+            self::Network => 'Switch / routeur',
         };
     }
 
     /**
-     * Capteurs créés avec l'équipement : le ping pour tous, plus le service
-     * propre au type d'équipement.
+     * Modèle d'équipement : capteurs créés avec lui. Les capteurs SNMP ne sont
+     * ajoutés que si on le demande, l'équipement devant avoir SNMP activé.
      *
-     * @return list<array{kind: string, name: string, port: int|null, path: string|null}>
+     * @return list<array{kind: string, name: string, port?: int, parameter?: string}>
      */
-    public function defaultSensors(): array
+    public function template(bool $snmp): array
     {
-        $ping = ['kind' => 'ping', 'name' => 'Ping', 'port' => null, 'path' => null];
-
-        return match ($this) {
-            self::Camera => [$ping,
-                ['kind' => 'tcp', 'name' => 'Flux vidéo (RTSP)', 'port' => 554, 'path' => null],
-                ['kind' => 'http', 'name' => 'Interface web', 'port' => 80, 'path' => '/']],
-            self::Printer => [$ping, ['kind' => 'tcp', 'name' => "Port d'impression", 'port' => 9100, 'path' => null]],
-            self::Antenna => [$ping, ['kind' => 'http', 'name' => 'Interface web', 'port' => 80, 'path' => '/']],
-            self::Server => [$ping],
+        $sensors = match ($this) {
+            self::Camera => [
+                ['kind' => 'ping', 'name' => 'Ping'],
+                ['kind' => 'tcp', 'name' => 'Flux vidéo (RTSP)', 'port' => 554],
+                ['kind' => 'http', 'name' => 'Interface web', 'port' => 80, 'parameter' => '/'],
+            ],
+            self::Printer => [
+                ['kind' => 'ping', 'name' => 'Ping'],
+                ['kind' => 'tcp', 'name' => "Port d'impression", 'port' => 9100],
+            ],
+            self::Server => [['kind' => 'ping', 'name' => 'Ping']],
+            self::Antenna, self::Network => [
+                ['kind' => 'ping', 'name' => 'Ping'],
+                ['kind' => 'http', 'name' => 'Interface web', 'port' => 80, 'parameter' => '/'],
+            ],
         };
+
+        if ($snmp) {
+            $sensors = [...$sensors, ...match ($this) {
+                self::Server => [
+                    ['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement'],
+                    ['kind' => 'snmp_cpu', 'name' => 'Processeur'],
+                    ['kind' => 'snmp_memory', 'name' => 'Mémoire'],
+                    ['kind' => 'snmp_disk', 'name' => 'Disque'],
+                ],
+                self::Printer => [['kind' => 'snmp_printer', 'name' => 'Consommables']],
+                self::Camera => [['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement']],
+                self::Antenna, self::Network => [
+                    ['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement'],
+                    ['kind' => 'snmp_traffic', 'name' => 'Trafic'],
+                ],
+            }];
+        }
+
+        return $sensors;
     }
 
     /** @return array<string, string> */

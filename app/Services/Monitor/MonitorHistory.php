@@ -2,32 +2,31 @@
 
 namespace App\Services\Monitor;
 
+use App\Enums\MonitorStatus;
 use App\Models\MonitorEvent;
 use App\Models\MonitorReading;
 use App\Models\MonitorSensor;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class MonitorHistory
 {
-    /** Mesures détaillées gardées 7 jours, moyennes horaires et événements 13 mois. */
-    public const RAW_DAYS = 7;
-
-    public const HOURLY_DAYS = 400;
-
-    /** @var array<string, array{label: string, hours: int, bucket: int}> */
+    /** Périodes des graphiques, comme les onglets de PRTG (bucket en minutes). */
     public const PERIODS = [
-        '24h' => ['label' => '24 heures', 'hours' => 24, 'bucket' => 5],
-        '7j' => ['label' => '7 jours', 'hours' => 168, 'bucket' => 60],
-        '30j' => ['label' => '30 jours', 'hours' => 720, 'bucket' => 360],
+        'direct' => ['label' => 'En direct (1 h)', 'hours' => 1, 'bucket' => 1],
+        '2j' => ['label' => '2 jours', 'hours' => 48, 'bucket' => 15],
+        '30j' => ['label' => '30 jours', 'hours' => 720, 'bucket' => 240],
+        '365j' => ['label' => '365 jours', 'hours' => 8760, 'bucket' => 1440],
     ];
 
-    /** Consolide les heures terminées depuis la dernière consolidation, puis purge. */
+    /** Consolide les heures terminées par moyennes horaires, puis purge. */
     public function rollup(): int
     {
+        $rawDays = (int) config('monitor.raw_days', 7);
         $last = DB::table('monitor_hourly')->max('hour');
-        $hour = $last ? Carbon::parse($last)->addHour() : now()->subHours(48)->startOfHour();
-        $hour = $hour->max(now()->subDays(self::RAW_DAYS)->startOfHour());
+        $hour = ($last ? Carbon::parse($last)->addHour() : now()->subHours(48)->startOfHour())
+            ->max(now()->subDays($rawDays)->startOfHour());
         $current = now()->startOfHour();
         $done = 0;
 
@@ -36,74 +35,124 @@ class MonitorHistory
                 ->where('checked_at', '>=', $hour)
                 ->where('checked_at', '<', $hour->copy()->addHour())
                 ->groupBy('sensor_id')
-                ->selectRaw('sensor_id, count(*) as samples, sum(case when ok then 0 else 1 end) as failures, avg(ms) as avg_ms, max(ms) as max_ms')
+                ->selectRaw('sensor_id, count(*) as samples, sum(case when ok then 0 else 1 end) as failures, avg(value) as avg_value, min(value) as min_value, max(value) as max_value')
                 ->get()
                 ->map(fn ($row) => [
                     'sensor_id' => $row->sensor_id,
                     'hour' => $hour->copy(),
                     'samples' => (int) $row->samples,
                     'failures' => (int) $row->failures,
-                    'avg_ms' => $row->avg_ms === null ? null : (int) round($row->avg_ms),
-                    'max_ms' => $row->max_ms === null ? null : (int) $row->max_ms,
+                    'avg_value' => $row->avg_value === null ? null : (float) $row->avg_value,
+                    'min_value' => $row->min_value === null ? null : (float) $row->min_value,
+                    'max_value' => $row->max_value === null ? null : (float) $row->max_value,
                 ])
                 ->all();
             if ($rows !== []) {
-                DB::table('monitor_hourly')->upsert($rows, ['sensor_id', 'hour'], ['samples', 'failures', 'avg_ms', 'max_ms']);
+                DB::table('monitor_hourly')->upsert($rows, ['sensor_id', 'hour'], ['samples', 'failures', 'avg_value', 'min_value', 'max_value']);
             }
             $hour->addHour();
             $done++;
         }
 
-        MonitorReading::query()->where('checked_at', '<', now()->subDays(self::RAW_DAYS))->delete();
-        DB::table('monitor_hourly')->where('hour', '<', now()->subDays(self::HOURLY_DAYS))->delete();
-        MonitorEvent::query()->where('created_at', '<', now()->subDays(self::HOURLY_DAYS))->delete();
+        MonitorReading::query()->where('checked_at', '<', now()->subDays($rawDays))->delete();
+        DB::table('monitor_hourly')->where('hour', '<', now()->subDays((int) config('monitor.hourly_days', 400)))->delete();
+        MonitorEvent::query()->where('created_at', '<', now()->subDays((int) config('monitor.hourly_days', 400)))->delete();
 
         return $done;
     }
 
     /**
-     * Points du graphique (temps de réponse moyen et échecs par tranche) et
-     * statistiques de la période.
+     * Mesures entre deux dates : détaillées si elles sont encore gardées, sinon moyennes horaires.
      *
-     * @return array{points: list<array{at: Carbon, ms: int|null, failed: bool}>, uptime: float|null, avg_ms: int|null, max_ms: int|null, samples: int}
+     * @return Collection<int, array{at: Carbon, samples: int, failures: int, avg: float|null, max: float|null}>
+     */
+    public function rows(MonitorSensor $sensor, Carbon $from, Carbon $to): Collection
+    {
+        $raw = $from->gte(now()->subDays((int) config('monitor.raw_days', 7))->addHour());
+
+        return $raw
+            ? MonitorReading::query()->where('sensor_id', $sensor->id)->whereBetween('checked_at', [$from, $to])->orderBy('checked_at')->get()
+                ->map(fn (MonitorReading $r) => ['at' => $r->checked_at, 'samples' => 1, 'failures' => $r->ok ? 0 : 1, 'avg' => $r->value, 'max' => $r->value])
+            : DB::table('monitor_hourly')->where('sensor_id', $sensor->id)->whereBetween('hour', [$from, $to])->orderBy('hour')->get()
+                ->map(fn ($r) => ['at' => Carbon::parse($r->hour), 'samples' => (int) $r->samples, 'failures' => (int) $r->failures, 'avg' => $r->avg_value === null ? null : (float) $r->avg_value, 'max' => $r->max_value === null ? null : (float) $r->max_value]);
+    }
+
+    /**
+     * Points du graphique et statistiques de la période.
+     *
+     * @return array{points: list<array{at: Carbon, value: float|null, failed: bool}>, uptime: float|null, avg: float|null, max: float|null, samples: int}
      */
     public function series(MonitorSensor $sensor, string $period): array
     {
         ['hours' => $hours, 'bucket' => $bucket] = self::PERIODS[$period];
-        $from = now()->subHours($hours);
-
-        // Les 24 dernières heures viennent des mesures détaillées, au-delà des moyennes horaires.
-        $rows = $hours <= 24
-            ? MonitorReading::query()->where('sensor_id', $sensor->id)->where('checked_at', '>=', $from)->orderBy('checked_at')
-                ->get()->map(fn (MonitorReading $r) => ['at' => $r->checked_at, 'samples' => 1, 'failures' => $r->ok ? 0 : 1, 'avg' => $r->ms, 'max' => $r->ms])
-            : DB::table('monitor_hourly')->where('sensor_id', $sensor->id)->where('hour', '>=', $from)->orderBy('hour')
-                ->get()->map(fn ($r) => ['at' => Carbon::parse($r->hour), 'samples' => $r->samples, 'failures' => $r->failures, 'avg' => $r->avg_ms, 'max' => $r->max_ms]);
+        $rows = $this->rows($sensor, now()->subHours($hours), now());
 
         $points = $rows
             ->groupBy(fn (array $row) => intdiv($row['at']->timestamp, $bucket * 60))
-            ->map(function ($group, $slot) use ($bucket) {
-                $timed = $group->filter(fn (array $row) => $row['avg'] !== null);
-                $weight = $timed->sum('samples');
-
-                return [
-                    'at' => Carbon::createFromTimestamp($slot * $bucket * 60, config('app.timezone')),
-                    'ms' => $weight > 0 ? (int) round($timed->sum(fn (array $row) => $row['avg'] * $row['samples']) / $weight) : null,
-                    'failed' => $group->sum('failures') > 0,
-                ];
-            })
+            ->map(fn (Collection $group, $slot) => [
+                'at' => Carbon::createFromTimestamp($slot * $bucket * 60, config('app.timezone')),
+                'value' => self::weightedAverage($group),
+                'failed' => $group->sum('failures') > 0,
+            ])
             ->values()
             ->all();
 
+        return ['points' => $points] + $this->stats($rows);
+    }
+
+    /** @return array{uptime: float|null, avg: float|null, max: float|null, samples: int} */
+    public function stats(Collection $rows): array
+    {
         $samples = (int) $rows->sum('samples');
+
+        return [
+            'samples' => $samples,
+            'uptime' => $samples > 0 ? round(100 * ($samples - $rows->sum('failures')) / $samples, 2) : null,
+            'avg' => self::weightedAverage($rows),
+            'max' => $rows->max('max'),
+        ];
+    }
+
+    /**
+     * Rapport de disponibilité d'une liste de capteurs sur une période.
+     *
+     * @param  Collection<int, MonitorSensor>  $sensors
+     * @return list<array{sensor: MonitorSensor, uptime: float|null, avg: float|null, max: float|null, samples: int, outages: int, downtime_minutes: int}>
+     */
+    public function report(Collection $sensors, Carbon $from, Carbon $to): array
+    {
+        return $sensors->map(function (MonitorSensor $sensor) use ($from, $to) {
+            $events = MonitorEvent::query()->where('sensor_id', $sensor->id)->where('created_at', '<=', $to)->orderBy('created_at')->get();
+            $down = [MonitorStatus::Down, MonitorStatus::DownAcknowledged];
+            $outages = 0;
+            $downtime = 0;
+            $downSince = null;
+            foreach ($events as $event) {
+                $isDown = in_array($event->to_status, $down, true);
+                $wasDown = in_array($event->from_status, $down, true);
+                if ($isDown && ! $wasDown) {
+                    $downSince = $event->created_at;
+                    if ($event->created_at->gte($from)) {
+                        $outages++;
+                    }
+                } elseif (! $isDown && $wasDown && $downSince) {
+                    $downtime += max(0, $downSince->max($from)->diffInMinutes($event->created_at->min($to), true));
+                    $downSince = null;
+                }
+            }
+            if ($downSince) {
+                $downtime += max(0, $downSince->max($from)->diffInMinutes($to->copy()->min(now()), true));
+            }
+
+            return ['sensor' => $sensor, 'outages' => $outages, 'downtime_minutes' => (int) round($downtime)] + $this->stats($this->rows($sensor, $from, $to));
+        })->all();
+    }
+
+    private static function weightedAverage(Collection $rows): ?float
+    {
         $timed = $rows->filter(fn (array $row) => $row['avg'] !== null);
         $weight = $timed->sum('samples');
 
-        return [
-            'points' => $points,
-            'samples' => $samples,
-            'uptime' => $samples > 0 ? round(100 * ($samples - $rows->sum('failures')) / $samples, 2) : null,
-            'avg_ms' => $weight > 0 ? (int) round($timed->sum(fn (array $row) => $row['avg'] * $row['samples']) / $weight) : null,
-            'max_ms' => $timed->max('max'),
-        ];
+        return $weight > 0 ? round($timed->sum(fn (array $row) => $row['avg'] * $row['samples']) / $weight, 1) : null;
     }
 }
