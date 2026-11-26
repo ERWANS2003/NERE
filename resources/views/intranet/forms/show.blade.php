@@ -152,7 +152,7 @@
                                     fn ($mime) => '.' . trim($mime),
                                     explode(',', $field->rules['mimes'] ?? 'pdf,jpg,jpeg,png')
                                 ));
-                                $maxKo = $field->rules['max'] ?? 10240;
+                                $maxKo = $field->rules['max'] ?? 20480;
                             @endphp
                             <input
                                 type="file"

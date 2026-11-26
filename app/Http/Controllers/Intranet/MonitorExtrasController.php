@@ -57,7 +57,7 @@ class MonitorExtrasController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'background' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
+            'background' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:20480'],
             'remove_background' => ['sometimes', 'boolean'],
             'items' => ['nullable', 'array'],
             'items.*.x' => ['required', 'numeric', 'between:0,100'],

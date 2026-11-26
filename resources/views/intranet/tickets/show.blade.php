@@ -251,7 +251,7 @@
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <input type="file" name="attachments[]" multiple accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,.xls,.xlsx" class="block w-full text-sm text-graphite-700">
-                            <p class="mt-1 text-xs text-graphite-500">5 fichiers max, 10 Mo chacun.</p>
+                            <p class="mt-1 text-xs text-graphite-500">5 fichiers max, 20 Mo chacun.</p>
                             @error('attachments')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                             @error('attachments.*')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                         </div>

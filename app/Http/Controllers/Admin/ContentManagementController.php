@@ -152,7 +152,7 @@ class ContentManagementController extends Controller
             'body' => ['required', 'string', 'max:10000'],
             'priority' => ['required', Rule::in(self::ANNOUNCEMENT_PRIORITIES)],
             'is_active' => ['nullable', 'boolean'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx,ppt,pptx'],
+            'attachment' => ['nullable', 'file', 'max:20480', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx,ppt,pptx'],
             'remove_attachment' => ['nullable', 'boolean'],
         ]);
 

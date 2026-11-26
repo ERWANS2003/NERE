@@ -28,7 +28,7 @@
                     <input name="name" value="{{ old('name', $map->name) }}" required maxlength="120" class="champ">
                 </label>
                 <label class="block">
-                    <span class="etiquette">Image de fond (plan, schéma)</span>
+                    <span class="etiquette">Image de fond (plan, schéma, 20 Mo maximum)</span>
                     <input type="file" name="background" accept="image/png,image/jpeg,image/webp" class="champ">
                     @error('background')<span class="mt-1 block text-sm text-red-700">{{ $message }}</span>@enderror
                 </label>

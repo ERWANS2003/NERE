@@ -171,7 +171,7 @@ class AnnouncementController extends Controller
             'body' => ['required', 'string', 'max:10000'],
             'priority' => ['required', 'in:'.implode(',', self::PRIORITIES)],
             'department_id' => ['present', 'nullable', 'integer', Rule::in($this->audienceDepartments($request->user(), $announcement)->modelKeys())],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx,ppt,pptx'],
+            'attachment' => ['nullable', 'file', 'max:20480', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx,ppt,pptx'],
             'remove_attachment' => ['nullable', 'boolean'],
         ]);
 

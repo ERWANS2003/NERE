@@ -62,7 +62,7 @@
         </div>
     @endif
     <input id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="block w-full text-sm text-graphite-700">
-    <p class="mt-1.5 text-xs text-graphite-500">PDF, image, Word, Excel, PowerPoint ou texte, 10 Mo maximum.</p>
+    <p class="mt-1.5 text-xs text-graphite-500">PDF, image, Word, Excel, PowerPoint ou texte, 20 Mo maximum.</p>
     <x-erreur :messages="$errors->get('attachment')" />
 </div>
 

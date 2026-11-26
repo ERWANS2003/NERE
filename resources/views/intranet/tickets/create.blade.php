@@ -72,7 +72,7 @@
             <div>
                 <label for="attachments" class="mb-1 block text-sm font-medium text-graphite-800">Pièces jointes (facultatif)</label>
                 <input id="attachments" type="file" name="attachments[]" multiple accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,.xls,.xlsx" class="block w-full text-sm text-graphite-700">
-                <p class="mt-1 text-xs text-graphite-500">5 fichiers maximum, 10 Mo par fichier. Formats : PDF, image, texte, Word ou Excel.</p>
+                <p class="mt-1 text-xs text-graphite-500">5 fichiers maximum, 20 Mo par fichier. Formats : PDF, image, texte, Word ou Excel.</p>
                 @error('attachments')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                 @error('attachments.*')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>

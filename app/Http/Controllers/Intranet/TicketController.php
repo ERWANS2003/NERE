@@ -103,7 +103,7 @@ class TicketController extends Controller
             'category' => ['required', Rule::enum(TicketCategory::class)],
             'priority' => ['required', Rule::enum(TicketPriority::class)],
             'attachments' => ['sometimes', 'array', 'max:5'],
-            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
+            'attachments.*' => ['file', 'max:20480', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
         ]);
 
         $ticket = DB::transaction(function () use ($request, $department, $validated, $ticketSlaService) {
@@ -355,7 +355,7 @@ class TicketController extends Controller
             'body' => ['required', 'string', 'max:10000'],
             'is_internal' => ['sometimes', 'boolean'],
             'attachments' => ['sometimes', 'array', 'max:5'],
-            'attachments.*' => ['file', 'max:10240', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
+            'attachments.*' => ['file', 'max:20480', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx,xls,xlsx'],
         ]);
 
         $internal = $isAgent && $request->boolean('is_internal');

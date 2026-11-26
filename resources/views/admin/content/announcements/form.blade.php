@@ -40,7 +40,7 @@
                     </div>
                 @endif
                 <input id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" class="block w-full text-sm text-gray-700">
-                <p class="mt-1 text-xs text-gray-500">PDF, image, Word, Excel, PowerPoint ou texte, 10 Mo maximum.{{ $announcement->attachment_path ? ' Un nouveau fichier remplace l’actuel.' : '' }}</p>
+                <p class="mt-1 text-xs text-gray-500">PDF, image, Word, Excel, PowerPoint ou texte, 20 Mo maximum.{{ $announcement->attachment_path ? ' Un nouveau fichier remplace l’actuel.' : '' }}</p>
                 @error('attachment')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
             <label class="flex items-center gap-2 text-sm text-gray-700">
