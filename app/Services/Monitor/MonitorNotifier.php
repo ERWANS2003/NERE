@@ -18,6 +18,12 @@ use Illuminate\Support\Facades\Notification;
  */
 class MonitorNotifier
 {
+    /** @var list<array{0: MonitorSensor, 1: string}> alertes pour l'équipe IT, envoyées ensemble */
+    private array $team = [];
+
+    /** @var list<array{0: MonitorSensor, 1: string}> escalades pour les responsables */
+    private array $escalations = [];
+
     public function statusChanged(MonitorSensor $sensor, MonitorStatus $previous): void
     {
         $wasDown = in_array($previous, [MonitorStatus::Down, MonitorStatus::DownAcknowledged], true);
@@ -26,7 +32,7 @@ class MonitorNotifier
         if ($wasDown && ! $isDown) {
             // Fin d'alerte, seulement si la panne avait été annoncée.
             if ($sensor->notified_at) {
-                Notification::send($this->team(), new MonitorAlert($sensor, 'recovered'));
+                $this->team[] = [$sensor, 'recovered'];
             }
             $sensor->forceFill(['notified_at' => null, 'last_notified_at' => null, 'escalated' => false])->save();
         }
@@ -49,7 +55,7 @@ class MonitorNotifier
 
                 if ($sensor->notified_at === null) {
                     if ($since->lte(now()->subMinutes($delay))) {
-                        Notification::send($this->team(), new MonitorAlert($sensor, 'down'));
+                        $this->team[] = [$sensor, 'down'];
                         $sensor->forceFill(['notified_at' => now(), 'last_notified_at' => now()])->save();
                     }
 
@@ -57,15 +63,30 @@ class MonitorNotifier
                 }
 
                 if ($repeat > 0 && $sensor->last_notified_at?->lte(now()->subMinutes($repeat))) {
-                    Notification::send($this->team(), new MonitorAlert($sensor, 'still_down'));
+                    $this->team[] = [$sensor, 'still_down'];
                     $sensor->forceFill(['last_notified_at' => now()])->save();
                 }
 
                 if ($escalate > 0 && ! $sensor->escalated && $since->lte(now()->subMinutes($escalate))) {
-                    Notification::send($this->managers(), new MonitorAlert($sensor, 'escalated'));
+                    $this->escalations[] = [$sensor, 'escalated'];
                     $sensor->forceFill(['escalated' => true])->save();
                 }
             });
+
+        $this->flush();
+    }
+
+    /** Une seule notification par destinataire pour tout le passage. */
+    private function flush(): void
+    {
+        if ($this->team !== []) {
+            Notification::send($this->team(), new MonitorAlert($this->team));
+        }
+        if ($this->escalations !== []) {
+            Notification::send($this->managers(), new MonitorAlert($this->escalations));
+        }
+        $this->team = [];
+        $this->escalations = [];
     }
 
     /** Techniciens et responsables IT, et administrateurs. @return Collection<int, User> */

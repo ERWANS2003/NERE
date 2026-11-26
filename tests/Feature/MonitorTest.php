@@ -144,29 +144,29 @@ it('warns on the first failure, goes down on the second, then notifies after the
 
     $this->travel(6)->minutes();
     $poller->poll();
-    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => $n->kind === 'down');
+    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => in_array('down', $n->kinds(), true));
 
     $this->travel(31)->minutes();
     $poller->poll();
-    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => $n->kind === 'still_down');
+    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => in_array('still_down', $n->kinds(), true));
 
     $this->travel(30)->minutes();
     $poller->poll();
-    Notification::assertSentTo($director, MonitorAlert::class, fn ($n) => $n->kind === 'escalated');
-    Notification::assertNotSentTo($technician, MonitorAlert::class, fn ($n) => $n->kind === 'escalated');
+    Notification::assertSentTo($director, MonitorAlert::class, fn ($n) => in_array('escalated', $n->kinds(), true));
+    Notification::assertNotSentTo($technician, MonitorAlert::class, fn ($n) => in_array('escalated', $n->kinds(), true));
 
     Process::fake(['*' => Process::result(pingReply(12))]);
     $this->travel(2)->minutes();
     $poller->poll();
     expect($ping->fresh()->status)->toBe(MonitorStatus::Up)->and($ping->fresh()->last_value)->toBe(12.0);
-    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => $n->kind === 'recovered');
+    Notification::assertSentTo($technician, MonitorAlert::class, fn ($n) => in_array('recovered', $n->kinds(), true));
 });
 
 it('stops reminders once acknowledged and returns to down when the acknowledgement expires', function () {
     Notification::fake();
     $technician = monitorTechnician();
     $device = monitorDevice();
-    $device->group->update(['notify_repeat_minutes' => 10]);
+    $device->group->update(['notify_repeat_minutes' => 10, 'notify_delay_minutes' => 0]);
     $ping = $device->sensors->first();
     $poller = app(MonitorPoller::class);
     pingFails();
@@ -440,4 +440,45 @@ it('draws maps with icons, dependency lines, alarms, a wall screen and whole gro
         ->assertSee('Caméra portail')
         ->assertDontSee('intranet-sidebar', false);
     $this->get(route('intranet.monitor.maps'))->assertOk()->assertSee('2 en panne');
+});
+
+it('sends no e-mail for short outages and groups alerts into one message per check', function () {
+    Notification::fake();
+    $technician = monitorTechnician();
+    $printer = monitorDevice(['name' => 'Imprimante', 'host' => '10.0.0.7', 'type' => 'printer']);
+    $poller = app(MonitorPoller::class);
+
+    // Coupure de 3 minutes : en panne à l'écran, mais aucun message (délai par défaut : 10 min).
+    pingFails();
+    $poller->poll();
+    $poller->poll();
+    expect($printer->sensors()->where('kind', 'ping')->first()->status)->toBe(MonitorStatus::Down);
+    $this->travel(3)->minutes();
+    Process::fake(['*' => Process::result(pingReply(5))]);
+    $poller->poll();
+    Notification::assertNothingSent();
+
+    // Panne qui dure : un seul message pour les capteurs touchés au même moment.
+    $printer->sensors()->where('kind', 'tcp')->update(['port' => 1]);
+    $this->travel(2)->minutes();
+    Process::fake(['*' => Process::result("Délai d'attente dépassé.
+")]);
+    $poller->poll();
+    $poller->poll();
+    $this->travel(11)->minutes();
+    $poller->poll();
+
+    Notification::assertSentToTimes($technician, MonitorAlert::class, 1);
+    Notification::assertSentTo($technician, MonitorAlert::class, function (MonitorAlert $alert) use ($technician) {
+        $data = $alert->toArray($technician);
+
+        return $alert->kinds() === ['down'] && str_starts_with($data['title'], 'En panne : Imprimante');
+    });
+
+    $sensors = $printer->sensors()->with('device')->get();
+    $grouped = new MonitorAlert([[$sensors[0], 'down'], [$sensors[1], 'down'], [$sensors[0], 'recovered']]);
+    expect($grouped->toArray($technician)['title'])->toBe('Supervision : 2 en panne, 1 rétabli')
+        ->and($grouped->toArray($technician)['url'])->toBe(route('intranet.monitor.index'))
+        ->and(implode("
+", $grouped->toMail($technician)->introLines))->toContain('En panne : Imprimante · Ping');
 });

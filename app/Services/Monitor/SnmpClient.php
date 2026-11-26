@@ -61,9 +61,16 @@ class SnmpClient
         }
         $timeout = (float) config('monitor.snmp_timeout', 2);
         stream_set_timeout($socket, (int) $timeout, (int) (fmod($timeout, 1) * 1_000_000));
-        fwrite($socket, $packet);
-        $data = fread($socket, 65535);
-        $timedOut = stream_get_meta_data($socket)['timed_out'];
+        // UDP peut perdre un paquet, et un appareil occupé répondre en retard :
+        // on renvoie la question une fois avant de conclure à une absence de réponse.
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            fwrite($socket, $packet);
+            $data = fread($socket, 65535);
+            $timedOut = stream_get_meta_data($socket)['timed_out'];
+            if ($data !== false && $data !== '' && ! $timedOut) {
+                break;
+            }
+        }
         fclose($socket);
         if ($data === false || $data === '' || $timedOut) {
             throw new RuntimeException('SNMP : pas de réponse (communauté ou SNMP désactivé ?)');

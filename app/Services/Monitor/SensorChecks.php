@@ -64,7 +64,7 @@ class SensorChecks
      * @param  list<string>  $hosts
      * @return array<string, string> sortie de ping par hôte
      */
-    public static function pingMany(array $hosts, int $waitMs = 1000): array
+    public static function pingMany(array $hosts, int $waitMs = 2000): array
     {
         $command = fn (string $host) => PHP_OS_FAMILY === 'Windows'
             ? ['ping', '-n', '1', '-w', (string) $waitMs, $host]

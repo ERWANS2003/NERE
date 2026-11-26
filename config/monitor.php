@@ -6,7 +6,8 @@ return [
     // Entrée « Supervision réseau » dans le menu : masquée tant que le module est en essai.
     'show_in_menu' => (bool) env('MONITOR_SHOW_IN_MENU', false),
     'interval_seconds' => (int) env('MONITOR_INTERVAL_SECONDS', 60),
-    'notify_delay_minutes' => (int) env('MONITOR_NOTIFY_DELAY_MINUTES', 0),
+    // Comme PRTG : pas d'alerte pour une panne de moins de 10 minutes (coupures brèves, capteurs instables).
+    'notify_delay_minutes' => (int) env('MONITOR_NOTIFY_DELAY_MINUTES', 10),
     'notify_repeat_minutes' => (int) env('MONITOR_NOTIFY_REPEAT_MINUTES', 0),
     'escalate_after_minutes' => (int) env('MONITOR_ESCALATE_AFTER_MINUTES', 30),
     'snmp_community' => env('MONITOR_SNMP_COMMUNITY', 'public'),
