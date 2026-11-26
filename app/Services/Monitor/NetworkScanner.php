@@ -3,8 +3,6 @@
 namespace App\Services\Monitor;
 
 use App\Models\MonitorDevice;
-use Illuminate\Process\Pool as ProcessPool;
-use Illuminate\Support\Facades\Process;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -46,16 +44,9 @@ class NetworkScanner
     public function scan(string $cidr, string $community): array
     {
         $alive = [];
-        foreach (array_chunk(self::hosts($cidr), 25) as $chunk) {
-            $pool = Process::pool(function (ProcessPool $pool) use ($chunk) {
-                foreach ($chunk as $ip) {
-                    $pool->as($ip)->timeout(5)->command(PHP_OS_FAMILY === 'Windows' ? ['ping', '-n', '1', '-w', '700', $ip] : ['ping', '-n', '-c', '1', '-W', '1', $ip]);
-                }
-            })->start()->wait();
-            foreach ($chunk as $ip) {
-                if (stripos($pool[$ip]->output(), 'ttl=') !== false) {
-                    $alive[] = $ip;
-                }
+        foreach (SensorChecks::pingMany(self::hosts($cidr), 700) as $ip => $output) {
+            if (stripos($output, 'ttl=') !== false) {
+                $alive[] = $ip;
             }
         }
 

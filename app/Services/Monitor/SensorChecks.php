@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 /**
  * Exécute les contrôles. Chaque résultat : [réussi, valeur, message, état à garder].
@@ -52,21 +53,51 @@ class SensorChecks
         };
     }
 
-    private function ping(Collection $sensors): array
+    /**
+     * Pings en parallèle par petits lots. Sur un serveur chargé, lancer un
+     * processus peut prendre plusieurs secondes : un ping trop long compte comme
+     * sans réponse au lieu d'interrompre tout le lot.
+     *
+     * @param  list<string>  $hosts
+     * @return array<string, string> sortie de ping par hôte
+     */
+    public static function pingMany(array $hosts, int $waitMs = 1000): array
     {
         $command = fn (string $host) => PHP_OS_FAMILY === 'Windows'
-            ? ['ping', '-n', '1', '-w', '1000', $host]
-            : ['ping', '-n', '-c', '1', '-W', '1', $host];
-
-        $pool = Process::pool(function (ProcessPool $pool) use ($sensors, $command) {
-            foreach ($sensors as $sensor) {
-                $pool->as((string) $sensor->id)->timeout(5)->command($command($sensor->device->host));
+            ? ['ping', '-n', '1', '-w', (string) $waitMs, $host]
+            : ['ping', '-n', '-c', '1', '-W', (string) max(1, intdiv($waitMs, 1000)), $host];
+        $outputs = [];
+        foreach (array_chunk(array_values(array_unique($hosts)), 10) as $chunk) {
+            try {
+                $pool = Process::pool(function (ProcessPool $pool) use ($chunk, $command) {
+                    foreach ($chunk as $host) {
+                        $pool->as($host)->timeout(30)->command($command($host));
+                    }
+                })->start()->wait();
+                foreach ($chunk as $host) {
+                    $outputs[$host] = $pool[$host]->output();
+                }
+            } catch (ProcessTimedOutException) {
+                foreach ($chunk as $host) {
+                    try {
+                        $outputs[$host] = Process::timeout(30)->run($command($host))->output();
+                    } catch (ProcessTimedOutException) {
+                        $outputs[$host] = '';
+                    }
+                }
             }
-        })->start()->wait();
+        }
+
+        return $outputs;
+    }
+
+    private function ping(Collection $sensors): array
+    {
+        $outputs = self::pingMany($sensors->map(fn (MonitorSensor $sensor) => $sensor->device->host)->all());
 
         $results = [];
         foreach ($sensors as $sensor) {
-            $output = $pool[(string) $sensor->id]->output();
+            $output = $outputs[$sensor->device->host] ?? '';
             // Sous Windows, « Impossible de joindre l'hôte » sort aussi avec le code 0 :
             // seule une vraie réponse contient TTL.
             if (stripos($output, 'ttl=') === false) {
@@ -101,7 +132,7 @@ class SensorChecks
         $responses = Http::pool(function (Pool $pool) use ($sensors) {
             foreach ($sensors as $sensor) {
                 // Les caméras et antennes ont souvent un certificat auto-signé.
-                $pool->as((string) $sensor->id)->timeout(5)->withoutVerifying()->get($sensor->url());
+                $pool->as((string) $sensor->id)->timeout(10)->withoutVerifying()->get($sensor->url());
             }
         });
 
