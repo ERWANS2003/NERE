@@ -67,11 +67,12 @@ class NetworkScanner
                 $description = '';
             }
             $name = gethostbyaddr($ip);
-            [$type, $workstation] = self::classify($ports, $description);
+            $name = $name && $name !== $ip ? $name : null;
+            [$type, $workstation] = self::classify($ports, $description, $name);
 
             return [
                 'ip' => $ip,
-                'name' => $name && $name !== $ip ? $name : null,
+                'name' => $name,
                 'ports' => $ports,
                 'description' => mb_substr($description, 0, 200),
                 'type' => $type,
@@ -85,9 +86,10 @@ class NetworkScanner
      * @param  list<int>  $ports
      * @return array{0: string|null, 1: bool} type deviné, et « probablement un poste de travail »
      */
-    public static function classify(array $ports, string $description): array
+    public static function classify(array $ports, string $description, ?string $name = null): array
     {
         $d = strtolower($description);
+        $n = strtolower((string) $name);
         $has = fn (int ...$wanted) => array_intersect($wanted, $ports) !== [];
 
         return match (true) {
@@ -97,10 +99,16 @@ class NetworkScanner
             preg_match('/cisco|switch|aruba|procurve|netgear|tp-link|fortigate|juniper/', $d) === 1 => ['network', false],
             str_contains($d, 'windows') && str_contains($d, 'server') => ['server', false],
             $has(22) && str_contains($d, 'linux') => ['server', false],
-            // Partage Windows sans SNMP serveur : très probablement un PC du personnel.
+            // Nom d'un ordinateur du personnel : portable (LT, LPT, LAPTOP) ou fixe (DT, DESKTOP, PC).
+            preg_match('/(^|[-_.])(lt|dt|lpt|pc|wks|ws)([-_.\d]|$)|laptop|desktop|portable/', $n) === 1 => [null, true],
+            // Nom de serveur : SRV, NAS, Synology, sauvegarde, ou la convention OUA-NM-… de NÉRÉ.
+            preg_match('/srv|server|serveur|nas|synology|qnap|veeam|backup|(^|[-_])nm[-_]/', $n) === 1 => ['server', false],
+            // Bureau à distance ou SSH ouverts : un serveur (les postes ne les ouvrent pas d'habitude).
+            $has(3389, 22) => ['server', false],
+            // Partage Windows seul : très probablement un PC du personnel.
             $has(135, 445) => [null, true],
-            $has(22) => ['server', false],
-            $has(80, 443) => ['antenna', false],
+            // Seulement une interface web : routeur, pare-feu, antenne ou switch.
+            $has(80, 443) => ['network', false],
             default => [null, false],
         };
     }
