@@ -20,6 +20,9 @@ class SensorChecks
 {
     private const SYS_UPTIME = '1.3.6.1.2.1.1.3.0';
 
+    /** Durée de marche de l'appareil (HOST-RESOURCES). sysUpTime ne compte que celle de l'agent SNMP. */
+    private const HOST_UPTIME = '1.3.6.1.2.1.25.1.1.0';
+
     public function __construct(private readonly SnmpClient $snmp) {}
 
     /**
@@ -202,7 +205,8 @@ class SensorChecks
 
         switch ($kind) {
             case MonitorSensorKind::SnmpUptime:
-                $ticks = $snmp->get($host, $community, [self::SYS_UPTIME])[self::SYS_UPTIME];
+                $uptimes = $snmp->get($host, $community, [self::HOST_UPTIME, self::SYS_UPTIME]);
+                $ticks = is_numeric($uptimes[self::HOST_UPTIME]) ? $uptimes[self::HOST_UPTIME] : $uptimes[self::SYS_UPTIME];
                 if ($ticks === null) {
                     throw new RuntimeException('SNMP : durée de fonctionnement non publiée');
                 }

@@ -35,12 +35,14 @@ class DeviceInventory
         try {
             $system = $this->snmp->get($host, $community, [
                 '1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.4.0', '1.3.6.1.2.1.1.5.0', '1.3.6.1.2.1.1.6.0',
-                '1.3.6.1.2.1.25.3.2.1.3.1', '1.3.6.1.2.1.43.5.1.1.17.1', '1.3.6.1.2.1.25.1.6.0', '1.3.6.1.2.1.25.2.2.0',
+                '1.3.6.1.2.1.25.3.2.1.3.1', '1.3.6.1.2.1.43.5.1.1.17.1', '1.3.6.1.2.1.25.1.6.0', '1.3.6.1.2.1.25.2.2.0', '1.3.6.1.2.1.25.1.1.0',
             ]);
         } catch (RuntimeException $exception) {
             return ['error' => $exception->getMessage()];
         }
 
+        // Durée de marche de l'appareil si publiée, sinon celle de l'agent SNMP.
+        $ticks = is_numeric($system['1.3.6.1.2.1.25.1.1.0']) ? $system['1.3.6.1.2.1.25.1.1.0'] : $system['1.3.6.1.2.1.1.3.0'];
         $text = fn (string $oid) => is_string($system[$oid]) && trim($system[$oid]) !== '' && mb_check_encoding($system[$oid], 'UTF-8') ? trim($system[$oid]) : null;
         $info = [
             'identity' => array_filter([
@@ -50,7 +52,7 @@ class DeviceInventory
                 'Nom réseau' => $text('1.3.6.1.2.1.1.5.0'),
                 'Emplacement' => $text('1.3.6.1.2.1.1.6.0'),
                 'Contact' => $text('1.3.6.1.2.1.1.4.0'),
-                'En marche depuis' => is_numeric($system['1.3.6.1.2.1.1.3.0']) ? SensorChecks::duration((int) ($system['1.3.6.1.2.1.1.3.0'] / 100)) : null,
+                'En marche depuis' => is_numeric($ticks) ? SensorChecks::duration((int) ($ticks / 100)) : null,
                 'Processus' => is_numeric($system['1.3.6.1.2.1.25.1.6.0']) ? (string) $system['1.3.6.1.2.1.25.1.6.0'] : null,
                 'Mémoire installée' => is_numeric($system['1.3.6.1.2.1.25.2.2.0']) ? number_format($system['1.3.6.1.2.1.25.2.2.0'] / 1048576, 1, ',', ' ').' Go' : null,
             ]),
