@@ -3,12 +3,18 @@
     $breadcrumbs = [['label' => 'Supervision réseau', 'url' => route('intranet.monitor.index')], ['label' => $title]];
     $group = \App\Models\MonitorGroup::find(old('group_id', $device->group_id)) ?? \App\Models\MonitorGroup::query()->first();
     $inherited = fn (string $field) => $field === 'snmp_community' ? '' : $group?->setting($field);
+    $templates = collect(\App\Enums\MonitorDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => [
+        'base' => collect($type->template(false))->pluck('name')->join(', '),
+        'snmp' => collect(array_slice($type->template(true), count($type->template(false))))->pluck('name')->join(', '),
+    ]]);
+    $advanced = collect(\App\Models\MonitorGroup::SETTINGS)->contains(fn ($field) => $errors->has($field) || filled($device->{$field}));
 @endphp
 
 <x-intranet-layout :title="$title" :breadcrumbs="$breadcrumbs">
     <x-intranet.page-header :title="$title" />
 
-    <form method="POST" action="{{ $device->exists ? route('intranet.monitor.devices.update', $device) : route('intranet.monitor.devices.store') }}" class="carte grid max-w-4xl gap-4 p-6 sm:grid-cols-2">
+    <form method="POST" action="{{ $device->exists ? route('intranet.monitor.devices.update', $device) : route('intranet.monitor.devices.store') }}" class="carte grid max-w-4xl gap-4 p-6 sm:grid-cols-2"
+          x-data="{ type: @js(old('type', $device->type?->value ?? 'camera')), snmp: @js((bool) old('snmp')), templates: @js($templates) }">
         @csrf
         @if($device->exists) @method('PUT') @endif
         <label class="block">
@@ -23,7 +29,7 @@
         </label>
         <label class="block">
             <span class="etiquette">Type</span>
-            <select name="type" required class="champ">
+            <select name="type" required class="champ" x-model="type">
                 @foreach($types as $value => $label)
                     <option value="{{ $value }}" @selected(old('type', $device->type?->value) === $value)>{{ $label }}</option>
                 @endforeach
@@ -49,17 +55,35 @@
             @error('parent_device_id')<span class="mt-1 block text-sm text-red-700">{{ $message }}</span>@enderror
         </label>
         @unless($device->exists)
-            <label class="flex items-start gap-2 text-sm text-graphite-700 sm:col-span-2">
-                <input type="checkbox" name="snmp" value="1" @checked(old('snmp')) class="mt-0.5 rounded border-graphite-300">
-                <span>Ajouter aussi les capteurs SNMP du modèle (durée de fonctionnement, processeur, mémoire, disque, consommables ou trafic selon le type). L’équipement doit avoir SNMP activé avec la communauté du groupe.</span>
-            </label>
+            <div class="rounded-lg bg-graphite-50 p-4 text-sm text-graphite-700 sm:col-span-2">
+                <p><span class="font-semibold text-graphite-900">Capteurs créés automatiquement :</span> <span x-text="templates[type].base + (snmp && templates[type].snmp ? ', ' + templates[type].snmp : '')"></span>.</p>
+                <label class="mt-3 flex items-start gap-2">
+                    <input type="checkbox" name="snmp" value="1" x-model="snmp" class="mt-0.5 rounded border-graphite-300">
+                    <span>Ajouter aussi les capteurs SNMP (<span x-text="templates[type].snmp"></span>). L’équipement doit avoir SNMP activé avec la communauté du groupe.</span>
+                </label>
+                <p class="mt-2 text-xs text-graphite-500">Vous pourrez ajouter d’autres capteurs ensuite (bureau à distance, base de données, site web…).</p>
+            </div>
         @endunless
 
-        @include('intranet.monitor.partials.settings-fields', ['model' => $device, 'inherited' => $inherited])
+        <details class="sm:col-span-2" @if($advanced) open @endif>
+            <summary class="cursor-pointer font-medium text-nere-700">Réglages avancés (facultatif) : intervalle, alertes, SNMP</summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                @include('intranet.monitor.partials.settings-fields', ['model' => $device, 'inherited' => $inherited])
+            </div>
+        </details>
 
         <div class="flex flex-wrap gap-3 sm:col-span-2">
             <button class="bouton-primaire">{{ $device->exists ? 'Enregistrer' : 'Ajouter l’équipement' }}</button>
             <a href="{{ $device->exists ? route('intranet.monitor.devices.show', $device) : route('intranet.monitor.index') }}" class="bouton-secondaire">Annuler</a>
         </div>
     </form>
+
+    @if($device->exists)
+        <form method="POST" action="{{ route('intranet.monitor.devices.destroy', $device) }}" class="mt-6 max-w-4xl" onsubmit="return confirm('Retirer cet équipement et tout son historique de la supervision ?')">
+            @csrf
+            @method('DELETE')
+            <button class="bouton-danger">Retirer l’équipement de la supervision</button>
+            <span class="ml-2 text-sm text-graphite-600">Supprime aussi ses capteurs et son historique.</span>
+        </form>
+    @endif
 </x-intranet-layout>

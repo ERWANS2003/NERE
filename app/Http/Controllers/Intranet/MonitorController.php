@@ -180,7 +180,7 @@ class MonitorController extends Controller
 
     // Capteurs
 
-    public function storeSensor(Request $request, MonitorDevice $device): RedirectResponse
+    public function storeSensor(Request $request, MonitorDevice $device, MonitorPoller $poller): RedirectResponse
     {
         $data = $this->validateSensor($request);
         $kind = MonitorSensorKind::from($data['kind']);
@@ -189,8 +189,12 @@ class MonitorController extends Controller
             $data[$field] ??= $value;
         }
         $sensor = $device->sensors()->create($data);
+        // Premier contrôle tout de suite, pour un résultat immédiat.
+        $poller->checkNow($sensor);
 
-        return redirect()->route('intranet.monitor.sensors.show', $sensor)->with('success', 'Capteur ajouté. Utilisez « Vérifier maintenant » pour un premier résultat.');
+        return $request->boolean('quick')
+            ? back()->with('success', 'Capteur « '.$sensor->name.' » ajouté : '.$sensor->fresh()->last_message.'.')
+            : redirect()->route('intranet.monitor.sensors.show', $sensor)->with('success', 'Capteur ajouté et contrôlé une première fois.');
     }
 
     public function showSensor(Request $request, MonitorSensor $sensor, MonitorHistory $history): View

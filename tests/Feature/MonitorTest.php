@@ -349,3 +349,28 @@ it('places devices on a map and opens a ticket from an alarm', function () {
     $this->post(route('intranet.monitor.sensors.ticket', $ping))->assertRedirect(route('intranet.tickets.show', $ticket));
     expect(Ticket::count())->toBe(1);
 });
+
+it('helps with search, colour legend, quick add and a one-click acknowledgement', function () {
+    $technician = monitorTechnician();
+    $device = monitorDevice();
+    pingFails();
+    app(MonitorPoller::class)->poll();
+    app(MonitorPoller::class)->poll();
+
+    $this->actingAs($technician)->get(route('intranet.monitor.index'))
+        ->assertOk()
+        ->assertSee('Rechercher un équipement')
+        ->assertSee('Que signifient les couleurs ?')
+        ->assertSee('1 en panne')
+        ->assertSee('<option value="0" selected>Jusqu’à reprise manuelle</option>', false);
+
+    $this->get(route('intranet.monitor.devices.show', $device))->assertOk()->assertSee('+ Bureau à distance (3389)')->assertDontSee('Retirer l’équipement');
+    $this->get(route('intranet.monitor.devices.edit', $device))->assertOk()->assertSee('Retirer l’équipement');
+
+    $this->from(route('intranet.monitor.devices.show', $device))
+        ->post(route('intranet.monitor.sensors.store', $device), ['quick' => 1, 'kind' => 'tcp', 'name' => 'Bureau à distance', 'port' => 3389])
+        ->assertRedirect(route('intranet.monitor.devices.show', $device));
+    $rdp = $device->sensors()->where('port', 3389)->firstOrFail();
+    expect($rdp->checked_at)->not->toBeNull();
+    $this->get(route('intranet.monitor.devices.show', $device))->assertDontSee('+ Bureau à distance (3389)');
+});

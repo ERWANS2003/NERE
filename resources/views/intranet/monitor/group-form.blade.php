@@ -27,7 +27,12 @@
             @error('parent_id')<span class="mt-1 block text-sm text-red-700">{{ $message }}</span>@enderror
         </label>
 
-        @include('intranet.monitor.partials.settings-fields', ['model' => $group, 'inherited' => $inherited])
+        <details class="sm:col-span-2" @if(collect(\App\Models\MonitorGroup::SETTINGS)->contains(fn ($f) => $errors->has($f) || filled($group->{$f}))) open @endif>
+            <summary class="cursor-pointer font-medium text-nere-700">Réglages du groupe (facultatif) : intervalle, alertes, SNMP</summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                @include('intranet.monitor.partials.settings-fields', ['model' => $group, 'inherited' => $inherited])
+            </div>
+        </details>
 
         <div class="flex flex-wrap gap-3 sm:col-span-2">
             <button class="bouton-primaire">Enregistrer</button>

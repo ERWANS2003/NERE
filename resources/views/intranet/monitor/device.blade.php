@@ -1,7 +1,7 @@
 @php
     $breadcrumbs = [
         ['label' => 'Supervision réseau', 'url' => route('intranet.monitor.index')],
-        ['label' => $device->group->path()],
+        ['label' => $device->group->path(), 'url' => route('intranet.monitor.index')],
         ['label' => $device->name],
     ];
 @endphp
@@ -75,8 +75,37 @@
         </div>
     </section>
 
+    @php
+        $quick = collect([
+            ['kind' => 'tcp', 'name' => 'Bureau à distance', 'port' => 3389],
+            ['kind' => 'tcp', 'name' => 'SSH', 'port' => 22],
+            ['kind' => 'http', 'name' => 'Site web', 'port' => 80],
+            ['kind' => 'http', 'name' => 'Site web sécurisé', 'port' => 443],
+            ['kind' => 'ssl', 'name' => 'Certificat SSL', 'port' => 443],
+            ['kind' => 'tcp', 'name' => 'Base PostgreSQL', 'port' => 5432],
+            ['kind' => 'snmp_uptime', 'name' => 'Durée de fonctionnement (SNMP)', 'port' => null],
+        ])->reject(fn ($q) => $device->sensors->contains(fn ($s) => $s->kind->value === $q['kind'] && $s->port === $q['port']));
+    @endphp
+    @if($quick->isNotEmpty())
+        <section class="carte mb-4 p-5">
+            <h2 class="mb-3 font-semibold text-graphite-900">Ajout rapide</h2>
+            <div class="flex flex-wrap gap-2">
+                @foreach($quick as $item)
+                    <form method="POST" action="{{ route('intranet.monitor.sensors.store', $device) }}">
+                        @csrf
+                        <input type="hidden" name="quick" value="1">
+                        @foreach($item as $field => $value)
+                            @if($value !== null)<input type="hidden" name="{{ $field }}" value="{{ $value }}">@endif
+                        @endforeach
+                        <button class="rounded-full border border-graphite-300 px-3 py-1.5 text-sm font-medium text-graphite-700 hover:border-nere-300 hover:bg-nere-50 hover:text-nere-700">+ {{ $item['name'] }}{{ $item['port'] && $item['kind'] === 'tcp' ? ' ('.$item['port'].')' : '' }}</button>
+                    </form>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <details class="carte p-5" @if($errors->any()) open @endif>
-        <summary class="cursor-pointer font-semibold text-graphite-900">Ajouter un capteur</summary>
+        <summary class="cursor-pointer font-semibold text-graphite-900">Ajouter un autre capteur</summary>
         <form method="POST" action="{{ route('intranet.monitor.sensors.store', $device) }}" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
               x-data="{ kind: @js(old('kind', 'tcp')), needsPort: @js(collect($kinds)->filter->needsPort()->map->value->values()), parameters: @js(collect($kinds)->mapWithKeys(fn ($k) => [$k->value => $k->parameterLabel()])) }">
             @csrf
@@ -114,9 +143,4 @@
         </form>
     </details>
 
-    <form method="POST" action="{{ route('intranet.monitor.devices.destroy', $device) }}" class="mt-6" onsubmit="return confirm('Retirer cet équipement et tout son historique de la supervision ?')">
-        @csrf
-        @method('DELETE')
-        <button class="bouton-danger">Retirer l’équipement de la supervision</button>
-    </form>
 </x-intranet-layout>

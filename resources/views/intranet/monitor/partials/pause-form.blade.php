@@ -7,7 +7,7 @@
 @else
     <details class="relative">
         <summary class="bouton-secondaire cursor-pointer list-none">Mettre en pause</summary>
-        <form method="POST" action="{{ $action }}" class="carte absolute right-0 z-20 mt-2 w-80 space-y-3 p-4">
+        <form method="POST" action="{{ $action }}" class="absolute right-0 z-30 mt-2 w-80 space-y-3 rounded-xl border border-graphite-200 bg-white p-4 shadow-xl">
             @csrf
             <label class="block">
                 <span class="etiquette">Durée</span>

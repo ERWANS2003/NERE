@@ -63,7 +63,7 @@
                         <span class="etiquette">Pendant</span>
                         <select name="duration" class="champ">
                             @foreach($durations as $value => $label)
-                                <option value="{{ $value }}" @selected($value === '0')>{{ $label }}</option>
+                                <option value="{{ $value }}" @selected((string) $value === '0')>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
