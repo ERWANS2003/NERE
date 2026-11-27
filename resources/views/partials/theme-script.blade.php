@@ -9,7 +9,7 @@
 
         /* Barre rabattue : le nom de chaque lien reste lisible au survol. */
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.intranet-sidebar .sidebar-link').forEach(function (link) {
+            document.querySelectorAll('.sidebar-link').forEach(function (link) {
                 if (! link.title) link.title = link.textContent.replace(/\s+/g, ' ').trim();
             });
         });
