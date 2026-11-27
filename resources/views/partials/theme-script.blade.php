@@ -26,17 +26,70 @@
             return d;
         }
 
-        /* Décor éphémère : la nuit allume des étoiles, le jour lance des rayons. */
-        function effects(dark, x, y, r) {
-            var fx = el('theme-fx ' + (dark ? 'is-night' : 'is-day'), '--x:' + x + 'px;--y:' + y + 'px;--r:' + r + 'px');
-            fx.appendChild(el('theme-fx-ring'));
+        var DURATION = 1400;
+
+        /* Avancée de la vague : lente au départ, rapide au milieu, douce à l'arrivée. */
+        function ease(t) { return -(Math.cos(Math.PI * t) - 1) / 2; }
+
+        /* Instant (0 à 1) où la vague atteint la hauteur y. */
+        function reach(y, h) { return Math.acos(1 - 2 * Math.min(1, Math.max(0, y / h))) / Math.PI; }
+
+        /*
+         * Images clés de la vague qui descend et engloutit l'écran : une crête
+         * double sinusoïde dont la houle grossit à mi-course et qui roule
+         * latéralement pendant qu'elle avance.
+         */
+        function wave(w, h) {
+            var clip = [], crest = [], steps = 48, cols = 36;
+            var length = Math.max(w / 2.2, 260);
+            for (var i = 0; i <= steps; i++) {
+                var p = ease(i / steps);
+                var swell = 10 + (22 + h * 0.035) * Math.sin(Math.PI * p);
+                var base = -3 * swell + p * (h + 6 * swell);
+                var phase = p * Math.PI * 3.4;
+                var pts = [], line = [];
+                for (var c = 0; c <= cols; c++) {
+                    var x = w * c / cols;
+                    var y = base + swell * Math.sin(2 * Math.PI * x / length + phase)
+                        + swell * 0.45 * Math.sin(2 * Math.PI * x / (length * 0.53) - phase * 1.7);
+                    pts.push(x.toFixed(1) + 'px ' + y.toFixed(1) + 'px');
+                    line.push((c ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1));
+                }
+                clip.push('polygon(0px -100px, ' + w + 'px -100px, ' + pts.reverse().join(', ') + ')');
+                crest.push('path("' + line.join(' ') + '")');
+            }
+            return { clip: clip, crest: crest };
+        }
+
+        function el(cls, css) {
+            var d = document.createElement('span');
+            d.className = cls;
+            if (css) d.style.cssText = css;
+            return d;
+        }
+
+        /* Crête lumineuse de la vague, et décor : étoiles la nuit, rayons le jour. */
+        function effects(dark, x, y, shape) {
+            var w = innerWidth, h = innerHeight;
+            var fx = el('theme-fx ' + (dark ? 'is-night' : 'is-day'), '--x:' + x + 'px;--y:' + y + 'px');
+            var ns = 'http://www.w3.org/2000/svg';
+            var svg = document.createElementNS(ns, 'svg');
+            svg.setAttribute('class', 'theme-fx-crest');
+            svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+            ['halo', 'foam', 'line'].forEach(function (kind) {
+                var path = document.createElementNS(ns, 'path');
+                path.setAttribute('class', 'theme-fx-' + kind);
+                svg.appendChild(path);
+                if (path.animate) {
+                    try { path.animate({ d: shape.crest }, { duration: DURATION, fill: 'forwards' }); } catch (e) {}
+                }
+            });
+            fx.appendChild(svg);
             if (dark) {
-                var w = innerWidth, h = innerHeight;
-                for (var i = 0; i < 34; i++) {
-                    var sx = Math.random() * w, sy = Math.random() * h * 0.85;
-                    var dist = Math.hypot(sx - x, sy - y) / r;
+                for (var i = 0; i < 40; i++) {
+                    var sx = Math.random() * w, sy = Math.random() * h * 0.92;
                     var size = 2 + Math.random() * 4;
-                    fx.appendChild(el('theme-fx-star', 'left:' + sx + 'px;top:' + sy + 'px;width:' + size + 'px;height:' + size + 'px;animation-delay:' + Math.round(dist * 620 + Math.random() * 180) + 'ms'));
+                    fx.appendChild(el('theme-fx-star', 'left:' + sx + 'px;top:' + sy + 'px;width:' + size + 'px;height:' + size + 'px;animation-delay:' + Math.round(reach(sy, h) * DURATION + Math.random() * 160) + 'ms'));
                 }
                 fx.appendChild(el('theme-fx-comet'));
             } else {
@@ -44,7 +97,7 @@
                 fx.appendChild(el('theme-fx-rays'));
             }
             document.body.appendChild(fx);
-            setTimeout(function () { fx.remove(); }, 2200);
+            setTimeout(function () { fx.remove(); }, DURATION + 1300);
         }
 
         window.nereToggleTheme = function (event) {
@@ -59,26 +112,26 @@
 
             var box = button.getBoundingClientRect();
             var x = box.left + box.width / 2, y = box.top + box.height / 2;
-            var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
             var dark = !root.classList.contains('dark');
+            var shape = wave(innerWidth, innerHeight);
 
             button.classList.remove('is-turning');
             void button.offsetWidth;
             button.classList.add('is-turning');
 
             if (!document.startViewTransition) {
-                apply(); release(); effects(dark, x, y, r);
+                apply(); release(); effects(dark, x, y, shape);
                 return;
             }
 
             var transition = document.startViewTransition(function () {
                 apply();
-                effects(dark, x, y, r);
+                effects(dark, x, y, shape);
             });
             transition.ready.then(function () {
                 root.animate(
-                    { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + r + 'px at ' + x + 'px ' + y + 'px)'] },
-                    { duration: 820, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' }
+                    { clipPath: shape.clip },
+                    { duration: DURATION, pseudoElement: '::view-transition-new(root)' }
                 );
             });
             transition.finished.then(release, release);

@@ -727,10 +727,10 @@ html.theme-switching *::after {
 }
 
 /*
- * Bascule de thème animée : le nouveau thème se répand en cercle depuis le
- * bouton (View Transitions), bordé d'un anneau de lumière. Vers la nuit, des
- * étoiles s'allument au passage de la vague et une étoile filante traverse
- * l'écran ; vers le jour, des rayons dorés jaillissent du bouton.
+ * Bascule de thème animée : le nouveau thème déferle comme une vague qui
+ * descend et engloutit l'écran (View Transitions), sous une crête lumineuse.
+ * Vers la nuit, des étoiles s'allument au passage de la vague et une étoile
+ * filante traverse l'écran ; vers le jour, des rayons dorés jaillissent du bouton.
  */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -775,28 +775,50 @@ html.theme-switching *::after {
     display: block;
 }
 
-.theme-fx-ring {
-    left: calc(var(--x) - var(--r));
-    top: calc(var(--y) - var(--r));
-    width: calc(var(--r) * 2);
-    height: calc(var(--r) * 2);
-    border-radius: 50%;
-    scale: 0;
-    animation: theme-fx-ring 820ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+.theme-fx-crest {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
 }
 
-.is-night .theme-fx-ring {
-    box-shadow: 0 0 0 3px rgb(199 210 254 / 85%), 0 0 40px 10px rgb(129 140 248 / 45%), inset 0 0 50px 8px rgb(129 140 248 / 30%);
+.theme-fx-crest path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-.is-day .theme-fx-ring {
-    box-shadow: 0 0 0 3px rgb(255 210 90 / 95%), 0 0 50px 14px rgb(255 184 60 / 55%), inset 0 0 60px 10px rgb(255 210 90 / 40%);
+.theme-fx-halo {
+    stroke-width: 46;
+    opacity: 0.22;
+    filter: blur(14px);
 }
 
-@keyframes theme-fx-ring {
-    0% { scale: 0; opacity: 1; }
-    80% { opacity: 1; }
-    100% { scale: 1; opacity: 0; }
+.theme-fx-foam {
+    stroke-width: 12;
+    opacity: 0.45;
+    filter: blur(4px);
+}
+
+.theme-fx-line {
+    stroke-width: 2.5;
+}
+
+.is-night .theme-fx-halo { stroke: #818cf8; }
+.is-night .theme-fx-foam { stroke: #c7d2fe; }
+.is-night .theme-fx-line { stroke: #eef2ff; }
+.is-day .theme-fx-halo { stroke: #ffb83c; }
+.is-day .theme-fx-foam { stroke: #ffd25a; }
+.is-day .theme-fx-line { stroke: #fff6d6; }
+
+/* La crête s'efface une fois l'écran englouti. */
+.theme-fx-crest {
+    animation: theme-fx-crest-out 400ms 1250ms ease forwards;
+}
+
+@keyframes theme-fx-crest-out {
+    to { opacity: 0; }
 }
 
 .theme-fx-star {
@@ -830,7 +852,7 @@ html.theme-switching *::after {
     box-shadow: 0 0 10px 2px rgb(199 210 254 / 70%);
     rotate: 155deg;
     opacity: 0;
-    animation: theme-fx-comet 900ms 520ms cubic-bezier(0.3, 0, 0.2, 1) both;
+    animation: theme-fx-comet 900ms 900ms cubic-bezier(0.3, 0, 0.2, 1) both;
 }
 
 @keyframes theme-fx-comet {
