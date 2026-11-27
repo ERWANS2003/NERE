@@ -725,3 +725,172 @@ html.theme-switching *::before,
 html.theme-switching *::after {
     transition: none !important;
 }
+
+/*
+ * Bascule de thème animée : le nouveau thème se répand en cercle depuis le
+ * bouton (View Transitions), bordé d'un anneau de lumière. Vers la nuit, des
+ * étoiles s'allument au passage de la vague et une étoile filante traverse
+ * l'écran ; vers le jour, des rayons dorés jaillissent du bouton.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root) {
+        animation: theme-fade-out 450ms ease both;
+    }
+
+    ::view-transition-new(root) {
+        animation: theme-fade-in 450ms ease both;
+    }
+}
+
+@keyframes theme-fade-out {
+    to { opacity: 0; }
+}
+
+@keyframes theme-fade-in {
+    from { opacity: 0; }
+}
+
+::view-transition-group(theme-fx),
+::view-transition-new(theme-fx) {
+    animation: none;
+}
+
+.theme-fx {
+    view-transition-name: theme-fx;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.theme-fx > span {
+    position: absolute;
+    display: block;
+}
+
+.theme-fx-ring {
+    left: calc(var(--x) - var(--r));
+    top: calc(var(--y) - var(--r));
+    width: calc(var(--r) * 2);
+    height: calc(var(--r) * 2);
+    border-radius: 50%;
+    scale: 0;
+    animation: theme-fx-ring 820ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.is-night .theme-fx-ring {
+    box-shadow: 0 0 0 3px rgb(199 210 254 / 85%), 0 0 40px 10px rgb(129 140 248 / 45%), inset 0 0 50px 8px rgb(129 140 248 / 30%);
+}
+
+.is-day .theme-fx-ring {
+    box-shadow: 0 0 0 3px rgb(255 210 90 / 95%), 0 0 50px 14px rgb(255 184 60 / 55%), inset 0 0 60px 10px rgb(255 210 90 / 40%);
+}
+
+@keyframes theme-fx-ring {
+    0% { scale: 0; opacity: 1; }
+    80% { opacity: 1; }
+    100% { scale: 1; opacity: 0; }
+}
+
+.theme-fx-star {
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px 2px rgb(199 210 254 / 90%), 0 0 14px 4px rgb(129 140 248 / 50%);
+    opacity: 0;
+    animation: theme-fx-twinkle 1100ms ease-out both;
+}
+
+.theme-fx-star:nth-child(3n) {
+    background: #ffd25a;
+    box-shadow: 0 0 6px 2px rgb(255 210 90 / 90%), 0 0 14px 4px rgb(255 184 60 / 45%);
+}
+
+@keyframes theme-fx-twinkle {
+    0% { opacity: 0; scale: 0; }
+    25% { opacity: 1; scale: 1.6; }
+    45% { scale: 0.8; }
+    65% { opacity: 1; scale: 1.15; }
+    100% { opacity: 0; scale: 0.4; }
+}
+
+.theme-fx-comet {
+    left: 70%;
+    top: 8%;
+    width: 160px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(255 255 255 / 0%), rgb(255 255 255 / 95%));
+    box-shadow: 0 0 10px 2px rgb(199 210 254 / 70%);
+    rotate: 155deg;
+    opacity: 0;
+    animation: theme-fx-comet 900ms 520ms cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+@keyframes theme-fx-comet {
+    0% { opacity: 0; translate: 0 0; }
+    15% { opacity: 1; }
+    100% { opacity: 0; translate: -45vw 28vh; }
+}
+
+.theme-fx-glow,
+.theme-fx-rays {
+    left: calc(var(--x) - 70vmax);
+    top: calc(var(--y) - 70vmax);
+    width: 140vmax;
+    height: 140vmax;
+    border-radius: 50%;
+}
+
+.theme-fx-glow {
+    background: radial-gradient(circle, rgb(255 236 170 / 75%) 0%, rgb(255 210 90 / 30%) 12%, rgb(255 210 90 / 0%) 40%);
+    scale: 0.1;
+    animation: theme-fx-glow 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes theme-fx-glow {
+    0% { opacity: 0; scale: 0.1; }
+    20% { opacity: 1; }
+    100% { opacity: 0; scale: 1; }
+}
+
+.theme-fx-rays {
+    background: repeating-conic-gradient(from 0deg, rgb(255 210 90 / 38%) 0deg 5deg, rgb(255 210 90 / 0%) 5deg 22.5deg);
+    -webkit-mask-image: radial-gradient(circle, #000 0%, rgb(0 0 0 / 60%) 25%, transparent 55%);
+    mask-image: radial-gradient(circle, #000 0%, rgb(0 0 0 / 60%) 25%, transparent 55%);
+    scale: 0.05;
+    animation: theme-fx-rays 1500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes theme-fx-rays {
+    0% { opacity: 0; scale: 0.05; rotate: -20deg; }
+    25% { opacity: 1; }
+    100% { opacity: 0; scale: 1; rotate: 25deg; }
+}
+
+/* L'icône du bouton fait un tour en rebondissant. */
+[data-theme-toggle].is-turning svg {
+    animation: theme-icon-turn 700ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes theme-icon-turn {
+    0% { rotate: -200deg; scale: 0.2; opacity: 0; }
+    60% { opacity: 1; }
+    100% { rotate: 0deg; scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-fx {
+        display: none;
+    }
+
+    [data-theme-toggle].is-turning svg {
+        animation: none;
+    }
+}
