@@ -19,20 +19,10 @@
             });
         }
 
-        function el(cls, css) {
-            var d = document.createElement('span');
-            d.className = cls;
-            if (css) d.style.cssText = css;
-            return d;
-        }
-
         var DURATION = 1400;
 
         /* Avancée de la vague : lente au départ, rapide au milieu, douce à l'arrivée. */
         function ease(t) { return -(Math.cos(Math.PI * t) - 1) / 2; }
-
-        /* Instant (0 à 1) où la vague atteint la hauteur y. */
-        function reach(y, h) { return Math.acos(1 - 2 * Math.min(1, Math.max(0, y / h))) / Math.PI; }
 
         /*
          * Images clés de la vague qui descend et engloutit l'écran : une crête
@@ -61,21 +51,14 @@
             return { clip: clip, crest: crest };
         }
 
-        function el(cls, css) {
-            var d = document.createElement('span');
-            d.className = cls;
-            if (css) d.style.cssText = css;
-            return d;
-        }
-
-        /* Crête lumineuse de la vague, et décor : étoiles la nuit, rayons le jour. */
-        function effects(dark, x, y, shape) {
-            var w = innerWidth, h = innerHeight;
-            var fx = el('theme-fx ' + (dark ? 'is-night' : 'is-day'), '--x:' + x + 'px;--y:' + y + 'px');
+        /* Crête lumineuse qui suit le bord de la vague. */
+        function crest(dark, shape) {
             var ns = 'http://www.w3.org/2000/svg';
+            var fx = document.createElement('div');
+            fx.className = 'theme-fx ' + (dark ? 'is-night' : 'is-day');
             var svg = document.createElementNS(ns, 'svg');
             svg.setAttribute('class', 'theme-fx-crest');
-            svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+            svg.setAttribute('viewBox', '0 0 ' + innerWidth + ' ' + innerHeight);
             ['halo', 'foam', 'line'].forEach(function (kind) {
                 var path = document.createElementNS(ns, 'path');
                 path.setAttribute('class', 'theme-fx-' + kind);
@@ -85,19 +68,8 @@
                 }
             });
             fx.appendChild(svg);
-            if (dark) {
-                for (var i = 0; i < 40; i++) {
-                    var sx = Math.random() * w, sy = Math.random() * h * 0.92;
-                    var size = 2 + Math.random() * 4;
-                    fx.appendChild(el('theme-fx-star', 'left:' + sx + 'px;top:' + sy + 'px;width:' + size + 'px;height:' + size + 'px;animation-delay:' + Math.round(reach(sy, h) * DURATION + Math.random() * 160) + 'ms'));
-                }
-                fx.appendChild(el('theme-fx-comet'));
-            } else {
-                fx.appendChild(el('theme-fx-glow'));
-                fx.appendChild(el('theme-fx-rays'));
-            }
             document.body.appendChild(fx);
-            setTimeout(function () { fx.remove(); }, DURATION + 1300);
+            setTimeout(function () { fx.remove(); }, DURATION + 500);
         }
 
         window.nereToggleTheme = function (event) {
@@ -110,23 +82,17 @@
                 return;
             }
 
-            var box = button.getBoundingClientRect();
-            var x = box.left + box.width / 2, y = box.top + box.height / 2;
             var dark = !root.classList.contains('dark');
             var shape = wave(innerWidth, innerHeight);
 
-            button.classList.remove('is-turning');
-            void button.offsetWidth;
-            button.classList.add('is-turning');
-
             if (!document.startViewTransition) {
-                apply(); release(); effects(dark, x, y, shape);
+                apply(); release(); crest(dark, shape);
                 return;
             }
 
             var transition = document.startViewTransition(function () {
                 apply();
-                effects(dark, x, y, shape);
+                crest(dark, shape);
             });
             transition.ready.then(function () {
                 root.animate(
