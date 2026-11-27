@@ -19,6 +19,7 @@
     <!-- Icons -->
     
     <!-- Styles -->
+    @include('partials.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>

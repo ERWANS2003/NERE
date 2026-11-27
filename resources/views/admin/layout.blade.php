@@ -11,6 +11,7 @@
     <link rel="apple-touch-icon" href="{{ asset('images/pwa-icon-192.png') }}">
     <title>@yield('title') - {{ $siteName ?? config('app.name') }}</title>
 
+    @include('partials.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="admin-shell">
@@ -152,6 +153,7 @@
                         <span class="admin-user-name">{{ auth()->user()->name }}</span>
                         <span class="admin-user-role">{{ $isSystemAdmin ? 'Administrateur système' : 'Gestionnaire' }}</span>
                     </span>
+                    <x-theme-toggle class="admin-icon-button" />
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="admin-icon-button" title="Se déconnecter" aria-label="Se déconnecter">

@@ -14,6 +14,7 @@
              l'accueil, le nom de l'application suffit alors. --}}
         <title>{{ trim(($titre ?? '').' — '.config('app.name'), ' —') }}</title>
 
+    @include('partials.theme-script')
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>

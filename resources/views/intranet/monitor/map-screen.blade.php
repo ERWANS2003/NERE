@@ -11,6 +11,7 @@
     {{-- Écran mural : la page se recharge seule toutes les 30 secondes. --}}
     <meta http-equiv="refresh" content="30">
     <title>{{ $map->name }} · Supervision</title>
+    @include('partials.theme-script')
     @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-screen bg-graphite-950 text-white antialiased">

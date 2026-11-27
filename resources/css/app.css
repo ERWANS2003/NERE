@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './dark.css';
 
 /*
  * L'intranet tourne sur le reseau local de la mine : aucune ressource ne doit

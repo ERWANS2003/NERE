@@ -46,6 +46,8 @@
             <span class="sm:hidden">Installer</span>
         </button>
 
+        <x-theme-toggle />
+
         <!-- Notifications -->
         <x-notification-dropdown />
 

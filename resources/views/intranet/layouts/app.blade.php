@@ -17,6 +17,7 @@
          La pile de polices système est définie dans resources/css/app.css (--font-sans). --}}
 
     <!-- Styles -->
+    @include('partials.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/nere-design-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fullcalendar-custom.css') }}">

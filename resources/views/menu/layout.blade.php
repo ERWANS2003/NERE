@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#1b2126">
     <title>@yield('title', 'Menu du personnel') · NÉRÉ Mining</title>
+    @include('partials.theme-script')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>

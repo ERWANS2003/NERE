@@ -1,0 +1,727 @@
+/*
+ * Mode sombre : activÈ par la classe ´ dark ª sur <html> (bouton de l'en-tÍte,
+ * choix gardÈ dans le navigateur). Fichier gÈnÈrÈ : la palette neutre est
+ * inversÈe, les teintes claires deviennent des teintes sombres et les textes
+ * colorÈs foncÈs passent en clair pour rester lisibles.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html.dark {
+    color-scheme: dark;
+    --color-graphite-50: #0f1418;
+    --color-graphite-100: #1c2329;
+    --color-graphite-200: #2a323a;
+    --color-graphite-300: #3b454e;
+    --color-graphite-400: #6b7781;
+    --color-graphite-500: #8b96a0;
+    --color-graphite-600: #a7b1b9;
+    --color-graphite-700: #c4cbd1;
+    --color-graphite-800: #dde2e6;
+    --color-graphite-900: #eef1f3;
+    --color-graphite-950: #f7f8f9;
+    --color-gray-50: #0f1418;
+    --color-gray-100: #1c2329;
+    --color-gray-200: #2a323a;
+    --color-gray-300: #3b454e;
+    --color-gray-400: #6b7781;
+    --color-gray-500: #8b96a0;
+    --color-gray-600: #a7b1b9;
+    --color-gray-700: #c4cbd1;
+    --color-gray-800: #dde2e6;
+    --color-gray-900: #eef1f3;
+    --color-gray-950: #f7f8f9;
+    --color-nere-50: color-mix(in oklab, #d04540 12%, #161c21);
+    --color-nere-100: color-mix(in oklab, #d04540 18%, #161c21);
+    --color-nere-200: color-mix(in oklab, #d04540 30%, #161c21);
+    --color-nere-700: #f0a29f;
+    --color-nere-800: color-mix(in oklab, #f0a29f 55%, #ffffff);
+    --color-nere-900: color-mix(in oklab, #f0a29f 55%, #ffffff);
+    --color-nere-950: color-mix(in oklab, #f0a29f 55%, #ffffff);
+    --color-or-50: color-mix(in oklab, #f0b52b 12%, #161c21);
+    --color-or-100: color-mix(in oklab, #f0b52b 18%, #161c21);
+    --color-or-200: color-mix(in oklab, #f0b52b 30%, #161c21);
+    --color-or-700: #fddf72;
+    --color-or-800: color-mix(in oklab, #fddf72 55%, #ffffff);
+    --color-or-900: color-mix(in oklab, #fddf72 55%, #ffffff);
+    --color-or-950: color-mix(in oklab, #fddf72 55%, #ffffff);
+    --color-red-50: color-mix(in oklab, #ef4444 12%, #161c21);
+    --color-red-100: color-mix(in oklab, #ef4444 18%, #161c21);
+    --color-red-200: color-mix(in oklab, #ef4444 30%, #161c21);
+    --color-red-700: #fca5a5;
+    --color-red-800: color-mix(in oklab, #fca5a5 55%, #ffffff);
+    --color-red-900: color-mix(in oklab, #fca5a5 55%, #ffffff);
+    --color-red-950: color-mix(in oklab, #fca5a5 55%, #ffffff);
+    --color-green-50: color-mix(in oklab, #22c55e 12%, #161c21);
+    --color-green-100: color-mix(in oklab, #22c55e 18%, #161c21);
+    --color-green-200: color-mix(in oklab, #22c55e 30%, #161c21);
+    --color-green-700: #86efac;
+    --color-green-800: color-mix(in oklab, #86efac 55%, #ffffff);
+    --color-green-900: color-mix(in oklab, #86efac 55%, #ffffff);
+    --color-green-950: color-mix(in oklab, #86efac 55%, #ffffff);
+    --color-emerald-50: color-mix(in oklab, #10b981 12%, #161c21);
+    --color-emerald-100: color-mix(in oklab, #10b981 18%, #161c21);
+    --color-emerald-200: color-mix(in oklab, #10b981 30%, #161c21);
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: color-mix(in oklab, #6ee7b7 55%, #ffffff);
+    --color-emerald-900: color-mix(in oklab, #6ee7b7 55%, #ffffff);
+    --color-emerald-950: color-mix(in oklab, #6ee7b7 55%, #ffffff);
+    --color-blue-50: color-mix(in oklab, #3b82f6 12%, #161c21);
+    --color-blue-100: color-mix(in oklab, #3b82f6 18%, #161c21);
+    --color-blue-200: color-mix(in oklab, #3b82f6 30%, #161c21);
+    --color-blue-700: #93c5fd;
+    --color-blue-800: color-mix(in oklab, #93c5fd 55%, #ffffff);
+    --color-blue-900: color-mix(in oklab, #93c5fd 55%, #ffffff);
+    --color-blue-950: color-mix(in oklab, #93c5fd 55%, #ffffff);
+    --color-sky-50: color-mix(in oklab, #0ea5e9 12%, #161c21);
+    --color-sky-100: color-mix(in oklab, #0ea5e9 18%, #161c21);
+    --color-sky-200: color-mix(in oklab, #0ea5e9 30%, #161c21);
+    --color-sky-700: #7dd3fc;
+    --color-sky-800: color-mix(in oklab, #7dd3fc 55%, #ffffff);
+    --color-sky-900: color-mix(in oklab, #7dd3fc 55%, #ffffff);
+    --color-sky-950: color-mix(in oklab, #7dd3fc 55%, #ffffff);
+    --color-indigo-50: color-mix(in oklab, #6366f1 12%, #161c21);
+    --color-indigo-100: color-mix(in oklab, #6366f1 18%, #161c21);
+    --color-indigo-200: color-mix(in oklab, #6366f1 30%, #161c21);
+    --color-indigo-700: #a5b4fc;
+    --color-indigo-800: color-mix(in oklab, #a5b4fc 55%, #ffffff);
+    --color-indigo-900: color-mix(in oklab, #a5b4fc 55%, #ffffff);
+    --color-indigo-950: color-mix(in oklab, #a5b4fc 55%, #ffffff);
+    --color-amber-50: color-mix(in oklab, #f59e0b 12%, #161c21);
+    --color-amber-100: color-mix(in oklab, #f59e0b 18%, #161c21);
+    --color-amber-200: color-mix(in oklab, #f59e0b 30%, #161c21);
+    --color-amber-700: #fcd34d;
+    --color-amber-800: color-mix(in oklab, #fcd34d 55%, #ffffff);
+    --color-amber-900: color-mix(in oklab, #fcd34d 55%, #ffffff);
+    --color-amber-950: color-mix(in oklab, #fcd34d 55%, #ffffff);
+    --color-yellow-50: color-mix(in oklab, #eab308 12%, #161c21);
+    --color-yellow-100: color-mix(in oklab, #eab308 18%, #161c21);
+    --color-yellow-200: color-mix(in oklab, #eab308 30%, #161c21);
+    --color-yellow-700: #fde047;
+    --color-yellow-800: color-mix(in oklab, #fde047 55%, #ffffff);
+    --color-yellow-900: color-mix(in oklab, #fde047 55%, #ffffff);
+    --color-yellow-950: color-mix(in oklab, #fde047 55%, #ffffff);
+    --color-orange-50: color-mix(in oklab, #f97316 12%, #161c21);
+    --color-orange-100: color-mix(in oklab, #f97316 18%, #161c21);
+    --color-orange-200: color-mix(in oklab, #f97316 30%, #161c21);
+    --color-orange-700: #fdba74;
+    --color-orange-800: color-mix(in oklab, #fdba74 55%, #ffffff);
+    --color-orange-900: color-mix(in oklab, #fdba74 55%, #ffffff);
+    --color-orange-950: color-mix(in oklab, #fdba74 55%, #ffffff);
+    --color-purple-50: color-mix(in oklab, #a855f7 12%, #161c21);
+    --color-purple-100: color-mix(in oklab, #a855f7 18%, #161c21);
+    --color-purple-200: color-mix(in oklab, #a855f7 30%, #161c21);
+    --color-purple-700: #d8b4fe;
+    --color-purple-800: color-mix(in oklab, #d8b4fe 55%, #ffffff);
+    --color-purple-900: color-mix(in oklab, #d8b4fe 55%, #ffffff);
+    --color-purple-950: color-mix(in oklab, #d8b4fe 55%, #ffffff);
+    --color-fuchsia-50: color-mix(in oklab, #d946ef 12%, #161c21);
+    --color-fuchsia-100: color-mix(in oklab, #d946ef 18%, #161c21);
+    --color-fuchsia-200: color-mix(in oklab, #d946ef 30%, #161c21);
+    --color-fuchsia-700: #f0abfc;
+    --color-fuchsia-800: color-mix(in oklab, #f0abfc 55%, #ffffff);
+    --color-fuchsia-900: color-mix(in oklab, #f0abfc 55%, #ffffff);
+    --color-fuchsia-950: color-mix(in oklab, #f0abfc 55%, #ffffff);
+    --color-pink-50: color-mix(in oklab, #ec4899 12%, #161c21);
+    --color-pink-100: color-mix(in oklab, #ec4899 18%, #161c21);
+    --color-pink-200: color-mix(in oklab, #ec4899 30%, #161c21);
+    --color-pink-700: #f9a8d4;
+    --color-pink-800: color-mix(in oklab, #f9a8d4 55%, #ffffff);
+    --color-pink-900: color-mix(in oklab, #f9a8d4 55%, #ffffff);
+    --color-pink-950: color-mix(in oklab, #f9a8d4 55%, #ffffff);
+    --color-cyan-50: color-mix(in oklab, #06b6d4 12%, #161c21);
+    --color-cyan-100: color-mix(in oklab, #06b6d4 18%, #161c21);
+    --color-cyan-200: color-mix(in oklab, #06b6d4 30%, #161c21);
+    --color-cyan-700: #67e8f9;
+    --color-cyan-800: color-mix(in oklab, #67e8f9 55%, #ffffff);
+    --color-cyan-900: color-mix(in oklab, #67e8f9 55%, #ffffff);
+    --color-cyan-950: color-mix(in oklab, #67e8f9 55%, #ffffff);
+    --color-teal-50: color-mix(in oklab, #14b8a6 12%, #161c21);
+    --color-teal-100: color-mix(in oklab, #14b8a6 18%, #161c21);
+    --color-teal-200: color-mix(in oklab, #14b8a6 30%, #161c21);
+    --color-teal-700: #5eead4;
+    --color-teal-800: color-mix(in oklab, #5eead4 55%, #ffffff);
+    --color-teal-900: color-mix(in oklab, #5eead4 55%, #ffffff);
+    --color-teal-950: color-mix(in oklab, #5eead4 55%, #ffffff);
+}
+
+@layer utilities {
+    :where(html.dark) .bg-white { background-color: #161c21; }
+    :where(html.dark) .bg-white\/40 { background-color: color-mix(in oklab, #161c21 40%, transparent); }
+    :where(html.dark) .bg-white\/50 { background-color: color-mix(in oklab, #161c21 50%, transparent); }
+    :where(html.dark) .bg-white\/55 { background-color: color-mix(in oklab, #161c21 55%, transparent); }
+    :where(html.dark) .bg-white\/60 { background-color: color-mix(in oklab, #161c21 60%, transparent); }
+    :where(html.dark) .bg-white\/70 { background-color: color-mix(in oklab, #161c21 70%, transparent); }
+    :where(html.dark) .bg-white\/75 { background-color: color-mix(in oklab, #161c21 75%, transparent); }
+    :where(html.dark) .bg-white\/80 { background-color: color-mix(in oklab, #161c21 80%, transparent); }
+    :where(html.dark) .bg-white\/90 { background-color: color-mix(in oklab, #161c21 90%, transparent); }
+    :where(html.dark) .bg-white\/95 { background-color: color-mix(in oklab, #161c21 95%, transparent); }
+    :where(html.dark) .hover\:bg-white:hover { background-color: #161c21; }
+    :where(html.dark) .hover\:bg-white\/40:hover { background-color: color-mix(in oklab, #161c21 40%, transparent); }
+    :where(html.dark) .hover\:bg-white\/50:hover { background-color: color-mix(in oklab, #161c21 50%, transparent); }
+    :where(html.dark) .hover\:bg-white\/55:hover { background-color: color-mix(in oklab, #161c21 55%, transparent); }
+    :where(html.dark) .hover\:bg-white\/60:hover { background-color: color-mix(in oklab, #161c21 60%, transparent); }
+    :where(html.dark) .hover\:bg-white\/70:hover { background-color: color-mix(in oklab, #161c21 70%, transparent); }
+    :where(html.dark) .hover\:bg-white\/75:hover { background-color: color-mix(in oklab, #161c21 75%, transparent); }
+    :where(html.dark) .hover\:bg-white\/80:hover { background-color: color-mix(in oklab, #161c21 80%, transparent); }
+    :where(html.dark) .hover\:bg-white\/90:hover { background-color: color-mix(in oklab, #161c21 90%, transparent); }
+    :where(html.dark) .hover\:bg-white\/95:hover { background-color: color-mix(in oklab, #161c21 95%, transparent); }
+    :where(html.dark) .focus\:bg-white:focus { background-color: #161c21; }
+    :where(html.dark) .focus\:bg-white\/40:focus { background-color: color-mix(in oklab, #161c21 40%, transparent); }
+    :where(html.dark) .focus\:bg-white\/50:focus { background-color: color-mix(in oklab, #161c21 50%, transparent); }
+    :where(html.dark) .focus\:bg-white\/55:focus { background-color: color-mix(in oklab, #161c21 55%, transparent); }
+    :where(html.dark) .focus\:bg-white\/60:focus { background-color: color-mix(in oklab, #161c21 60%, transparent); }
+    :where(html.dark) .focus\:bg-white\/70:focus { background-color: color-mix(in oklab, #161c21 70%, transparent); }
+    :where(html.dark) .focus\:bg-white\/75:focus { background-color: color-mix(in oklab, #161c21 75%, transparent); }
+    :where(html.dark) .focus\:bg-white\/80:focus { background-color: color-mix(in oklab, #161c21 80%, transparent); }
+    :where(html.dark) .focus\:bg-white\/90:focus { background-color: color-mix(in oklab, #161c21 90%, transparent); }
+    :where(html.dark) .focus\:bg-white\/95:focus { background-color: color-mix(in oklab, #161c21 95%, transparent); }
+    :where(html.dark) .from-white { --tw-gradient-from: #161c21; }
+    :where(html.dark) .via-white { --tw-gradient-via: #161c21; }
+    :where(html.dark) .to-white { --tw-gradient-to: #161c21; }
+    :where(html.dark) .border-white\/70 { border-color: rgb(255 255 255 / 10%); }
+    :where(html.dark) .bg-graphite-700 { background-color: #3b454e; }
+    :where(html.dark) .hover\:bg-graphite-700:hover { background-color: #3b454e; }
+    :where(html.dark) .group:hover .group-hover\:bg-graphite-700 { background-color: #3b454e; }
+    :where(html.dark) .bg-graphite-700\/40 { background-color: color-mix(in oklab, #3b454e 40%, transparent); }
+    :where(html.dark) .bg-graphite-700\/50 { background-color: color-mix(in oklab, #3b454e 50%, transparent); }
+    :where(html.dark) .bg-graphite-700\/55 { background-color: color-mix(in oklab, #3b454e 55%, transparent); }
+    :where(html.dark) .bg-graphite-700\/60 { background-color: color-mix(in oklab, #3b454e 60%, transparent); }
+    :where(html.dark) .bg-graphite-700\/70 { background-color: color-mix(in oklab, #3b454e 70%, transparent); }
+    :where(html.dark) .bg-graphite-700\/75 { background-color: color-mix(in oklab, #3b454e 75%, transparent); }
+    :where(html.dark) .bg-graphite-700\/80 { background-color: color-mix(in oklab, #3b454e 80%, transparent); }
+    :where(html.dark) .bg-graphite-700\/90 { background-color: color-mix(in oklab, #3b454e 90%, transparent); }
+    :where(html.dark) .bg-graphite-700\/95 { background-color: color-mix(in oklab, #3b454e 95%, transparent); }
+    :where(html.dark) .bg-graphite-800 { background-color: #2b333a; }
+    :where(html.dark) .hover\:bg-graphite-800:hover { background-color: #2b333a; }
+    :where(html.dark) .group:hover .group-hover\:bg-graphite-800 { background-color: #2b333a; }
+    :where(html.dark) .bg-graphite-800\/40 { background-color: color-mix(in oklab, #2b333a 40%, transparent); }
+    :where(html.dark) .bg-graphite-800\/50 { background-color: color-mix(in oklab, #2b333a 50%, transparent); }
+    :where(html.dark) .bg-graphite-800\/55 { background-color: color-mix(in oklab, #2b333a 55%, transparent); }
+    :where(html.dark) .bg-graphite-800\/60 { background-color: color-mix(in oklab, #2b333a 60%, transparent); }
+    :where(html.dark) .bg-graphite-800\/70 { background-color: color-mix(in oklab, #2b333a 70%, transparent); }
+    :where(html.dark) .bg-graphite-800\/75 { background-color: color-mix(in oklab, #2b333a 75%, transparent); }
+    :where(html.dark) .bg-graphite-800\/80 { background-color: color-mix(in oklab, #2b333a 80%, transparent); }
+    :where(html.dark) .bg-graphite-800\/90 { background-color: color-mix(in oklab, #2b333a 90%, transparent); }
+    :where(html.dark) .bg-graphite-800\/95 { background-color: color-mix(in oklab, #2b333a 95%, transparent); }
+    :where(html.dark) .bg-graphite-900 { background-color: #1b2126; }
+    :where(html.dark) .hover\:bg-graphite-900:hover { background-color: #1b2126; }
+    :where(html.dark) .group:hover .group-hover\:bg-graphite-900 { background-color: #1b2126; }
+    :where(html.dark) .bg-graphite-900\/40 { background-color: color-mix(in oklab, #1b2126 40%, transparent); }
+    :where(html.dark) .bg-graphite-900\/50 { background-color: color-mix(in oklab, #1b2126 50%, transparent); }
+    :where(html.dark) .bg-graphite-900\/55 { background-color: color-mix(in oklab, #1b2126 55%, transparent); }
+    :where(html.dark) .bg-graphite-900\/60 { background-color: color-mix(in oklab, #1b2126 60%, transparent); }
+    :where(html.dark) .bg-graphite-900\/70 { background-color: color-mix(in oklab, #1b2126 70%, transparent); }
+    :where(html.dark) .bg-graphite-900\/75 { background-color: color-mix(in oklab, #1b2126 75%, transparent); }
+    :where(html.dark) .bg-graphite-900\/80 { background-color: color-mix(in oklab, #1b2126 80%, transparent); }
+    :where(html.dark) .bg-graphite-900\/90 { background-color: color-mix(in oklab, #1b2126 90%, transparent); }
+    :where(html.dark) .bg-graphite-900\/95 { background-color: color-mix(in oklab, #1b2126 95%, transparent); }
+    :where(html.dark) .bg-graphite-950 { background-color: #0b0f12; }
+    :where(html.dark) .hover\:bg-graphite-950:hover { background-color: #0b0f12; }
+    :where(html.dark) .group:hover .group-hover\:bg-graphite-950 { background-color: #0b0f12; }
+    :where(html.dark) .bg-graphite-950\/40 { background-color: color-mix(in oklab, #0b0f12 40%, transparent); }
+    :where(html.dark) .bg-graphite-950\/50 { background-color: color-mix(in oklab, #0b0f12 50%, transparent); }
+    :where(html.dark) .bg-graphite-950\/55 { background-color: color-mix(in oklab, #0b0f12 55%, transparent); }
+    :where(html.dark) .bg-graphite-950\/60 { background-color: color-mix(in oklab, #0b0f12 60%, transparent); }
+    :where(html.dark) .bg-graphite-950\/70 { background-color: color-mix(in oklab, #0b0f12 70%, transparent); }
+    :where(html.dark) .bg-graphite-950\/75 { background-color: color-mix(in oklab, #0b0f12 75%, transparent); }
+    :where(html.dark) .bg-graphite-950\/80 { background-color: color-mix(in oklab, #0b0f12 80%, transparent); }
+    :where(html.dark) .bg-graphite-950\/90 { background-color: color-mix(in oklab, #0b0f12 90%, transparent); }
+    :where(html.dark) .bg-graphite-950\/95 { background-color: color-mix(in oklab, #0b0f12 95%, transparent); }
+    :where(html.dark) .bg-gray-700 { background-color: #3b454e; }
+    :where(html.dark) .hover\:bg-gray-700:hover { background-color: #3b454e; }
+    :where(html.dark) .group:hover .group-hover\:bg-gray-700 { background-color: #3b454e; }
+    :where(html.dark) .bg-gray-700\/40 { background-color: color-mix(in oklab, #3b454e 40%, transparent); }
+    :where(html.dark) .bg-gray-700\/50 { background-color: color-mix(in oklab, #3b454e 50%, transparent); }
+    :where(html.dark) .bg-gray-700\/55 { background-color: color-mix(in oklab, #3b454e 55%, transparent); }
+    :where(html.dark) .bg-gray-700\/60 { background-color: color-mix(in oklab, #3b454e 60%, transparent); }
+    :where(html.dark) .bg-gray-700\/70 { background-color: color-mix(in oklab, #3b454e 70%, transparent); }
+    :where(html.dark) .bg-gray-700\/75 { background-color: color-mix(in oklab, #3b454e 75%, transparent); }
+    :where(html.dark) .bg-gray-700\/80 { background-color: color-mix(in oklab, #3b454e 80%, transparent); }
+    :where(html.dark) .bg-gray-700\/90 { background-color: color-mix(in oklab, #3b454e 90%, transparent); }
+    :where(html.dark) .bg-gray-700\/95 { background-color: color-mix(in oklab, #3b454e 95%, transparent); }
+    :where(html.dark) .bg-gray-800 { background-color: #2b333a; }
+    :where(html.dark) .hover\:bg-gray-800:hover { background-color: #2b333a; }
+    :where(html.dark) .group:hover .group-hover\:bg-gray-800 { background-color: #2b333a; }
+    :where(html.dark) .bg-gray-800\/40 { background-color: color-mix(in oklab, #2b333a 40%, transparent); }
+    :where(html.dark) .bg-gray-800\/50 { background-color: color-mix(in oklab, #2b333a 50%, transparent); }
+    :where(html.dark) .bg-gray-800\/55 { background-color: color-mix(in oklab, #2b333a 55%, transparent); }
+    :where(html.dark) .bg-gray-800\/60 { background-color: color-mix(in oklab, #2b333a 60%, transparent); }
+    :where(html.dark) .bg-gray-800\/70 { background-color: color-mix(in oklab, #2b333a 70%, transparent); }
+    :where(html.dark) .bg-gray-800\/75 { background-color: color-mix(in oklab, #2b333a 75%, transparent); }
+    :where(html.dark) .bg-gray-800\/80 { background-color: color-mix(in oklab, #2b333a 80%, transparent); }
+    :where(html.dark) .bg-gray-800\/90 { background-color: color-mix(in oklab, #2b333a 90%, transparent); }
+    :where(html.dark) .bg-gray-800\/95 { background-color: color-mix(in oklab, #2b333a 95%, transparent); }
+    :where(html.dark) .bg-gray-900 { background-color: #1b2126; }
+    :where(html.dark) .hover\:bg-gray-900:hover { background-color: #1b2126; }
+    :where(html.dark) .group:hover .group-hover\:bg-gray-900 { background-color: #1b2126; }
+    :where(html.dark) .bg-gray-900\/40 { background-color: color-mix(in oklab, #1b2126 40%, transparent); }
+    :where(html.dark) .bg-gray-900\/50 { background-color: color-mix(in oklab, #1b2126 50%, transparent); }
+    :where(html.dark) .bg-gray-900\/55 { background-color: color-mix(in oklab, #1b2126 55%, transparent); }
+    :where(html.dark) .bg-gray-900\/60 { background-color: color-mix(in oklab, #1b2126 60%, transparent); }
+    :where(html.dark) .bg-gray-900\/70 { background-color: color-mix(in oklab, #1b2126 70%, transparent); }
+    :where(html.dark) .bg-gray-900\/75 { background-color: color-mix(in oklab, #1b2126 75%, transparent); }
+    :where(html.dark) .bg-gray-900\/80 { background-color: color-mix(in oklab, #1b2126 80%, transparent); }
+    :where(html.dark) .bg-gray-900\/90 { background-color: color-mix(in oklab, #1b2126 90%, transparent); }
+    :where(html.dark) .bg-gray-900\/95 { background-color: color-mix(in oklab, #1b2126 95%, transparent); }
+    :where(html.dark) .bg-gray-950 { background-color: #0b0f12; }
+    :where(html.dark) .hover\:bg-gray-950:hover { background-color: #0b0f12; }
+    :where(html.dark) .group:hover .group-hover\:bg-gray-950 { background-color: #0b0f12; }
+    :where(html.dark) .bg-gray-950\/40 { background-color: color-mix(in oklab, #0b0f12 40%, transparent); }
+    :where(html.dark) .bg-gray-950\/50 { background-color: color-mix(in oklab, #0b0f12 50%, transparent); }
+    :where(html.dark) .bg-gray-950\/55 { background-color: color-mix(in oklab, #0b0f12 55%, transparent); }
+    :where(html.dark) .bg-gray-950\/60 { background-color: color-mix(in oklab, #0b0f12 60%, transparent); }
+    :where(html.dark) .bg-gray-950\/70 { background-color: color-mix(in oklab, #0b0f12 70%, transparent); }
+    :where(html.dark) .bg-gray-950\/75 { background-color: color-mix(in oklab, #0b0f12 75%, transparent); }
+    :where(html.dark) .bg-gray-950\/80 { background-color: color-mix(in oklab, #0b0f12 80%, transparent); }
+    :where(html.dark) .bg-gray-950\/90 { background-color: color-mix(in oklab, #0b0f12 90%, transparent); }
+    :where(html.dark) .bg-gray-950\/95 { background-color: color-mix(in oklab, #0b0f12 95%, transparent); }
+    :where(html.dark) .text-nere-600 { color: #e06c67; }
+    :where(html.dark) .hover\:text-nere-600:hover { color: #e06c67; }
+    :where(html.dark) .group:hover .group-hover\:text-nere-600 { color: #e06c67; }
+    :where(html.dark) .bg-nere-700 { background-color: #a82a26; }
+    :where(html.dark) .hover\:bg-nere-700:hover { background-color: #a82a26; }
+    :where(html.dark) .group:hover .group-hover\:bg-nere-700 { background-color: #a82a26; }
+    :where(html.dark) .focus\:bg-nere-700:focus { background-color: #a82a26; }
+    :where(html.dark) .bg-nere-800 { background-color: #87231f; }
+    :where(html.dark) .hover\:bg-nere-800:hover { background-color: #87231f; }
+    :where(html.dark) .group:hover .group-hover\:bg-nere-800 { background-color: #87231f; }
+    :where(html.dark) .focus\:bg-nere-800:focus { background-color: #87231f; }
+    :where(html.dark) .text-or-600 { color: #ffd25a; }
+    :where(html.dark) .hover\:text-or-600:hover { color: #ffd25a; }
+    :where(html.dark) .group:hover .group-hover\:text-or-600 { color: #ffd25a; }
+    :where(html.dark) .bg-or-700 { background-color: #9c6c0d; }
+    :where(html.dark) .hover\:bg-or-700:hover { background-color: #9c6c0d; }
+    :where(html.dark) .group:hover .group-hover\:bg-or-700 { background-color: #9c6c0d; }
+    :where(html.dark) .focus\:bg-or-700:focus { background-color: #9c6c0d; }
+    :where(html.dark) .bg-or-800 { background-color: #78530d; }
+    :where(html.dark) .hover\:bg-or-800:hover { background-color: #78530d; }
+    :where(html.dark) .group:hover .group-hover\:bg-or-800 { background-color: #78530d; }
+    :where(html.dark) .focus\:bg-or-800:focus { background-color: #78530d; }
+    :where(html.dark) .text-red-600 { color: #f87171; }
+    :where(html.dark) .hover\:text-red-600:hover { color: #f87171; }
+    :where(html.dark) .group:hover .group-hover\:text-red-600 { color: #f87171; }
+    :where(html.dark) .bg-red-700 { background-color: #b91c1c; }
+    :where(html.dark) .hover\:bg-red-700:hover { background-color: #b91c1c; }
+    :where(html.dark) .group:hover .group-hover\:bg-red-700 { background-color: #b91c1c; }
+    :where(html.dark) .focus\:bg-red-700:focus { background-color: #b91c1c; }
+    :where(html.dark) .bg-red-800 { background-color: #991b1b; }
+    :where(html.dark) .hover\:bg-red-800:hover { background-color: #991b1b; }
+    :where(html.dark) .group:hover .group-hover\:bg-red-800 { background-color: #991b1b; }
+    :where(html.dark) .focus\:bg-red-800:focus { background-color: #991b1b; }
+    :where(html.dark) .text-green-600 { color: #4ade80; }
+    :where(html.dark) .hover\:text-green-600:hover { color: #4ade80; }
+    :where(html.dark) .group:hover .group-hover\:text-green-600 { color: #4ade80; }
+    :where(html.dark) .bg-green-700 { background-color: #15803d; }
+    :where(html.dark) .hover\:bg-green-700:hover { background-color: #15803d; }
+    :where(html.dark) .group:hover .group-hover\:bg-green-700 { background-color: #15803d; }
+    :where(html.dark) .focus\:bg-green-700:focus { background-color: #15803d; }
+    :where(html.dark) .bg-green-800 { background-color: #166534; }
+    :where(html.dark) .hover\:bg-green-800:hover { background-color: #166534; }
+    :where(html.dark) .group:hover .group-hover\:bg-green-800 { background-color: #166534; }
+    :where(html.dark) .focus\:bg-green-800:focus { background-color: #166534; }
+    :where(html.dark) .text-emerald-600 { color: #34d399; }
+    :where(html.dark) .hover\:text-emerald-600:hover { color: #34d399; }
+    :where(html.dark) .group:hover .group-hover\:text-emerald-600 { color: #34d399; }
+    :where(html.dark) .bg-emerald-700 { background-color: #047857; }
+    :where(html.dark) .hover\:bg-emerald-700:hover { background-color: #047857; }
+    :where(html.dark) .group:hover .group-hover\:bg-emerald-700 { background-color: #047857; }
+    :where(html.dark) .focus\:bg-emerald-700:focus { background-color: #047857; }
+    :where(html.dark) .bg-emerald-800 { background-color: #065f46; }
+    :where(html.dark) .hover\:bg-emerald-800:hover { background-color: #065f46; }
+    :where(html.dark) .group:hover .group-hover\:bg-emerald-800 { background-color: #065f46; }
+    :where(html.dark) .focus\:bg-emerald-800:focus { background-color: #065f46; }
+    :where(html.dark) .text-blue-600 { color: #60a5fa; }
+    :where(html.dark) .hover\:text-blue-600:hover { color: #60a5fa; }
+    :where(html.dark) .group:hover .group-hover\:text-blue-600 { color: #60a5fa; }
+    :where(html.dark) .bg-blue-700 { background-color: #1d4ed8; }
+    :where(html.dark) .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+    :where(html.dark) .group:hover .group-hover\:bg-blue-700 { background-color: #1d4ed8; }
+    :where(html.dark) .focus\:bg-blue-700:focus { background-color: #1d4ed8; }
+    :where(html.dark) .bg-blue-800 { background-color: #1e40af; }
+    :where(html.dark) .hover\:bg-blue-800:hover { background-color: #1e40af; }
+    :where(html.dark) .group:hover .group-hover\:bg-blue-800 { background-color: #1e40af; }
+    :where(html.dark) .focus\:bg-blue-800:focus { background-color: #1e40af; }
+    :where(html.dark) .text-sky-600 { color: #38bdf8; }
+    :where(html.dark) .hover\:text-sky-600:hover { color: #38bdf8; }
+    :where(html.dark) .group:hover .group-hover\:text-sky-600 { color: #38bdf8; }
+    :where(html.dark) .bg-sky-700 { background-color: #0369a1; }
+    :where(html.dark) .hover\:bg-sky-700:hover { background-color: #0369a1; }
+    :where(html.dark) .group:hover .group-hover\:bg-sky-700 { background-color: #0369a1; }
+    :where(html.dark) .focus\:bg-sky-700:focus { background-color: #0369a1; }
+    :where(html.dark) .bg-sky-800 { background-color: #075985; }
+    :where(html.dark) .hover\:bg-sky-800:hover { background-color: #075985; }
+    :where(html.dark) .group:hover .group-hover\:bg-sky-800 { background-color: #075985; }
+    :where(html.dark) .focus\:bg-sky-800:focus { background-color: #075985; }
+    :where(html.dark) .text-indigo-600 { color: #818cf8; }
+    :where(html.dark) .hover\:text-indigo-600:hover { color: #818cf8; }
+    :where(html.dark) .group:hover .group-hover\:text-indigo-600 { color: #818cf8; }
+    :where(html.dark) .bg-indigo-700 { background-color: #4338ca; }
+    :where(html.dark) .hover\:bg-indigo-700:hover { background-color: #4338ca; }
+    :where(html.dark) .group:hover .group-hover\:bg-indigo-700 { background-color: #4338ca; }
+    :where(html.dark) .focus\:bg-indigo-700:focus { background-color: #4338ca; }
+    :where(html.dark) .bg-indigo-800 { background-color: #3730a3; }
+    :where(html.dark) .hover\:bg-indigo-800:hover { background-color: #3730a3; }
+    :where(html.dark) .group:hover .group-hover\:bg-indigo-800 { background-color: #3730a3; }
+    :where(html.dark) .focus\:bg-indigo-800:focus { background-color: #3730a3; }
+    :where(html.dark) .text-amber-600 { color: #fbbf24; }
+    :where(html.dark) .hover\:text-amber-600:hover { color: #fbbf24; }
+    :where(html.dark) .group:hover .group-hover\:text-amber-600 { color: #fbbf24; }
+    :where(html.dark) .bg-amber-700 { background-color: #b45309; }
+    :where(html.dark) .hover\:bg-amber-700:hover { background-color: #b45309; }
+    :where(html.dark) .group:hover .group-hover\:bg-amber-700 { background-color: #b45309; }
+    :where(html.dark) .focus\:bg-amber-700:focus { background-color: #b45309; }
+    :where(html.dark) .bg-amber-800 { background-color: #92400e; }
+    :where(html.dark) .hover\:bg-amber-800:hover { background-color: #92400e; }
+    :where(html.dark) .group:hover .group-hover\:bg-amber-800 { background-color: #92400e; }
+    :where(html.dark) .focus\:bg-amber-800:focus { background-color: #92400e; }
+    :where(html.dark) .text-yellow-600 { color: #facc15; }
+    :where(html.dark) .hover\:text-yellow-600:hover { color: #facc15; }
+    :where(html.dark) .group:hover .group-hover\:text-yellow-600 { color: #facc15; }
+    :where(html.dark) .bg-yellow-700 { background-color: #a16207; }
+    :where(html.dark) .hover\:bg-yellow-700:hover { background-color: #a16207; }
+    :where(html.dark) .group:hover .group-hover\:bg-yellow-700 { background-color: #a16207; }
+    :where(html.dark) .focus\:bg-yellow-700:focus { background-color: #a16207; }
+    :where(html.dark) .bg-yellow-800 { background-color: #854d0e; }
+    :where(html.dark) .hover\:bg-yellow-800:hover { background-color: #854d0e; }
+    :where(html.dark) .group:hover .group-hover\:bg-yellow-800 { background-color: #854d0e; }
+    :where(html.dark) .focus\:bg-yellow-800:focus { background-color: #854d0e; }
+    :where(html.dark) .text-orange-600 { color: #fb923c; }
+    :where(html.dark) .hover\:text-orange-600:hover { color: #fb923c; }
+    :where(html.dark) .group:hover .group-hover\:text-orange-600 { color: #fb923c; }
+    :where(html.dark) .bg-orange-700 { background-color: #c2410c; }
+    :where(html.dark) .hover\:bg-orange-700:hover { background-color: #c2410c; }
+    :where(html.dark) .group:hover .group-hover\:bg-orange-700 { background-color: #c2410c; }
+    :where(html.dark) .focus\:bg-orange-700:focus { background-color: #c2410c; }
+    :where(html.dark) .bg-orange-800 { background-color: #9a3412; }
+    :where(html.dark) .hover\:bg-orange-800:hover { background-color: #9a3412; }
+    :where(html.dark) .group:hover .group-hover\:bg-orange-800 { background-color: #9a3412; }
+    :where(html.dark) .focus\:bg-orange-800:focus { background-color: #9a3412; }
+    :where(html.dark) .text-purple-600 { color: #c084fc; }
+    :where(html.dark) .hover\:text-purple-600:hover { color: #c084fc; }
+    :where(html.dark) .group:hover .group-hover\:text-purple-600 { color: #c084fc; }
+    :where(html.dark) .bg-purple-700 { background-color: #7e22ce; }
+    :where(html.dark) .hover\:bg-purple-700:hover { background-color: #7e22ce; }
+    :where(html.dark) .group:hover .group-hover\:bg-purple-700 { background-color: #7e22ce; }
+    :where(html.dark) .focus\:bg-purple-700:focus { background-color: #7e22ce; }
+    :where(html.dark) .bg-purple-800 { background-color: #6b21a8; }
+    :where(html.dark) .hover\:bg-purple-800:hover { background-color: #6b21a8; }
+    :where(html.dark) .group:hover .group-hover\:bg-purple-800 { background-color: #6b21a8; }
+    :where(html.dark) .focus\:bg-purple-800:focus { background-color: #6b21a8; }
+    :where(html.dark) .text-fuchsia-600 { color: #e879f9; }
+    :where(html.dark) .hover\:text-fuchsia-600:hover { color: #e879f9; }
+    :where(html.dark) .group:hover .group-hover\:text-fuchsia-600 { color: #e879f9; }
+    :where(html.dark) .bg-fuchsia-700 { background-color: #a21caf; }
+    :where(html.dark) .hover\:bg-fuchsia-700:hover { background-color: #a21caf; }
+    :where(html.dark) .group:hover .group-hover\:bg-fuchsia-700 { background-color: #a21caf; }
+    :where(html.dark) .focus\:bg-fuchsia-700:focus { background-color: #a21caf; }
+    :where(html.dark) .bg-fuchsia-800 { background-color: #86198f; }
+    :where(html.dark) .hover\:bg-fuchsia-800:hover { background-color: #86198f; }
+    :where(html.dark) .group:hover .group-hover\:bg-fuchsia-800 { background-color: #86198f; }
+    :where(html.dark) .focus\:bg-fuchsia-800:focus { background-color: #86198f; }
+    :where(html.dark) .text-pink-600 { color: #f472b6; }
+    :where(html.dark) .hover\:text-pink-600:hover { color: #f472b6; }
+    :where(html.dark) .group:hover .group-hover\:text-pink-600 { color: #f472b6; }
+    :where(html.dark) .bg-pink-700 { background-color: #be185d; }
+    :where(html.dark) .hover\:bg-pink-700:hover { background-color: #be185d; }
+    :where(html.dark) .group:hover .group-hover\:bg-pink-700 { background-color: #be185d; }
+    :where(html.dark) .focus\:bg-pink-700:focus { background-color: #be185d; }
+    :where(html.dark) .bg-pink-800 { background-color: #9d174d; }
+    :where(html.dark) .hover\:bg-pink-800:hover { background-color: #9d174d; }
+    :where(html.dark) .group:hover .group-hover\:bg-pink-800 { background-color: #9d174d; }
+    :where(html.dark) .focus\:bg-pink-800:focus { background-color: #9d174d; }
+    :where(html.dark) .text-cyan-600 { color: #22d3ee; }
+    :where(html.dark) .hover\:text-cyan-600:hover { color: #22d3ee; }
+    :where(html.dark) .group:hover .group-hover\:text-cyan-600 { color: #22d3ee; }
+    :where(html.dark) .bg-cyan-700 { background-color: #0e7490; }
+    :where(html.dark) .hover\:bg-cyan-700:hover { background-color: #0e7490; }
+    :where(html.dark) .group:hover .group-hover\:bg-cyan-700 { background-color: #0e7490; }
+    :where(html.dark) .focus\:bg-cyan-700:focus { background-color: #0e7490; }
+    :where(html.dark) .bg-cyan-800 { background-color: #155e75; }
+    :where(html.dark) .hover\:bg-cyan-800:hover { background-color: #155e75; }
+    :where(html.dark) .group:hover .group-hover\:bg-cyan-800 { background-color: #155e75; }
+    :where(html.dark) .focus\:bg-cyan-800:focus { background-color: #155e75; }
+    :where(html.dark) .text-teal-600 { color: #2dd4bf; }
+    :where(html.dark) .hover\:text-teal-600:hover { color: #2dd4bf; }
+    :where(html.dark) .group:hover .group-hover\:text-teal-600 { color: #2dd4bf; }
+    :where(html.dark) .bg-teal-700 { background-color: #0f766e; }
+    :where(html.dark) .hover\:bg-teal-700:hover { background-color: #0f766e; }
+    :where(html.dark) .group:hover .group-hover\:bg-teal-700 { background-color: #0f766e; }
+    :where(html.dark) .focus\:bg-teal-700:focus { background-color: #0f766e; }
+    :where(html.dark) .bg-teal-800 { background-color: #115e59; }
+    :where(html.dark) .hover\:bg-teal-800:hover { background-color: #115e59; }
+    :where(html.dark) .group:hover .group-hover\:bg-teal-800 { background-color: #115e59; }
+    :where(html.dark) .focus\:bg-teal-800:focus { background-color: #115e59; }
+}
+
+/* Surfaces en verre : m√™mes formes, verre fum√© au lieu de verre clair. */
+html.dark {
+    --glass-ink: 0 0 0;
+    --glass-tint: rgb(28 35 41 / 78%);
+    --glass-tint-hover: rgb(36 44 51 / 86%);
+    --glass-tint-bar: rgb(18 24 29 / 82%);
+    --glass-tint-float: rgb(24 31 37 / 96%);
+    --glass-edge: rgb(255 255 255 / 6%);
+    --glass-border: rgb(255 255 255 / 9%);
+    --glass-sheen: linear-gradient(155deg, rgb(255 255 255 / 5%) 0%, rgb(255 255 255 / 0%) 45%);
+    --glass-shadow:
+        inset 0 1px 0 var(--glass-edge),
+        0 2px 3px rgb(0 0 0 / 20%),
+        0 16px 36px -22px rgb(0 0 0 / 70%);
+    --glass-shadow-hover:
+        inset 0 1px 0 rgb(255 255 255 / 9%),
+        0 4px 10px rgb(0 0 0 / 25%),
+        0 24px 48px -24px rgb(0 0 0 / 80%);
+    --glass-button-gloss: linear-gradient(180deg, rgb(255 255 255 / 7%) 0%, rgb(255 255 255 / 0%) 55%);
+
+    /* Feuille du design system (public/css/nere-design-system.css). */
+    --text-primary: #eef1f3;
+    --text-secondary: #a7b1b9;
+    --text-muted: #8b96a0;
+    --bg-light: #0f1418;
+    --bg-lighter: #1c2329;
+    --bg-white: #161c21;
+    --border-color: #2a323a;
+    --border-dark: #3b454e;
+}
+
+html.dark :is(.intranet-shell, .app-shell, .admin-shell) {
+    background-color: #0f1418;
+    background-image:
+        radial-gradient(42rem 34rem at 4% 6%, rgb(var(--glass-red) / 12%), transparent 70%),
+        radial-gradient(40rem 34rem at 96% 14%, rgb(var(--glass-blue) / 10%), transparent 70%),
+        radial-gradient(36rem 28rem at 18% 96%, rgb(255 210 90 / 6%), transparent 70%),
+        linear-gradient(160deg, #11161b 0%, #0f1418 50%, #10151b 100%);
+}
+
+html.dark .intranet-sidebar > div:first-child {
+    border-color: var(--glass-border);
+}
+
+@media (max-width: 1023px) {
+    html.dark .intranet-sidebar {
+        background-color: rgb(18 24 29 / 94%);
+    }
+}
+
+html.dark .intranet-shell .sidebar-link:hover {
+    background-color: rgb(255 255 255 / 6%);
+}
+
+html.dark .intranet-shell .sidebar-link.active {
+    background-color: rgb(var(--glass-red) / 20%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 6%),
+        inset 0 0 0 1px rgb(var(--glass-red) / 30%),
+        0 6px 16px -10px rgb(var(--glass-red) / 55%);
+}
+
+html.dark .intranet-table-container thead {
+    background-color: rgb(255 255 255 / 4%);
+}
+
+html.dark .intranet-table-container tbody tr {
+    border-color: var(--glass-border);
+}
+
+html.dark .intranet-table-container tbody tr:hover {
+    background-color: rgb(255 255 255 / 4%);
+}
+
+html.dark :is(#main-content, .admin-shell main, .app-shell main)
+    .flex.items-center.justify-center:is(.h-8, .h-9, .h-10, .h-11, .h-12, .h-14):is(.w-8, .w-9, .w-10, .w-11, .w-12, .w-14):is(.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        0 6px 14px -8px rgb(0 0 0 / 60%);
+}
+
+html.dark .intranet-header button.p-2,
+html.dark .intranet-sidebar button.p-2,
+html.dark .intranet-header #intranet-profile-trigger,
+html.dark .intranet-header #intranet-search-trigger,
+html.dark :is(.intranet-shell, .app-shell, .admin-shell) :is(.bouton-secondaire, .intranet-filter-link:not(.intranet-filter-link-active)) {
+    background-color: rgb(255 255 255 / 5%);
+}
+
+html.dark .intranet-header button.p-2:hover,
+html.dark .intranet-sidebar button.p-2:hover,
+html.dark .intranet-header #intranet-profile-trigger:hover,
+html.dark .intranet-header #intranet-search-trigger:hover {
+    background-color: rgb(255 255 255 / 10%);
+}
+
+html.dark .intranet-header #intranet-search-trigger kbd {
+    background-color: rgb(255 255 255 / 8%);
+}
+
+html.dark .intranet-header.is-scrolled {
+    background-color: rgb(18 24 29 / 90%);
+    box-shadow:
+        inset 0 1px 0 var(--glass-edge),
+        inset 0 -1px 0 var(--glass-border),
+        0 14px 30px -18px rgb(0 0 0 / 70%);
+}
+
+html.dark .intranet-tour-card,
+html.dark .page-skeleton-card {
+    border-color: var(--glass-border);
+    background-color: rgb(24 31 37 / 96%);
+}
+
+html.dark .page-skeleton-block {
+    background-image: linear-gradient(90deg, #2a323a 0%, #3b454e 50%, #2a323a 100%);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    html.dark .intranet-header,
+    html.dark .intranet-sidebar,
+    html.dark .intranet-shell #intranet-profile-menu,
+    html.dark .intranet-shell [role="menu"],
+    html.dark .intranet-header .absolute.bg-white,
+    html.dark :is(.intranet-shell, .app-shell, .admin-shell) :is(.carte, .carte-plate, .nere-card, .nere-card-flat, .intranet-filters, .intranet-table-container),
+    html.dark :is(#main-content, .admin-shell main, .app-shell main) .bg-white:is(.rounded-lg, .rounded-xl, .rounded-2xl) {
+        background-color: #161c21;
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    html.dark .intranet-header,
+    html.dark .intranet-sidebar,
+    html.dark .intranet-shell #intranet-profile-menu,
+    html.dark .intranet-shell [role="menu"],
+    html.dark .intranet-header .absolute.bg-white {
+        background-color: rgb(18 24 29 / 96%);
+    }
+}
+
+/* Console d'administration. */
+html.dark .admin-icon-button {
+    border-color: rgb(255 255 255 / 10%);
+    background: rgb(255 255 255 / 5%);
+}
+
+html.dark .admin-icon-button:hover {
+    background: rgb(255 255 255 / 10%);
+}
+
+html.dark .admin-alert-success {
+    color: #86efac;
+    background: rgb(34 197 94 / 12%);
+}
+
+html.dark .admin-alert-error {
+    color: #fca5a5;
+    background: rgb(239 68 68 / 12%);
+}
+
+html.dark .admin-content-inner :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    border-color: #3b454e;
+    background-color: rgb(255 255 255 / 5%);
+}
+
+html.dark .admin-content-inner :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+    background-color: rgb(255 255 255 / 8%);
+}
+
+html.dark .admin-content-inner table thead {
+    background: rgb(255 255 255 / 4%);
+}
+
+html.dark .admin-content-inner table tbody tr:hover {
+    background: rgb(255 255 255 / 4%);
+}
+
+html.dark .admin-stat-card[data-tone="success"] .admin-stat-icon {
+    color: #86efac;
+    background: rgb(34 197 94 / 15%);
+}
+
+html.dark .admin-stat-card[data-tone="blue"] .admin-stat-icon {
+    color: #93c5fd;
+    background: rgb(59 130 246 / 15%);
+}
+
+html.dark .admin-stat-card[data-tone="purple"] .admin-stat-icon {
+    color: #d8b4fe;
+    background: rgb(168 85 247 / 15%);
+}
+
+html.dark .admin-scope-card {
+    background: linear-gradient(145deg, rgb(200 53 48 / 14%), rgb(255 255 255 / 3%));
+}
+
+/* Champs de formulaire sans fond explicite : fond sombre lisible. */
+html.dark :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):not([class*="bg-"]) {
+    background-color: #12181d;
+    color: var(--color-graphite-900);
+}
+
+html.dark .bouton-danger {
+    background-color: #b91c1c;
+}
+
+html.dark .bouton-danger:hover {
+    background-color: #991b1b;
+}
+
+html.dark .admin-content-inner :is(a, button).bg-gray-300,
+html.dark .admin-content-inner a.border-gray-300 {
+    background-color: rgb(255 255 255 / 6%);
+}
+
+/* Texte fonc√© gard√© sur les aplats or et jaunes. */
+html.dark :is(.bg-or-300, .bg-or-400, .bg-or-500, .bg-yellow-300, .bg-yellow-400, .bg-amber-300, .bg-amber-400):is(.text-graphite-700, .text-graphite-800, .text-graphite-900, .text-graphite-950, .text-gray-800, .text-gray-900) {
+    color: #1b2126;
+}
+
+/* Agenda (public/css/fullcalendar-custom.css). */
+html.dark .fc {
+    --fc-border-color: #2a323a;
+    --fc-page-bg-color: #161c21;
+    --fc-neutral-bg-color: #1c2329;
+    --fc-list-event-hover-bg-color: #1c2329;
+    --fc-today-bg-color: rgb(200 53 48 / 12%);
+}
+
+html.dark .fc .fc-toolbar {
+    background: #161c21;
+    border-bottom-color: #2a323a;
+}
+
+html.dark .fc .fc-toolbar-title {
+    color: #eef1f3;
+}
+
+html.dark .fc .fc-col-header-cell {
+    background-color: #1c2329;
+    border-color: #2a323a;
+}
+
+html.dark .fc .fc-col-header-cell,
+html.dark .fc .fc-col-header-cell a,
+html.dark .fc .fc-daygrid-day-number,
+html.dark .fc .fc-timegrid-slot-label,
+html.dark .fc .fc-list-day-text,
+html.dark .fc .fc-list-day-side-text {
+    color: #c4cbd1;
+}
+
+html.dark .fc .fc-day-today .fc-daygrid-day-number {
+    color: #fff;
+}
+
+html.dark .fc :is(.fc-daygrid-day, .fc-timegrid-slot, td, th) {
+    border-color: #2a323a;
+}
+
+/* Pastilles pleines claires (300) : leur texte tr√®s fonc√© reste fonc√©. */
+html.dark [class*="bg-"][class*="-300"]:is([class*="text-"][class*="-900"], [class*="text-"][class*="-950"]) {
+    color: #1b2126;
+}
+
+/* Bascule instantan√©e : sans fondu des couleurs au moment du changement de th√®me. */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+}
