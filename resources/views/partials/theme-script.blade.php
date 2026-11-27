@@ -1,10 +1,23 @@
-{{-- Appliqué avant les styles pour éviter un flash clair. Choix gardé dans le navigateur. --}}
+{{-- Appliqué avant les styles pour éviter un flash : thème et barre latérale rabattue. Choix gardés dans le navigateur. --}}
 <script>
     (function () {
         var root = document.documentElement;
         try {
             if (localStorage.getItem('nere-theme') === 'dark') root.classList.add('dark');
+            if (localStorage.getItem('nere-sidebar') === 'collapsed') root.classList.add('sidebar-collapsed');
         } catch (e) {}
+
+        /* Barre rabattue : le nom de chaque lien reste lisible au survol. */
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.intranet-sidebar .sidebar-link').forEach(function (link) {
+                if (! link.title) link.title = link.textContent.replace(/\s+/g, ' ').trim();
+            });
+        });
+
+        window.nereToggleSidebar = function () {
+            var collapsed = root.classList.toggle('sidebar-collapsed');
+            try { localStorage.setItem('nere-sidebar', collapsed ? 'collapsed' : 'open'); } catch (e) {}
+        };
 
         function apply() {
             root.classList.add('theme-switching');

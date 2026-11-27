@@ -8,9 +8,22 @@
     aria-label="Navigation principale"
 >
     <div class="flex h-16 items-center justify-between gap-3 border-b border-graphite-200 px-4">
-        <a href="{{ route('intranet.dashboard') }}" class="flex min-w-0 flex-1 items-center justify-center rounded-lg bg-graphite-900 px-3 py-2" aria-label="NÉRÉ Mining, accueil">
+        <a href="{{ route('intranet.dashboard') }}" class="sidebar-logo flex min-w-0 flex-1 items-center justify-center rounded-lg bg-graphite-900 px-3 py-2" aria-label="NÉRÉ Mining, accueil">
             <img src="{{ asset('images/logo-nere-mining.png') }}" alt="NÉRÉ Mining" class="h-10 w-auto">
         </a>
+        <button
+            type="button"
+            onclick="nereToggleSidebar()"
+            data-sidebar-collapse
+            class="sidebar-collapse hidden shrink-0 rounded-lg p-2 text-graphite-600 hover:bg-graphite-100 lg:inline-flex"
+            aria-controls="intranet-sidebar"
+            aria-label="Rabattre ou déployer le menu"
+            title="Rabattre ou déployer le menu"
+        >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7"/>
+            </svg>
+        </button>
         <button
             type="button"
             @click="sidebarOpen = false"

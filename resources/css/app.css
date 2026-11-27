@@ -2354,3 +2354,72 @@ a[data-glass]:hover {
 input[type="datetime-local"]::-webkit-datetime-edit-hour-field {
     margin-left: 0.75rem;
 }
+
+/*
+ * Barre latérale rabattue (ordinateur) : une colonne d'icônes. Le bouton en
+ * haut de la barre la replie ou la déploie ; le choix est gardé dans le
+ * navigateur (classe « sidebar-collapsed » sur <html>).
+ */
+@media (min-width: 1024px) {
+    .intranet-sidebar {
+        transition: width 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .sidebar-collapse svg {
+        transition: rotate 220ms ease;
+    }
+
+    html.sidebar-collapsed .intranet-sidebar {
+        width: 4.75rem;
+    }
+
+    html.sidebar-collapsed .intranet-sidebar > div:first-child {
+        justify-content: center;
+        padding-inline: 0.5rem;
+    }
+
+    html.sidebar-collapsed .intranet-sidebar .sidebar-logo {
+        display: none;
+    }
+
+    html.sidebar-collapsed .sidebar-collapse svg {
+        rotate: 180deg;
+    }
+
+    html.sidebar-collapsed .intranet-sidebar nav {
+        padding-inline: 0.75rem;
+        overflow-x: hidden;
+    }
+
+    /* Titres de section remplacés par un simple trait. */
+    html.sidebar-collapsed .intranet-sidebar nav h2 {
+        height: 1px;
+        margin: 0 0.5rem 0.75rem;
+        overflow: hidden;
+        padding: 0;
+        font-size: 0;
+        background-color: var(--color-graphite-200);
+    }
+
+    html.sidebar-collapsed .intranet-sidebar .sidebar-link {
+        position: relative;
+        justify-content: center;
+        gap: 0;
+        padding-inline: 0;
+    }
+
+    html.sidebar-collapsed .intranet-sidebar .sidebar-link > span:not(.ml-auto.rounded-full) {
+        display: none;
+    }
+
+    /* Compteurs (messages non lus) : une pastille sur l'icône. */
+    html.sidebar-collapsed .intranet-sidebar .sidebar-link > span.ml-auto {
+        position: absolute;
+        top: 0.15rem;
+        right: 0.2rem;
+        margin: 0;
+        padding: 0 0.3rem;
+        font-size: 0.625rem;
+        line-height: 1rem;
+    }
+}
