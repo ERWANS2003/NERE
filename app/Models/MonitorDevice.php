@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MonitorDevice extends Model
 {
-    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', 'maintenance', 'snmp_v3', ...MonitorGroup::SETTINGS];
+    protected $fillable = ['group_id', 'parent_device_id', 'name', 'host', 'type', 'paused', 'paused_until', 'pause_reason', 'maintenance', 'snmp_v3', 'details', ...MonitorGroup::SETTINGS];
 
     protected $hidden = ['snmp_community', 'snmp_v3'];
 
@@ -24,6 +24,7 @@ class MonitorDevice extends Model
             'snmp_community' => 'encrypted',
             'maintenance' => 'array',
             'snmp_v3' => 'encrypted:array',
+            'details' => 'array',
         ];
     }
 

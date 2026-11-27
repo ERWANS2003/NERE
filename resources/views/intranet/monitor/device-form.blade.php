@@ -65,6 +65,36 @@
             </div>
         @endunless
 
+        <fieldset id="fiche" class="scroll-mt-24 border-t border-graphite-100 pt-4 sm:col-span-2">
+            <legend class="pt-4 font-semibold text-graphite-900">Fiche de l’équipement</legend>
+            <p class="mb-4 text-sm text-graphite-600">Facultatif. Les champs changent selon le type. Le modèle, le n° de série et l’emplacement sont lus automatiquement si l’équipement répond en SNMP.</p>
+            @foreach(\App\Enums\MonitorDeviceType::cases() as $sheetType)
+                <template x-if="type === @js($sheetType->value)">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @foreach($sheetType->sheetFields() as $key => $field)
+                            @php $value = old('details.'.$key, $device->details[$key] ?? null); $input = $field['input'] ?? 'text'; @endphp
+                            <label class="block {{ $input === 'textarea' ? 'sm:col-span-2' : '' }}">
+                                <span class="etiquette">{{ $field['label'] }}</span>
+                                @if($input === 'select')
+                                    <select name="details[{{ $key }}]" class="champ">
+                                        <option value="">Non renseigné</option>
+                                        @foreach($field['options'] as $option)
+                                            <option value="{{ $option }}" @selected($value === $option)>{{ $option }}</option>
+                                        @endforeach
+                                    </select>
+                                @elseif($input === 'textarea')
+                                    <textarea name="details[{{ $key }}]" rows="3" maxlength="2000" class="champ" placeholder="Historique, particularités, accès…">{{ $value }}</textarea>
+                                @else
+                                    <input type="{{ $input }}" name="details[{{ $key }}]" value="{{ $value }}" maxlength="255" placeholder="{{ $field['placeholder'] ?? '' }}" class="champ">
+                                @endif
+                                @error('details.'.$key)<span class="mt-1 block text-sm text-red-700">{{ $message }}</span>@enderror
+                            </label>
+                        @endforeach
+                    </div>
+                </template>
+            @endforeach
+        </fieldset>
+
         <details class="sm:col-span-2" @if($advanced) open @endif>
             <summary class="cursor-pointer font-medium text-nere-700">Réglages avancés (facultatif) : intervalle, alertes, SNMP</summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">

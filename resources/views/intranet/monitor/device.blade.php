@@ -106,7 +106,7 @@
             <h2 class="font-semibold text-graphite-900">Fiche de l’équipement</h2>
             <button type="button" class="text-sm font-medium text-nere-700 hover:underline" @click="load(true)" :disabled="loading">Relire maintenant</button>
         </div>
-        <p class="text-sm text-graphite-500" x-show="loading">Lecture des informations de l’équipement en SNMP…</p>
+        <p class="text-sm text-graphite-500" x-show="loading">Lecture des informations de l’équipement…</p>
         <div x-show="! loading" x-html="html"></div>
     </section>
 

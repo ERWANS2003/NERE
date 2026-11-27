@@ -14,6 +14,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\MonitorAlert;
 use App\Services\Monitor\MonitorHistory;
+use App\Services\Monitor\HostProbe;
 use App\Services\Monitor\MonitorPoller;
 use App\Services\Monitor\NetworkScanner;
 use App\Services\Monitor\SnmpClient;
@@ -24,6 +25,34 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Process;
 
 uses(RefreshDatabase::class);
+
+// La fiche ne doit jamais sonder le vrai réseau pendant les tests.
+beforeEach(fn () => app()->instance(HostProbe::class, new FakeHostProbe));
+
+class FakeHostProbe extends HostProbe
+{
+    public function __construct(public ?string $dns = null, public ?string $macAddress = null, public array $open = [], public ?string $title = null) {}
+
+    public function name(string $host): ?string
+    {
+        return $this->dns;
+    }
+
+    public function mac(string $host): ?string
+    {
+        return $this->macAddress;
+    }
+
+    public function openPorts(string $host, array $ports): array
+    {
+        return array_values(array_intersect($ports, $this->open));
+    }
+
+    public function webTitle(string $url): ?string
+    {
+        return $this->title;
+    }
+}
 
 function monitorIt(): Department
 {
@@ -640,4 +669,41 @@ it('speaks SNMPv3 with SHA-256 authentication and AES encryption', function () {
     expect($device->fresh()->snmpCredentials()['auth_password'])->toBe('motdepasse-auth');
     $this->put(route('intranet.monitor.groups.update', $device->group), ['name' => $device->group->name, 'clear_snmp_v3' => 1]);
     expect($device->fresh()->snmpCredentials())->toBe('public');
+});
+
+it('keeps a sheet with the fields of each device type, completed by the network and SNMP', function () {
+    $this->actingAs(monitorTechnician());
+    $camera = monitorDevice(['name' => 'Caméra portail', 'host' => '10.0.0.30', 'type' => 'camera'], template: false);
+
+    $this->put(route('intranet.monitor.devices.update', $camera), [
+        'name' => 'Caméra portail', 'host' => '10.0.0.30', 'type' => 'camera', 'group_id' => $camera->group_id,
+        'details' => [
+            'brand' => 'Hikvision', 'serial' => 'DS2CD-123', 'camera_kind' => 'Dôme', 'area' => 'Portail nord',
+            'warranty_until' => now()->addDays(30)->toDateString(), 'toner_ref' => 'ignoré : champ d’imprimante', 'recorder' => '',
+        ],
+    ])->assertRedirect();
+    expect($camera->fresh()->details)->toBe([
+        'brand' => 'Hikvision', 'serial' => 'DS2CD-123', 'camera_kind' => 'Dôme', 'area' => 'Portail nord', 'warranty_until' => now()->addDays(30)->toDateString(),
+    ]);
+    $this->put(route('intranet.monitor.devices.update', $camera), [
+        'name' => 'Caméra portail', 'host' => '10.0.0.30', 'type' => 'camera', 'group_id' => $camera->group_id, 'details' => ['camera_kind' => 'Soucoupe'],
+    ])->assertSessionHasErrors('details.camera_kind');
+    $this->get(route('intranet.monitor.devices.edit', $camera))->assertOk()->assertSee('Zone filmée')->assertSee('Références des toners');
+
+    app()->instance(HostProbe::class, new FakeHostProbe('cam-portail.nere.local', 'BC:AD:28:11:22:33', [80, 554], 'Hikvision Web'));
+    app()->instance(SnmpClient::class, new FakeSnmp);
+    $this->get(route('intranet.monitor.devices.sheet', $camera))->assertOk()
+        ->assertSee('Hikvision')->assertSee('Portail nord')->assertSee('expire dans 30 j')->assertSee('Compléter la fiche')
+        ->assertSee('cam-portail.nere.local')->assertSee('BC:AD:28:11:22:33')->assertSee('Flux vidéo RTSP')->assertSee('Hikvision Web')
+        ->assertSee('SNMP ne répond pas')->assertDontSee('Références des toners');
+
+    $printer = monitorDevice(['name' => 'Imprimante RH', 'host' => '10.0.0.31', 'type' => 'printer'], template: false);
+    app()->instance(SnmpClient::class, new FakeSnmp([
+        '1.3.6.1.2.1.1.1.0' => 'KYOCERA', '1.3.6.1.2.1.25.3.2.1.3.1' => 'TASKalfa 2554ci', '1.3.6.1.2.1.43.5.1.1.17.1' => 'H721400190',
+        '1.3.6.1.2.1.2.2.1.2.1' => 'eth0', '1.3.6.1.2.1.2.2.1.6.1' => "\x00\x17\xC8\xAA\xBB\xCC",
+        '1.3.6.1.2.1.43.18.1.1.8.1.1' => 'Toner noir bientôt vide',
+    ]));
+    $this->get(route('intranet.monitor.devices.sheet', $printer))->assertOk()
+        ->assertSee('TASKalfa 2554ci')->assertSee('(lu en SNMP)', false)->assertSee('00:17:C8:AA:BB:CC')->assertSee('Toner noir bientôt vide')
+        ->assertSee('Références des toners')->assertDontSee('Zone filmée');
 });

@@ -511,7 +511,28 @@ class MonitorController extends Controller
             }
         }
 
+        $data['details'] = $this->detailsFrom($request, MonitorDeviceType::from($data['type']));
+
         return $this->keepSecret($request, $data, $device);
+    }
+
+    /** Fiche saisie : seuls les champs du type choisi sont gardés, les vides sont retirés. */
+    private function detailsFrom(Request $request, MonitorDeviceType $type): ?array
+    {
+        $rules = [];
+        $names = [];
+        foreach ($type->sheetFields() as $key => $field) {
+            $rules['details.'.$key] = match ($field['input'] ?? 'text') {
+                'date' => ['nullable', 'date'],
+                'select' => ['nullable', Rule::in($field['options'])],
+                'textarea' => ['nullable', 'string', 'max:2000'],
+                default => ['nullable', 'string', 'max:255'],
+            };
+            $names['details.'.$key] = mb_strtolower($field['label']);
+        }
+        $details = array_filter($request->validate($rules, [], $names)['details'] ?? [], 'filled');
+
+        return $details ?: null;
     }
 
     private function validateSensor(Request $request, ?MonitorSensorKind $kind = null): array

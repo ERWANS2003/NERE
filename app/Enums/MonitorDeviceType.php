@@ -82,6 +82,70 @@ enum MonitorDeviceType: string
         };
     }
 
+    /**
+     * Champs de la fiche saisie à la main : communs à tous, puis propres au type.
+     *
+     * @return array<string, array{label: string, input?: string, options?: list<string>, placeholder?: string}>
+     */
+    public function sheetFields(): array
+    {
+        $common = [
+            'brand' => ['label' => 'Marque', 'placeholder' => match ($this) {
+                self::Camera => 'Hikvision', self::Printer => 'Kyocera', self::Server => 'Dell', self::Antenna => 'Ubiquiti', self::Network => 'Cisco',
+            }],
+            'model' => ['label' => 'Modèle'],
+            'serial' => ['label' => 'N° de série'],
+            'location' => ['label' => 'Emplacement exact', 'placeholder' => 'Bâtiment, bureau, poteau…'],
+        ];
+
+        $specific = match ($this) {
+            self::Camera => [
+                'camera_kind' => ['label' => 'Forme', 'input' => 'select', 'options' => ['Dôme', 'Bullet', 'PTZ (motorisée)', 'Fisheye', 'Autre']],
+                'mounting' => ['label' => 'Pose', 'input' => 'select', 'options' => ['Intérieur', 'Extérieur']],
+                'area' => ['label' => 'Zone filmée', 'placeholder' => 'Portail nord, entrée usine…'],
+                'resolution' => ['label' => 'Résolution', 'placeholder' => '4 MP'],
+                'recorder' => ['label' => 'Enregistreur (NVR) et canal', 'placeholder' => 'NVR salle serveur, canal 5'],
+                'power' => ['label' => 'Alimentation', 'placeholder' => 'PoE, 12 V…'],
+            ],
+            self::Printer => [
+                'print_mode' => ['label' => 'Impression', 'input' => 'select', 'options' => ['Couleur', 'Noir et blanc']],
+                'functions' => ['label' => 'Fonctions', 'placeholder' => 'Impression, copie, scan'],
+                'served' => ['label' => 'Utilisée par', 'placeholder' => 'Service RH, 1er étage'],
+                'toner_ref' => ['label' => 'Références des toners', 'placeholder' => 'TK-8368K, C, M, Y'],
+                'service_contract' => ['label' => 'Contrat de maintenance'],
+            ],
+            self::Server => [
+                'role' => ['label' => 'Rôle', 'placeholder' => 'Contrôleur de domaine, fichiers, intranet…'],
+                'os' => ['label' => 'Système d’exploitation', 'placeholder' => 'Windows Server 2019'],
+                'hosting' => ['label' => 'Type', 'input' => 'select', 'options' => ['Physique', 'Machine virtuelle']],
+                'hypervisor' => ['label' => 'Hôte (si virtuel)', 'placeholder' => 'Hyper-V, VMware…'],
+                'hardware' => ['label' => 'Processeur, mémoire, disques'],
+                'backup' => ['label' => 'Sauvegarde', 'placeholder' => 'Veeam chaque nuit'],
+            ],
+            self::Antenna => [
+                'radio_mode' => ['label' => 'Mode', 'input' => 'select', 'options' => ['Point d’accès', 'Station', 'Pont point à point', 'Autre']],
+                'linked_to' => ['label' => 'Reliée à', 'placeholder' => 'Antenne du site, pylône…'],
+                'frequency' => ['label' => 'Fréquence et canal', 'placeholder' => '5 GHz, canal 36'],
+                'ssid' => ['label' => 'Nom du réseau (SSID)'],
+                'mast' => ['label' => 'Support et hauteur', 'placeholder' => 'Pylône, 18 m'],
+            ],
+            self::Network => [
+                'device_role' => ['label' => 'Rôle', 'input' => 'select', 'options' => ['Switch', 'Routeur', 'Pare-feu', 'Point d’accès Wi-Fi', 'Autre']],
+                'ports' => ['label' => 'Nombre de ports', 'placeholder' => '24'],
+                'firmware' => ['label' => 'Version du firmware'],
+                'uplink' => ['label' => 'Lien montant', 'placeholder' => 'Port 24 vers le cœur de réseau'],
+                'rack' => ['label' => 'Baie ou armoire'],
+            ],
+        };
+
+        return $common + $specific + [
+            'purchased_at' => ['label' => 'Date d’achat', 'input' => 'date'],
+            'warranty_until' => ['label' => 'Fin de garantie', 'input' => 'date'],
+            'supplier' => ['label' => 'Fournisseur ou prestataire'],
+            'notes' => ['label' => 'Remarques', 'input' => 'textarea'],
+        ];
+    }
+
     /** @return array<string, string> */
     public static function options(): array
     {
