@@ -36,10 +36,13 @@
                 </a>
                 <div class="flex gap-4 border-t border-graphite-100 px-5 py-2.5 text-sm font-medium">
                     <a href="{{ route('intranet.monitor.maps.screen', $map) }}" target="_blank" rel="noopener" class="text-nere-700 hover:underline">Écran mural</a>
-                    <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="text-graphite-600 hover:underline">Modifier</a>
+                    @can('monitor.manage')
+                        <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="text-graphite-600 hover:underline">Modifier</a>
+                    @endcan
                 </div>
             </article>
         @endforeach
+        @can('monitor.manage')
         <form method="POST" action="{{ route('intranet.monitor.maps.store') }}" class="carte flex flex-col gap-3 p-5">
             @csrf
             <label class="block">
@@ -49,5 +52,6 @@
             </label>
             <button class="bouton-primaire">Créer la carte</button>
         </form>
+        @endcan
     </div>
 </x-intranet-layout>

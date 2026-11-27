@@ -21,7 +21,9 @@
             @csrf
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-graphite-100 px-5 py-3">
                 <h2 class="font-semibold text-graphite-900">{{ $results->count() }} adresse(s) ont répondu</h2>
-                <button class="bouton-primaire">Ajouter les équipements cochés</button>
+                @can('monitor.manage')
+                    <button class="bouton-primaire">Ajouter les équipements cochés</button>
+                @endcan
             </div>
             @error('hosts')<p class="px-5 pt-3 text-sm text-red-700">{{ $message }}</p>@enderror
             <div class="overflow-x-auto">

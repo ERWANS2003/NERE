@@ -31,10 +31,14 @@
             <details class="relative ml-auto">
                 <summary class="cursor-pointer list-none rounded-md px-2 py-1 text-sm font-medium text-graphite-600 hover:bg-graphite-100" aria-label="Actions du groupe {{ $group->name }}">Actions ▾</summary>
                 <div class="absolute right-0 z-30 mt-1 w-56 rounded-xl border border-graphite-200 bg-white py-1 text-sm shadow-xl">
-                    <a href="{{ route('intranet.monitor.devices.create', ['group' => $group->id]) }}" class="block px-4 py-2 hover:bg-graphite-50">Ajouter un équipement</a>
-                    <a href="{{ route('intranet.monitor.groups.create', ['parent' => $group->id]) }}" class="block px-4 py-2 hover:bg-graphite-50">Ajouter un sous-groupe</a>
+                    @can('monitor.manage')
+                        <a href="{{ route('intranet.monitor.devices.create', ['group' => $group->id]) }}" class="block px-4 py-2 hover:bg-graphite-50">Ajouter un équipement</a>
+                        <a href="{{ route('intranet.monitor.groups.create', ['parent' => $group->id]) }}" class="block px-4 py-2 hover:bg-graphite-50">Ajouter un sous-groupe</a>
+                    @endcan
                     <a href="{{ route('intranet.monitor.reports', ['groupe' => $group->id]) }}" class="block px-4 py-2 hover:bg-graphite-50">Rapport de disponibilité</a>
-                    <a href="{{ route('intranet.monitor.groups.edit', $group) }}" class="block px-4 py-2 hover:bg-graphite-50">Réglages du groupe</a>
+                    @can('monitor.manage')
+                        <a href="{{ route('intranet.monitor.groups.edit', $group) }}" class="block px-4 py-2 hover:bg-graphite-50">Réglages du groupe</a>
+                    @endcan
                 </div>
             </details>
         </div>
@@ -71,8 +75,11 @@
                 </ul>
             @elseif($children->isEmpty())
                 <p class="py-3 pr-5 text-sm text-graphite-500" style="padding-left: {{ $indent + 1.5 }}rem">
-                    Aucun équipement. <a href="{{ route('intranet.monitor.devices.create', ['group' => $group->id]) }}" class="font-medium text-nere-700 hover:underline">En ajouter un</a>
-                    ou lancer la <a href="{{ route('intranet.monitor.discovery') }}" class="font-medium text-nere-700 hover:underline">découverte automatique</a>.
+                    Aucun équipement.
+                    @can('monitor.manage')
+                        <a href="{{ route('intranet.monitor.devices.create', ['group' => $group->id]) }}" class="font-medium text-nere-700 hover:underline">En ajouter un</a>
+                        ou lancer la <a href="{{ route('intranet.monitor.discovery') }}" class="font-medium text-nere-700 hover:underline">découverte automatique</a>.
+                    @endcan
                 </p>
             @endif
             @foreach($children as $child)

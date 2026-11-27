@@ -59,9 +59,10 @@ function monitorIt(): Department
     return Department::query()->firstWhere('code', 'IT') ?? Department::factory()->create(['code' => 'IT', 'name' => 'Informatique']);
 }
 
-function monitorTechnician(): User
+/** Technicien N3 : il peut modifier la supervision. */
+function monitorTechnician(int $level = 3): User
 {
-    return User::factory()->withRole(monitorIt(), DepartmentRole::Technician, 1)->create();
+    return User::factory()->withRole(monitorIt(), DepartmentRole::Technician, $level)->create();
 }
 
 function monitorDevice(array $attributes = [], bool $template = true): MonitorDevice
@@ -706,4 +707,54 @@ it('keeps a sheet with the fields of each device type, completed by the network 
     $this->get(route('intranet.monitor.devices.sheet', $printer))->assertOk()
         ->assertSee('TASKalfa 2554ci')->assertSee('(lu en SNMP)', false)->assertSee('00:17:C8:AA:BB:CC')->assertSee('Toner noir bientôt vide')
         ->assertSee('Références des toners')->assertDontSee('Zone filmée');
+});
+
+it('lets IT technicians below N3 view the supervision but not change it', function () {
+    $device = monitorDevice();
+    $sensor = $device->sensors()->first();
+    $viewer = monitorTechnician(2);
+
+    $this->actingAs($viewer)->get(route('intranet.monitor.index'))
+        ->assertOk()
+        ->assertDontSee('Ajouter un équipement')
+        ->assertDontSee('Nouveau groupe');
+    $this->actingAs($viewer)->get(route('intranet.monitor.devices.show', $device))
+        ->assertOk()
+        ->assertDontSee(route('intranet.monitor.devices.edit', $device))
+        ->assertDontSee('Ajouter un autre capteur');
+    $this->actingAs($viewer)->get(route('intranet.monitor.sensors.show', $sensor))
+        ->assertOk()
+        ->assertDontSee('Paramètres et seuils')
+        ->assertDontSee('Vérifier maintenant');
+
+    $this->actingAs($viewer)->get(route('intranet.monitor.maps'))->assertOk()->assertDontSee('Créer la carte');
+    $this->actingAs($viewer)->get(route('intranet.monitor.discovery'))->assertOk()->assertDontSee('Lancer la découverte');
+    $this->actingAs($viewer)->get(route('intranet.monitor.devices.sheet', $device))->assertOk()->assertDontSee('la fiche');
+
+    $this->actingAs($viewer)->get(route('intranet.monitor.devices.create'))->assertForbidden();
+    $this->actingAs($viewer)->get(route('intranet.monitor.devices.edit', $device))->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.groups.store'), ['name' => 'Mine'])->assertForbidden();
+    $this->actingAs($viewer)->put(route('intranet.monitor.devices.update', $device), ['name' => 'X'])->assertForbidden();
+    $this->actingAs($viewer)->delete(route('intranet.monitor.devices.destroy', $device))->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.devices.pause', $device))->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.sensors.check', $sensor))->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.sensors.acknowledge', $sensor))->assertForbidden();
+    $this->actingAs($viewer)->delete(route('intranet.monitor.sensors.destroy', $sensor))->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.maps.store'), ['name' => 'Plan'])->assertForbidden();
+    $this->actingAs($viewer)->post(route('intranet.monitor.discovery.store'), ['subnet' => '10.0.0.0/30'])->assertForbidden();
+
+    expect(MonitorDevice::find($device->id))->not->toBeNull();
+});
+
+it('lets the admin, the IT director and N3 technicians change the supervision', function () {
+    $admin = User::factory()->create(['is_super_admin' => true]);
+    $director = User::factory()->withRole(monitorIt(), DepartmentRole::Director)->create();
+
+    foreach ([$admin, $director, monitorTechnician(3)] as $user) {
+        expect($user->can('monitor.manage'))->toBeTrue();
+        $this->actingAs($user)->get(route('intranet.monitor.groups.create'))->assertOk();
+    }
+
+    expect(monitorTechnician(1)->can('monitor.manage'))->toBeFalse()
+        ->and(monitorTechnician(1)->can('monitor'))->toBeTrue();
 });

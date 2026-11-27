@@ -30,14 +30,16 @@
             @endif
         </div>
         <div class="flex flex-wrap gap-2" data-auto-refresh data-interval="60000">
-            <form method="POST" action="{{ route('intranet.monitor.sensors.check', $sensor) }}">
-                @csrf
-                <button class="bouton-primaire">Vérifier maintenant</button>
-            </form>
-            @include('intranet.monitor.partials.pause-form', ['paused' => $sensor->paused && $sensor->isPaused(), 'action' => route('intranet.monitor.sensors.pause', $sensor)])
+            @can('monitor.manage')
+                <form method="POST" action="{{ route('intranet.monitor.sensors.check', $sensor) }}">
+                    @csrf
+                    <button class="bouton-primaire">Vérifier maintenant</button>
+                </form>
+                @include('intranet.monitor.partials.pause-form', ['paused' => $sensor->paused && $sensor->isPaused(), 'action' => route('intranet.monitor.sensors.pause', $sensor)])
+            @endcan
             @if($sensor->ticket)
                 <a href="{{ route('intranet.tickets.show', $sensor->ticket) }}" class="bouton-secondaire">Ticket {{ $sensor->ticket->number }}</a>
-            @elseif($status->isAlarm())
+            @elseif($status->isAlarm() && auth()->user()->can('monitor.manage'))
                 <form method="POST" action="{{ route('intranet.monitor.sensors.ticket', $sensor) }}">
                     @csrf
                     <button class="bouton-secondaire">Ouvrir un ticket</button>
@@ -52,6 +54,8 @@
         <section class="carte mb-6 p-5">
             @if($sensor->status === \App\Enums\MonitorStatus::DownAcknowledged)
                 <p class="text-sm text-graphite-700">Pris en compte par <strong>{{ $sensor->acknowledger?->name }}</strong> le {{ $sensor->acknowledged_at?->format('d/m/Y à H:i') }}@if($sensor->acknowledged_until), jusqu’au {{ $sensor->acknowledged_until->format('d/m/Y à H:i') }}@endif @if($sensor->acknowledgement) : « {{ $sensor->acknowledgement }} »@endif. Plus de rappel ni d’escalade tant que la panne dure.</p>
+            @elseif(! auth()->user()->can('monitor.manage'))
+                <p class="text-sm text-graphite-700">Panne pas encore prise en compte par l’équipe.</p>
             @else
                 <form method="POST" action="{{ route('intranet.monitor.sensors.acknowledge', $sensor) }}" class="flex flex-wrap items-end gap-3">
                     @csrf
@@ -112,6 +116,7 @@
             </ul>
         </section>
 
+        @can('monitor.manage')
         <details class="carte p-5" @if($errors->any()) open @endif>
             <summary class="cursor-pointer font-semibold text-graphite-900">Paramètres et seuils</summary>
             <form method="POST" action="{{ route('intranet.monitor.sensors.update', $sensor) }}" class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -167,5 +172,6 @@
                 <button class="bouton-danger">Supprimer le capteur</button>
             </form>
         </details>
+        @endcan
     </div>
 </x-intranet-layout>

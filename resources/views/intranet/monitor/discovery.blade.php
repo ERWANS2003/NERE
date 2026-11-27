@@ -9,6 +9,8 @@
 
     @if($groups->isEmpty())
         <p class="carte p-5 text-sm text-graphite-700">Créez d’abord un groupe dans la vue d’ensemble : les équipements trouvés y seront rangés.</p>
+    @elseif(! auth()->user()->can('monitor.manage'))
+        <p class="carte mb-6 p-5 text-sm text-graphite-700">Les découvertes sont lancées par l’admin, le directeur IT ou un technicien N3. Vous pouvez consulter leurs résultats ci-dessous.</p>
     @else
         <form method="POST" action="{{ route('intranet.monitor.discovery.store') }}" class="carte mb-6 grid max-w-3xl gap-4 p-5 sm:grid-cols-3">
             @csrf

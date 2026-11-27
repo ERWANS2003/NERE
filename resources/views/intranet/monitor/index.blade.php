@@ -77,10 +77,12 @@
                 @endif
             </nav>
             <div class="flex flex-wrap items-center gap-2" data-auto-refresh data-interval="60000">
-                <a href="{{ route('intranet.monitor.groups.create') }}" class="bouton-secondaire">Nouveau groupe</a>
-                @if($groups->isNotEmpty())
-                    <a href="{{ route('intranet.monitor.devices.create') }}" class="bouton-primaire">Ajouter un équipement</a>
-                @endif
+                @can('monitor.manage')
+                    <a href="{{ route('intranet.monitor.groups.create') }}" class="bouton-secondaire">Nouveau groupe</a>
+                    @if($groups->isNotEmpty())
+                        <a href="{{ route('intranet.monitor.devices.create') }}" class="bouton-primaire">Ajouter un équipement</a>
+                    @endif
+                @endcan
                 <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">Suspendre l’actualisation</button>
                 <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
             </div>
@@ -111,7 +113,7 @@
                     @endif
                 </div>
                 <span class="hidden w-28 shrink-0 text-right text-xs text-graphite-500 sm:block" title="{{ $sensor->status_changed_at?->format('d/m/Y H:i') }}">depuis {{ $sensor->status_changed_at?->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
-                @if($state === \App\Enums\MonitorStatus::Down)
+                @if($state === \App\Enums\MonitorStatus::Down && auth()->user()->can('monitor.manage'))
                     @include('intranet.monitor.partials.acknowledge', ['sensor' => $sensor])
                 @endif
             </div>
@@ -167,7 +169,9 @@
         <div class="carte p-6 text-sm text-graphite-700">
             <p class="font-semibold text-graphite-900">Commencez par créer un groupe</p>
             <p class="mt-1">Un groupe correspond à un site ou une zone (ex. « Siège Ouagadougou », « Mine »). Vous y ajoutez ensuite les équipements, à la main ou avec la découverte automatique.</p>
-            <a href="{{ route('intranet.monitor.groups.create') }}" class="bouton-primaire mt-4 inline-flex">Créer le premier groupe</a>
+            @can('monitor.manage')
+                <a href="{{ route('intranet.monitor.groups.create') }}" class="bouton-primaire mt-4 inline-flex">Créer le premier groupe</a>
+            @endcan
         </div>
     @endif
 </x-intranet-layout>

@@ -48,7 +48,7 @@ class MonitorExtrasController extends Controller
 
         return view('intranet.monitor.map', [
             'map' => $map,
-            'editing' => $request->boolean('edition'),
+            'editing' => $request->boolean('edition') && $request->user()->can('monitor.manage'),
             'devices' => MonitorDevice::query()->whereNotIn('id', $map->items->pluck('device_id'))->orderBy('name')->get(['id', 'name', 'host']),
             'groups' => MonitorGroup::query()->get()->mapWithKeys(fn (MonitorGroup $g) => [$g->id => $g->path()])->sort(),
         ]);

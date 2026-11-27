@@ -20,7 +20,9 @@
                 <a href="{{ route('intranet.monitor.maps.show', $map) }}" class="bouton-secondaire">Terminer la modification</a>
             @else
                 <a href="{{ route('intranet.monitor.maps.screen', $map) }}" target="_blank" rel="noopener" class="bouton-primaire">Écran mural</a>
-                <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="bouton-secondaire">Modifier la carte</a>
+                @can('monitor.manage')
+                    <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="bouton-secondaire">Modifier la carte</a>
+                @endcan
                 <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">Suspendre l’actualisation</button>
                 <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
             @endif
@@ -79,8 +81,10 @@
         @if($map->items->isEmpty() && ! $editing)
             <div class="carte p-6 text-sm text-graphite-700">
                 <p class="font-semibold text-graphite-900">Cette carte est vide</p>
-                <p class="mt-1">Ajoutez un plan de fond (photo du site, schéma du réseau) puis placez-y les équipements.</p>
-                <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="bouton-primaire mt-4 inline-flex">Modifier la carte</a>
+                @can('monitor.manage')
+                    <p class="mt-1">Ajoutez un plan de fond (photo du site, schéma du réseau) puis placez-y les équipements.</p>
+                    <a href="{{ route('intranet.monitor.maps.show', [$map, 'edition' => 1]) }}" class="bouton-primaire mt-4 inline-flex">Modifier la carte</a>
+                @endcan
             </div>
         @else
             <div class="grid gap-4 {{ $editing ? '' : 'xl:grid-cols-[minmax(0,1fr)_18rem]' }}">

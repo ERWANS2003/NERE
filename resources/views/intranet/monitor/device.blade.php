@@ -35,8 +35,10 @@
                 </div>
             </div>
             <div class="flex flex-wrap gap-2" data-auto-refresh data-interval="60000">
-                @include('intranet.monitor.partials.pause-form', ['paused' => $device->isPaused(), 'action' => route('intranet.monitor.devices.pause', $device)])
-                <a href="{{ route('intranet.monitor.devices.edit', $device) }}" class="bouton-secondaire">Modifier</a>
+                @can('monitor.manage')
+                    @include('intranet.monitor.partials.pause-form', ['paused' => $device->isPaused(), 'action' => route('intranet.monitor.devices.pause', $device)])
+                    <a href="{{ route('intranet.monitor.devices.edit', $device) }}" class="bouton-secondaire">Modifier</a>
+                @endcan
                 <button type="button" class="bouton-secondaire" data-auto-refresh-toggle aria-pressed="false">Suspendre l’actualisation</button>
                 <span class="sr-only" role="status" aria-live="polite" data-auto-refresh-status></span>
             </div>
@@ -87,14 +89,16 @@
                             </td>
                             <td class="whitespace-nowrap px-5 py-3 text-graphite-500">{{ $sensor->checked_at?->diffForHumans() ?? 'jamais' }}</td>
                             <td class="whitespace-nowrap px-5 py-3 text-right">
-                                <form method="POST" action="{{ route('intranet.monitor.sensors.check', $sensor) }}" class="inline">
-                                    @csrf
-                                    <button class="font-medium text-nere-700 hover:underline">Vérifier maintenant</button>
-                                </form>
+                                @can('monitor.manage')
+                                    <form method="POST" action="{{ route('intranet.monitor.sensors.check', $sensor) }}" class="inline">
+                                        @csrf
+                                        <button class="font-medium text-nere-700 hover:underline">Vérifier maintenant</button>
+                                    </form>
+                                @endcan
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-5 py-4 text-graphite-600">Aucun capteur. Ajoutez-en un ci-dessous.</td></tr>
+                        <tr><td colspan="6" class="px-5 py-4 text-graphite-600">Aucun capteur.@can('monitor.manage') Ajoutez-en un ci-dessous.@endcan</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -110,6 +114,7 @@
         <div x-show="! loading" x-html="html"></div>
     </section>
 
+    @can('monitor.manage')
     @php
         $quick = collect([
             ['kind' => 'tcp', 'name' => 'Bureau à distance', 'port' => 3389],
@@ -187,5 +192,6 @@
             </div>
         </form>
     </details>
+    @endcan
 
 </x-intranet-layout>

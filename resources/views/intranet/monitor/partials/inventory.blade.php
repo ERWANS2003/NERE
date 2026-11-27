@@ -42,7 +42,9 @@
                     <span class="h-2 w-24 rounded-full bg-graphite-100"><span class="block h-2 rounded-full {{ $completion >= 80 ? 'bg-green-600' : ($completion >= 40 ? 'bg-amber-400' : 'bg-red-500') }}" style="width: {{ max(4, $completion) }}%"></span></span>
                     {{ $filled }} / {{ $counted->count() }}
                 </span>
-                <a href="{{ route('intranet.monitor.devices.edit', $device) }}#fiche" class="font-medium text-nere-700 hover:underline">{{ $completion < 100 ? 'Compléter la fiche' : 'Modifier la fiche' }}</a>
+                @can('monitor.manage')
+                    <a href="{{ route('intranet.monitor.devices.edit', $device) }}#fiche" class="font-medium text-nere-700 hover:underline">{{ $completion < 100 ? 'Compléter la fiche' : 'Modifier la fiche' }}</a>
+                @endcan
             </div>
         </div>
         <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
@@ -226,7 +228,7 @@
                             <span class="flex min-w-0 items-center gap-2"><span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $interface['up'] ? 'bg-green-600' : 'bg-graphite-300' }}" title="{{ $interface['up'] ? 'Connectée' : 'Déconnectée' }}"></span><span class="truncate">{{ $interface['name'] }}</span>@if($interface['mac'] ?? null)<span class="hidden font-mono text-xs text-graphite-400 sm:inline">{{ $interface['mac'] }}</span>@endif</span>
                             <span class="flex items-center gap-3 text-graphite-500">
                                 {{ $interface['up'] ? ($interface['speed'] ?? 'connectée') : 'déconnectée' }}
-                                @if(isset($interface['index']) && ! in_array((string) $interface['index'], $watchedPorts ?? [], true))
+                                @if(isset($interface['index']) && ! in_array((string) $interface['index'], $watchedPorts ?? [], true) && auth()->user()?->can('monitor.manage'))
                                     <form method="POST" action="{{ route('intranet.monitor.sensors.store', $device) }}">
                                         @csrf
                                         <input type="hidden" name="quick" value="1">

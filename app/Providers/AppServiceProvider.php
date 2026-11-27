@@ -86,6 +86,17 @@ class AppServiceProvider extends ServiceProvider
             return $it !== null && $user->canHandleIn($it);
         });
 
+        // Modifier la supervision : l'admin, le directeur IT et les techniciens
+        // IT de niveau 3. Les autres membres de l'equipe IT consultent seulement.
+        Gate::define('monitor.manage', function (User $user): bool {
+            if ($user->is_super_admin) {
+                return true;
+            }
+            $it = Department::query()->where('code', 'IT')->where('is_active', true)->value('id');
+
+            return $it !== null && $user->effectiveTechLevel($it) === User::HIGHEST_TECH_LEVEL;
+        });
+
         Event::listen(NotificationSent::class, function (NotificationSent $event): void {
             if (! config('webpush.enabled')
                 || $event->channel !== 'database'
